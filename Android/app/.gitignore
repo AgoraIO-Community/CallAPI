@@ -1,0 +1,6 @@
+/build
+agora-*
+libagora*
+libvideo*
+libudrm3.so
+/release/

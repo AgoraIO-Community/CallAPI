@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/default_room_bg"
+    tools:context=".LivingActivity">
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/vertical40"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.4" />
+
+    <FrameLayout
+        android:id="@+id/vCenter"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/black_50"/>
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/horizontal20"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.2" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvTargetUid"
+        android:layout_width="100dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="10dp"
+        android:text="目标用户uid"
+        android:gravity="center_vertical"
+        android:textColor="#CCFFFFFF"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/horizontal20" />
+
+    <androidx.appcompat.widget.AppCompatEditText
+        android:id="@+id/etTargetUid"
+        android:layout_width="200dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:hint="输入目标用户uid"
+        android:singleLine="true"
+        android:imeOptions="actionDone|flagNoExtractUi"
+        android:textColor="@color/white"
+        android:textColorHint="#99FFFFFF"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toBottomOf="@id/tvTargetUid"
+        app:layout_constraintStart_toEndOf="@id/tvTargetUid"
+        app:layout_constraintTop_toTopOf="@id/tvTargetUid" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/vertical50"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.5" />
+
+    <FrameLayout
+        android:id="@+id/vLeft"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+
+        android:background="@android:color/holo_orange_light"
+        app:layout_constraintDimensionRatio="1.31:2"
+        app:layout_constraintEnd_toEndOf="@id/vertical50"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/horizontal20" />
+
+    <FrameLayout
+        android:id="@+id/vRight"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@android:color/holo_purple"
+        app:layout_constraintDimensionRatio="1.31:2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@id/vertical50"
+        app:layout_constraintTop_toTopOf="@id/horizontal20" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/tvCurrentId"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        android:layout_marginTop="25dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="当前用户id" />
+
+    <androidx.appcompat.widget.AppCompatImageButton
+        android:id="@+id/btnQuitChannel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:layout_marginEnd="16dp"
+        android:padding="16dp"
+        android:src="@drawable/app_icon_exit"
+        android:text="@string/app_quit_channel"
+        app:layout_constraintBottom_toBottomOf="@id/tvCurrentId"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tvCurrentId" />
+
+    <include
+        android:id="@+id/statisticLayout"
+        layout="@layout/layout_statistic"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:visibility="invisible"
+        app:layout_constraintStart_toStartOf="@id/vertical40"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tvCurrentId" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="60dp"
+        android:text="邀请1v1"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnHangUp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="60dp"
+        android:text="挂断1v1"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

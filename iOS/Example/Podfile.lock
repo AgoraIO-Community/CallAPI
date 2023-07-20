@@ -1,0 +1,62 @@
+PODS:
+  - AgoraRtcEngine_iOS (1.0)
+  - CallAPI (0.1.0):
+    - AgoraRtcEngine_iOS
+  - FBSnapshotTestCase (2.1.4):
+    - FBSnapshotTestCase/SwiftSupport (= 2.1.4)
+  - FBSnapshotTestCase/Core (2.1.4)
+  - FBSnapshotTestCase/SwiftSupport (2.1.4):
+    - FBSnapshotTestCase/Core
+  - iOSSnapshotTestCase (8.0.0):
+    - iOSSnapshotTestCase/SwiftSupport (= 8.0.0)
+  - iOSSnapshotTestCase/Core (8.0.0)
+  - iOSSnapshotTestCase/SwiftSupport (8.0.0):
+    - iOSSnapshotTestCase/Core
+  - Nimble (10.0.0)
+  - Nimble-Snapshots (9.4.0):
+    - Nimble-Snapshots/Core (= 9.4.0)
+  - Nimble-Snapshots/Core (9.4.0):
+    - iOSSnapshotTestCase (~> 8.0)
+    - Nimble
+  - Quick (2.2.1)
+  - YYCategories (1.0.4):
+    - YYCategories/no-arc (= 1.0.4)
+  - YYCategories/no-arc (1.0.4)
+
+DEPENDENCIES:
+  - AgoraRtcEngine_iOS (from `./libs`)
+  - CallAPI (from `../`)
+  - FBSnapshotTestCase (~> 2.1.4)
+  - Nimble (~> 10.0.0)
+  - Nimble-Snapshots (~> 9.4.0)
+  - Quick (~> 2.2.0)
+  - YYCategories
+
+SPEC REPOS:
+  trunk:
+    - FBSnapshotTestCase
+    - iOSSnapshotTestCase
+    - Nimble
+    - Nimble-Snapshots
+    - Quick
+    - YYCategories
+
+EXTERNAL SOURCES:
+  AgoraRtcEngine_iOS:
+    :path: "./libs"
+  CallAPI:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  AgoraRtcEngine_iOS: 7af3b344c55059556eeb05dc748ff124c593d4fb
+  CallAPI: de7e1516c1bf7ac66abd76625ef0183eff43e1c4
+  FBSnapshotTestCase: 094f9f314decbabe373b87cc339bea235a63e07a
+  iOSSnapshotTestCase: a670511f9ee3829c2b9c23e6e68f315fd7b6790f
+  Nimble: 5316ef81a170ce87baf72dd961f22f89a602ff84
+  Nimble-Snapshots: ef281b908c604f78c8313587e25ea92c8ab513d7
+  Quick: f5754d69b7013f5864c29aab9ae6f0c79c5bc200
+  YYCategories: 6bcd4314c6661a561410dce4a793379ebd306abd
+
+PODFILE CHECKSUM: f2400e0063bba6b7bf2680034e262e84fcad88ad
+
+COCOAPODS: 1.12.0

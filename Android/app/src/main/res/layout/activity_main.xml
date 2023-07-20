@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/default_room_bg"
+    android:padding="16dp"
+    tools:context=".MainActivity">
+
+    <RadioGroup
+        android:id="@+id/rgMode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="30dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.appcompat.widget.AppCompatRadioButton
+            android:id="@+id/btnShow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="秀转场1V1"
+            android:textColor="@color/white" />
+
+        <androidx.appcompat.widget.AppCompatRadioButton
+            android:id="@+id/btnOneToOne"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="纯1V1"
+            android:textColor="@color/white" />
+    </RadioGroup>
+
+    <RadioGroup
+        android:id="@+id/rgRole"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/rgMode">
+
+        <androidx.appcompat.widget.AppCompatRadioButton
+            android:id="@+id/btnBroadcaster"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/app_role_broadcaster"
+            android:textColor="@color/white" />
+
+        <androidx.appcompat.widget.AppCompatRadioButton
+            android:id="@+id/btnAudience"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_role_audience"
+            android:textColor="@color/white" />
+    </RadioGroup>
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvLocalUid"
+        android:layout_width="100dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="10dp"
+        android:text="@string/app_input_title_local_uid"
+        android:gravity="center_vertical"
+        android:textColor="#CCFFFFFF"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/rgRole" />
+
+    <androidx.appcompat.widget.AppCompatEditText
+        android:id="@+id/etLocalUid"
+        android:layout_width="200dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:hint="@string/app_input_local_uid"
+        android:singleLine="true"
+        android:imeOptions="actionDone|flagNoExtractUi"
+        android:textColor="@color/white"
+        android:textColorHint="#99FFFFFF"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toBottomOf="@id/tvLocalUid"
+        app:layout_constraintStart_toEndOf="@id/tvLocalUid"
+        app:layout_constraintTop_toTopOf="@id/tvLocalUid" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvOwnerUid"
+        android:layout_width="100dp"
+        android:layout_height="48dp"
+        android:gravity="center_vertical"
+        android:text="主播id"
+        android:textColor="#CCFFFFFF"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvLocalUid" />
+
+    <androidx.appcompat.widget.AppCompatEditText
+        android:id="@+id/etOwnerUid"
+        android:layout_width="200dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:hint="输入主播id"
+        android:singleLine="true"
+        android:imeOptions="actionDone|flagNoExtractUi"
+        android:textColor="@color/white"
+        android:textColorHint="#99FFFFFF"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toBottomOf="@id/tvOwnerUid"
+        app:layout_constraintStart_toEndOf="@id/tvOwnerUid"
+        app:layout_constraintTop_toTopOf="@id/tvOwnerUid" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutResolution"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:orientation="vertical"
+        app:layout_constraintTop_toBottomOf="@id/tvOwnerUid">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_debug_encode_dimensions"
+            android:textColor="#303553"
+            android:textSize="14sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatEditText
+            android:id="@+id/etResolutionWidth"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:gravity="center"
+            android:imeOptions="actionNext"
+            android:inputType="numberDecimal"
+            android:textColor="#303553"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/tvResolutionX"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="1920" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/tvResolutionX"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_debug_x"
+            android:textColor="#303553"
+            android:textSize="14sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/etResolutionHeight"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatEditText
+            android:id="@+id/etResolutionHeight"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:imeOptions="actionNext"
+            android:inputType="numberDecimal"
+            android:singleLine="true"
+            android:textColor="#303553"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="1080" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/color_deliver"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutFrameRate"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:orientation="vertical"
+        app:layout_constraintTop_toBottomOf="@id/layoutResolution">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_debug_encode_frame_rate"
+            android:textColor="#303553"
+            android:textSize="14sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatEditText
+            android:id="@+id/etFps"
+            android:layout_width="30dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:gravity="center"
+            android:imeOptions="actionNext"
+            android:inputType="numberDecimal"
+            android:singleLine="true"
+            android:textColor="#303553"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/tvFps"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="60" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/tvFps"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_debug_frame_rate"
+            android:textColor="#303553"
+            android:textSize="14sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/color_deliver"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnEnter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="创建秀场转1v1"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        app:cornerRadius="4dp"
+        android:paddingHorizontal="24dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="100dp"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

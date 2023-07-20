@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">OneToOne</string>
+    <string name="app_channel_name">频&#8194;道&#8194;号</string>
+    <string name="app_role">角&#12288;&#12288;色</string>
+    <string name="app_input_channel">输入直播频道名</string>
+    <string name="app_input_title_local_uid">当前的用户id</string>
+    <string name="app_input_local_uid">输入当前的用uid</string>
+    <string name="app_role_broadcaster">主播</string>
+    <string name="app_role_audience">观众</string>
+    <string name="app_join_channel">加入频道</string>
+    <string name="app_debugging">Debug页面</string>
+    <string name="app_debugging_title">开发者模式设置</string>
+    <string name="app_debug_encode_dimensions">编码分辨率</string>
+    <string name="app_debug_encode_frame_rate">编码帧率</string>
+    <string name="app_debug_encode_bitrate">码率</string>
+    <string name="app_debug_x">x</string>
+    <string name="app_debug_frame_rate">fps</string>
+    <string name="app_debug_bitrate">kbps</string>
+    <string name="app_confirm">确认</string>
+    <string name="app_pk_channel">对端频道</string>
+    <string name="app_pk_channel1">频&#8194;道&#8194;一</string>
+    <string name="app_pk_channel2">频&#8194;道&#8194;二</string>
+    <string name="app_pk_channel3">频&#8194;道&#8194;三</string>
+    <string name="app_pk_channel4">频&#8194;道&#8194;四</string>
+    <string name="app_pk_channel5">频&#8194;道&#8194;五</string>
+    <string name="app_update_pk_channel">更新对端频道号</string>
+    <string name="app_quit_channel">退出</string>
+    <string name="app_statistic">实时数据</string>
+    <string name="app_statistic_dimensions">编码分辨率: %s</string>
+    <string name="app_statistic_frame_rate">编码帧率: %s fps</string>
+    <string name="app_statistic_bitrate">编码码率: %s Kbps</string>
+    <string name="app_pk_channels">对端频道：%s</string>
+    <string name="app_local_uid">UID：%s</string>
+    <string name="app_current_channel">当前频道号：%s</string>
+    <string name="app_main_channel_empty">加入的频道不能为空</string>
+</resources>
