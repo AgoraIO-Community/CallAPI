@@ -1,12 +1,11 @@
-package io.agora.onetoone.callAPI
+package io.agora.callapi
 
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.google.gson.Gson
-import io.agora.rtm.*
-import io.agora.rtm.RtmTokenBuilder.Role
+import io.agora.rtm2.*
 import org.json.JSONObject
 
 /// 回执的消息队列对象
@@ -93,11 +92,11 @@ class CallMessageManager(
             return
         }
         val rtmClient = this.rtmClient
-
         if (prepareConfig.autoLoginRTM && !isLoginedRTM) {
             loginRTM(rtmClient, rtmToken) { err ->
                 if (err != null) {
-                    completion.invoke(AGError(err.errorReason, err.errorCode))
+                    val errorCode = RtmConstants.RtmErrorCode.getValue(err.errorCode)
+                    completion.invoke(AGError(err.errorReason, errorCode))
                 }
                 mHandler.postDelayed({
                     rtmInitialize(prepareConfig, tokenConfig, completion)
@@ -119,9 +118,14 @@ class CallMessageManager(
 
     /// 更新RTM token
     /// - Parameter rtmToken: <#rtmToken description#>
-    public fun renewToken(rtmToken: String) {
+    fun renewToken(rtmToken: String) {
         if (!isLoginedRTM) { return }
-        rtmClient.renewToken(rtmToken)
+        rtmClient.renewToken(rtmToken, object : ResultCallback<Void> {
+            override fun onSuccess(responseInfo: Void?) {
+            }
+            override fun onFailure(errorInfo: ErrorInfo?) {
+            }
+        })
     }
 
     /// 发送频道消息
@@ -131,7 +135,7 @@ class CallMessageManager(
     ///   - message: 发送的消息字典
     ///   - retryCount: 重试次数
     ///   - completion: <#completion description#>
-    public fun sendMessage(roomId: String, fromRoomId: String, message: Map<String, Any>, retryCount: Int = 3,completion: ((AGError?)-> Unit)?) {
+    fun sendMessage(roomId: String, fromRoomId: String, message: Map<String, Any>, retryCount: Int = 3,completion: ((AGError?)-> Unit)?) {
         messageId += 1
         messageId %= Int.MAX_VALUE
         val map = message.toMutableMap()
@@ -142,7 +146,7 @@ class CallMessageManager(
         _sendMessage(roomId, map, retryCount, completion)
     }
 
-    public fun setPresenceState(attr:Map<String, Any>, retryCount: Int = 3, completion: ((AGError?) -> Unit)?) {
+    fun setPresenceState(attr:Map<String, Any>, retryCount: Int = 3, completion: ((AGError?) -> Unit)?) {
         if (config.mode != CallMode.ShowTo1v1) {
             completion?.invoke(AGError("can not be set presence in 'pure 1v1' mode", -1))
             return
@@ -177,7 +181,8 @@ class CallMessageManager(
             override fun onFailure(errorInfo: ErrorInfo?) {
                 if (!_retry()) {
                     val msg = errorInfo?.errorReason ?: "error"
-                    completion?.invoke(AGError(msg, errorInfo?.errorCode ?: -1))
+                    val errorCode = RtmConstants.RtmErrorCode.getValue(errorInfo?.errorCode)
+                    completion?.invoke(AGError(msg, errorCode))
                 }
             }
         })
@@ -187,7 +192,7 @@ class CallMessageManager(
     /// - Parameters:
     ///   - keys: 需要清理的presence的key 数组
     ///   - completion: <#completion description#>
-    public fun removePresenceState(keys: ArrayList<String>, completion: ((AGError?) -> Unit)?) {
+    fun removePresenceState(keys: ArrayList<String>, completion: ((AGError?) -> Unit)?) {
         val presence = rtmClient.presence ?: run {
             completion?.invoke(AGError("not presence", -1))
             return
@@ -204,14 +209,14 @@ class CallMessageManager(
             }
             override fun onFailure(errorInfo: ErrorInfo?) {
                 Log.e(TAG, "presence removeState $roomId finished: ${errorInfo?.errorCode}")
-                completion?.invoke(AGError(errorInfo?.errorReason ?: "error", errorInfo?.errorCode ?: -1))
+                val e = AGError(errorInfo?.errorReason ?: "error", RtmConstants.RtmErrorCode.getValue(errorInfo?.errorCode))
+                completion?.invoke(e)
             }
         })
     }
 
     private fun _createRtmClient(): RtmClient {
         val rtmConfig = RtmConfig()
-        rtmConfig.context = mContext
         rtmConfig.userId = config.userId.toString()
         rtmConfig.appId = config.appId
         if (rtmConfig.userId.isEmpty()) {
@@ -255,7 +260,7 @@ class CallMessageManager(
             }
             var error1: AGError? = null
             var error2: AGError? = null
-            var tryCount = 2
+            var tryCount = 3
             val tryToInvoke = {
                 if (tryCount == 0) {
                     completion?.invoke(error1 ?: error2)
@@ -265,8 +270,10 @@ class CallMessageManager(
             options1.withMessage = true
             options1.withMetadata = false
             options1.withPresence = false
+            Log.d(TAG, "1/3 will _subscribe[$roomId]")
             _subscribe(roomId, options1) { error ->
                 error1 = error
+                Log.d(TAG, "1/3 _subscribe[$roomId]: ${error?.msg ?: "success"}")
                 tryCount -= 1
                 tryToInvoke.invoke()
             }
@@ -275,17 +282,42 @@ class CallMessageManager(
             options2.withMessage = false
             options2.withMetadata = false
             options2.withPresence = true
+            Log.d(TAG, "2/3 will _subscribe[$ownerRoomId]")
             _subscribe(ownerRoomId, options2) { error ->
                 error2 = error
+                Log.d(TAG, "2/3 _subscribe[$ownerRoomId]: ${error?.msg ?: "success"}")
+                tryCount -= 1
+                tryToInvoke.invoke()
+            }
+
+            Log.d(TAG, "3/3 waiting for snapshot")
+            //保证snapshot完成才认为subscribe完成，否则presence服务不一定成功导致后续写presence可能不成功
+            snapshotDidRecv = {
+                Log.d(TAG, "3/3 recv snapshot")
                 tryCount -= 1
                 tryToInvoke.invoke()
             }
         } else {
+            var error: AGError? = null
+            var tryCount = 2
+            val tryToInvoke = {
+                if (tryCount == 0) {
+                    completion?.invoke(error)
+                }
+            }
             val options = SubscribeOptions()
             options.withMessage = true
             options.withMetadata = false
             options.withPresence = true
-            _subscribe(roomId, options, completion)
+            _subscribe(roomId, options) { e ->
+                error = e
+                tryCount -= 1
+                tryToInvoke.invoke()
+            }
+            snapshotDidRecv = {
+                tryCount -= 1
+                tryToInvoke.invoke()
+            }
         }
     }
 
@@ -301,8 +333,7 @@ class CallMessageManager(
         Log.d(TAG, "_sendReceipts to $roomId, message: $message, retryCount: $retryCount")
         val json = Gson().toJson(message)
         val options = PublishOptions()
-        options.type = RtmConstants.RtmMessageType.STRING
-        rtmClient.publish(roomId, json, options, object : ResultCallback<Void> {
+        rtmClient.publish(roomId, json.toByteArray(), options, object : ResultCallback<Void> {
             override fun onSuccess(responseInfo: Void?) {
                 Log.d(TAG, "_sendReceipts cost ${System.currentTimeMillis()} ms")
                 completion?.invoke(null)
@@ -310,7 +341,8 @@ class CallMessageManager(
             override fun onFailure(errorInfo: ErrorInfo?) {
                 if (retryCount <= 1) {
                     val msg = errorInfo?.errorReason ?: "error"
-                    completion?.invoke(AGError(msg, errorInfo?.errorCode ?: -1))
+                    val errorCode = RtmConstants.RtmErrorCode.getValue(errorInfo?.errorCode)
+                    completion?.invoke(AGError(msg, errorCode))
                 } else {
                     _sendReceipts(roomId, messageId, retryCount - 1, completion)
                 }
@@ -323,8 +355,7 @@ class CallMessageManager(
         val msgId = message[kMessageId] as? Int ?: 0
         val json = Gson().toJson(message)
         val options = PublishOptions()
-        options.type = RtmConstants.RtmMessageType.STRING
-        rtmClient.publish(roomId, json, options, object : ResultCallback<Void> {
+        rtmClient.publish(roomId, json.toByteArray(), options, object : ResultCallback<Void> {
             override fun onSuccess(p0: Void?) {
                 completion?.invoke(null)
                 receiptsQueue.firstOrNull { it.messageId == msgId }?.let {
@@ -354,7 +385,7 @@ class CallMessageManager(
             override fun onFailure(errorInfo: ErrorInfo?) {
                 if (retryCount <= 1) {
                     val msg = errorInfo?.errorReason ?: "error"
-                    completion?.invoke(AGError(msg, errorInfo?.errorCode ?: -1))
+                    completion?.invoke(AGError(msg, -1))
                 } else {
                     _sendMessage(roomId, message, retryCount - 1, completion)
                 }
@@ -363,13 +394,23 @@ class CallMessageManager(
     }
 
     private fun _subscribe(channelName: String, option: SubscribeOptions, completion: ((AGError?) -> Unit)?) {
+        Log.d(TAG, "will subscribe[$channelName]")
+        rtmClient.unsubscribe(channelName, object: ResultCallback<Void> {
+            override fun onSuccess(responseInfo: Void?) {
+            }
+            override fun onFailure(errorInfo: ErrorInfo?) {
+            }
+        })
         rtmClient.subscribe(channelName, option, object: ResultCallback<Void> {
             override fun onSuccess(responseInfo: Void?) {
+                Log.d(TAG, "subscribe[$channelName] finished = success")
                 completion?.invoke(null)
             }
             override fun onFailure(errorInfo: ErrorInfo?) {
                 val msg = errorInfo?.errorReason ?: "error"
-                completion?.invoke(AGError(msg, errorInfo?.errorCode ?: -1))
+                val errorCode = RtmConstants.RtmErrorCode.getValue(errorInfo?.errorCode)
+                Log.d(TAG, "subscribe[$channelName] finished = failed: $msg")
+                completion?.invoke(AGError(msg, errorCode))
             }
         })
     }
@@ -379,6 +420,7 @@ class CallMessageManager(
             completion(null)
             return
         }
+        Log.d(TAG, "will login")
         val ret = rtmClient.login(token, object : ResultCallback<Void?> {
             override fun onSuccess(p0: Void?) {
                 Log.d(TAG, "login success")
@@ -396,9 +438,14 @@ class CallMessageManager(
         Log.d(TAG, "login ret: $ret")
     }
     //MARK: AgoraRtmClientDelegate
+    override fun onTokenPrivilegeWillExpire(channelName: String?) {
+        Log.d(TAG, "rtm onTokenPrivilegeWillExpire[${channelName ?: "nil"}]")
+        rtmListener?.onTokenPrivilegeWillExpire(channelName)
+    }
+
     override fun onMessageEvent(event: MessageEvent?) {
-        val message = event?.message ?: return
-        val jsonString = String(message)
+        val message = event?.message?.data as? ByteArray ?: return
+        val jsonString = String(message, Charsets.ISO_8859_1)
         Log.d(TAG, "on event message: $jsonString")
         val map = jsonStringToMap(jsonString)
         val messageId = map[kMessageId] as? Int
@@ -427,9 +474,11 @@ class CallMessageManager(
     override fun onTopicEvent(event: TopicEvent?) {}
     override fun onLockEvent(event: LockEvent?) {}
     override fun onStorageEvent(event: StorageEvent?) {}
-    override fun onConnectionStateChange(channelName: String?, state: Int, reason: Int) {}
-    override fun onTokenPrivilegeWillExpire(channelName: String?) {}
-
+    override fun onConnectionStateChange(
+        channelName: String?,
+        state: RtmConstants.RtmConnectionState?,
+        reason: RtmConstants.RtmConnectionChangeReason?
+    ) {}
     private fun jsonStringToMap(jsonString: String): Map<String, Any> {
         val json = JSONObject(jsonString)
         val map = mutableMapOf<String, Any>()

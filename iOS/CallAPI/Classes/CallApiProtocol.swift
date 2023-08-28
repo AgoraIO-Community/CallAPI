@@ -25,7 +25,8 @@ public enum CallMode: UInt {
 public class CallConfig: NSObject {
     public var appId: String = ""               //声网App Id
     public var userId: UInt = 0                 //用户id
-    public var ownerRoomId: String?             //房主房间id，秀场转1v1可用
+    public var userExtension: [String: Any]?    //用户扩展字段,用在呼叫上，对端收到calling时可以通过kFromUserExtension字段读到
+    public var ownerRoomId: String?             //房主房间id，秀场转1v1可用，用于订阅房主频道
     public var rtcEngine: AgoraRtcEngineKit!    //rtc engine实例
     public var mode: CallMode = .showTo1v1      //模式
     public var role: CallRole = .callee         //角色，纯1v1需要设置成caller
@@ -93,7 +94,8 @@ public class CallTokenConfig: NSObject {
     case rtmSetupFailed           //设置RTM失败
     case rtmSetupSuccessed        //设置RTM成功
     case messageFailed            //消息发送失败
-    case localRejected = 100       //本地用户拒绝
+    case stateMismatch            //状态流转异常
+    case localRejected = 100      //本地用户拒绝
     case remoteRejected           //远端用户拒绝
     case onCalling                //变成呼叫中
     case remoteAccepted           //远端用户接收
@@ -144,9 +146,16 @@ public class CallTokenConfig: NSObject {
     ///   - fromUserId: 发起呼叫的用户id
     ///   - toUserId: 接收呼叫的用户id
     @objc optional func onOneForOneCache(oneForOneRoomId: String, fromUserId: UInt, toUserId: UInt)
+    
+    
+    /// token快要过期了
+    @objc optional func tokenPrivilegeWillExpire()
+    
+    @objc optional func callDebugInfo(message: String)
+    @objc optional func callDebugWarning(message: String)
 }
 
-public protocol CallApiProtocol: NSObjectProtocol {
+@objc public protocol CallApiProtocol: NSObjectProtocol {
     
     /// 初始化配置
     /// - Parameters:
@@ -163,6 +172,10 @@ public protocol CallApiProtocol: NSObjectProtocol {
     /// 更新rtc/rtm的token
     /// - Parameter config: <#config description#>
     func renewToken(with config: CallTokenConfig)
+    
+    /// 更新呼叫token
+    /// - Parameter token: <#token description#>
+    func renewRemoteCallerChannelToken(roomId: String, token: String)
     
     /// 连接(对RTM进行login和subscribe)， 观众调用
     /// - Parameters:
@@ -215,4 +228,9 @@ public protocol CallApiProtocol: NSObjectProtocol {
     /// 获取callId，callId为通话过程中消息的标识，通过argus可以查询到从呼叫到通话的耗时和状态变迁的时间戳
     /// - Returns: callId，非呼叫到通话之外的消息为空
     func getCallId() -> String
+    
+    //
+    @objc optional func addRTCListener(listener: AgoraRtcEngineDelegate)
+    //
+    @objc optional func removeRTCListener(listener: AgoraRtcEngineDelegate)
 }

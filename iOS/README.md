@@ -17,9 +17,6 @@ This document mainly introduces how to quickly get through the CallAPI example p
 static var AppId: String = <#Your AppId#>
 static var Certificate: String = <#Your Certificate#>
 ```
-- Download the [ latest version of the RTC SDK containing RTM 2.0](https://download.agora.io/sdk/release/Agora_Native_SDK_for_iOS_hyf_63842_FULL_20230428_1607_263060.zip), extract it, and then copy the files from libs to [libs](Example/libs)
-![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/1689587437014.jpg)
-
 - Open the terminal and enter the [Podfile](Example/Podfile) directory, run `pod install`
 - Finally, open [CallAPI.xcworkspace](Example/CallAPI.xcworkspace) and run it to start your experience
   

@@ -17,11 +17,6 @@ This document mainly introduces how to quickly get through the CallAPI example p
 AG_APP_ID=""
 AG_APP_CERTIFICATE=""
 ```
-- Obtain Agora SDK
-  Download [the rtc sdk with rtm 2.0](https://download.agora.io/null/Agora_Native_SDK_for_Android_rel.v4.1.1.30_49294_FULL_20230512_1606_264137.zip) and then unzip it to the directions belows:
-  [AUIKit/Android/auikit/libs](app/libs) : agora-rtc-sdk.jar
-  [AUIKit/Android/auikit/src/main/jniLibs](app/src/main/jniLibs) : so(arm64-v8a/armeabi-v7a/x86/x86_64)
-
 - Run the project with Android Studio to begin your experience
   
 ## Integration

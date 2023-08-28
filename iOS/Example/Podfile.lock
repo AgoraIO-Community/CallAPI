@@ -1,7 +1,9 @@
 PODS:
-  - AgoraRtcEngine_iOS (1.0)
+  - AgoraRtcEngine_Special_iOS (4.1.1.247)
+  - AgoraRtm_iOS (2.1.4)
   - CallAPI (0.1.0):
-    - AgoraRtcEngine_iOS
+    - AgoraRtcEngine_Special_iOS (~> 4.1.1.147)
+    - AgoraRtm_iOS (~> 2.1.4)
   - FBSnapshotTestCase (2.1.4):
     - FBSnapshotTestCase/SwiftSupport (= 2.1.4)
   - FBSnapshotTestCase/Core (2.1.4)
@@ -24,7 +26,6 @@ PODS:
   - YYCategories/no-arc (1.0.4)
 
 DEPENDENCIES:
-  - AgoraRtcEngine_iOS (from `./libs`)
   - CallAPI (from `../`)
   - FBSnapshotTestCase (~> 2.1.4)
   - Nimble (~> 10.0.0)
@@ -34,6 +35,8 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - AgoraRtcEngine_Special_iOS
+    - AgoraRtm_iOS
     - FBSnapshotTestCase
     - iOSSnapshotTestCase
     - Nimble
@@ -42,14 +45,13 @@ SPEC REPOS:
     - YYCategories
 
 EXTERNAL SOURCES:
-  AgoraRtcEngine_iOS:
-    :path: "./libs"
   CallAPI:
     :path: "../"
 
 SPEC CHECKSUMS:
-  AgoraRtcEngine_iOS: 7af3b344c55059556eeb05dc748ff124c593d4fb
-  CallAPI: de7e1516c1bf7ac66abd76625ef0183eff43e1c4
+  AgoraRtcEngine_Special_iOS: 1da915f9ea50947b0c01f3a7f9674df4e3c90820
+  AgoraRtm_iOS: 11b767ee81a7202dcf09e045cd2d359b5abbc965
+  CallAPI: 0479fc354ee11539e6df45d3d729074f64c108d9
   FBSnapshotTestCase: 094f9f314decbabe373b87cc339bea235a63e07a
   iOSSnapshotTestCase: a670511f9ee3829c2b9c23e6e68f315fd7b6790f
   Nimble: 5316ef81a170ce87baf72dd961f22f89a602ff84
@@ -57,6 +59,6 @@ SPEC CHECKSUMS:
   Quick: f5754d69b7013f5864c29aab9ae6f0c79c5bc200
   YYCategories: 6bcd4314c6661a561410dce4a793379ebd306abd
 
-PODFILE CHECKSUM: f2400e0063bba6b7bf2680034e262e84fcad88ad
+PODFILE CHECKSUM: 7d24f05f7d1f46ab2daf63faedac52b8a404985e
 
-COCOAPODS: 1.12.0
+COCOAPODS: 1.12.1

@@ -17,8 +17,7 @@
 static var AppId: String = <#Your AppId#>
 static var Certificate: String = <#Your Certificate#>
 ```
-- 下载[包含RTM 2.0的RTC SDK最新版本](https://download.agora.io/sdk/release/Agora_Native_SDK_for_iOS_hyf_63842_FULL_20230428_1607_263060.zip) , 解压之后把libs里的文件拷贝到[libs](Example/libs) 里
-![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/1689587437014.jpg)
+
 
 - 打开终端，进入到[Podfile](Example/Podfile)目录下，执行`pod install`命令
 

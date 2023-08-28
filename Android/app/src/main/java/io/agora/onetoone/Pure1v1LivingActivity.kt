@@ -3,7 +3,6 @@ package io.agora.onetoone
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.TextureView
@@ -16,20 +15,16 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import io.agora.onetoone.callAPI.*
-import io.agora.onetoone.databinding.ActivityLivingBinding
+import io.agora.callapi.*
 import io.agora.onetoone.databinding.ActivityPure1v1LivingBinding
 import io.agora.onetoone.http.HttpManager
 import io.agora.onetoone.model.EnterRoomInfoModel
-import io.agora.onetoone.utils.KeyCenter
 import io.agora.onetoone.utils.PermissionHelp
 import io.agora.onetoone.utils.SPUtil
 import io.agora.rtc2.*
 import io.agora.rtc2.video.CameraCapturerConfiguration
 import io.agora.rtc2.video.VideoEncoderConfiguration
-import io.agora.rtm.RtmClient
+import io.agora.rtm2.RtmClient
 
 class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
 
@@ -113,7 +108,10 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
             true
         )
     }
-
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        closeAction()
+    }
     private fun updateCallState(state: CallStateType) {
         mCallState = state
         when(mCallState) {
@@ -142,6 +140,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         val config = CallConfig(
             BuildConfig.AG_APP_ID,
             enterModel.currentUid.toInt(),
+            null,
             null,
             _createRtcEngine(),
             CallMode.Pure1v1,

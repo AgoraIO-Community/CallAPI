@@ -1,6 +1,7 @@
-package io.agora.onetoone.callAPI
+package io.agora.callapi
 
 import android.view.TextureView
+import io.agora.rtc2.IRtcEngineEventHandler
 import io.agora.rtc2.RtcEngineEx
 
 enum class CallRole(val value: Int) {
@@ -21,7 +22,9 @@ open class CallConfig(
     var appId: String = "",
     //用户id
     var userId: Int = 0,
-    //房主房间id，秀场转1v1可用
+    //用户扩展字段,用在呼叫上，对端收到calling时可以通过kFromUserExtension字段读到
+    var userExtension: Map<String, Any>? = null,
+    //房主房间id，秀场转1v1可用，用于订阅房主频道
     var ownerRoomId: String? = null,
     //rtc engine实例
     var rtcEngine: RtcEngineEx? = null,
@@ -94,6 +97,7 @@ enum class CallEvent(val value: Int) {
     RtmSetupFailed(6),              // 设置RTM失败
     RtmSetupSuccessed(7),           // 设置RTM成功
     MessageFailed(8),               // 消息发送失败
+    StateMismatch(9),               // 状态流转异常
     LocalRejected(100),             // 本地用户拒绝
     RemoteRejected(101),            // 远端用户拒绝
     OnCalling(102),                 // 变成呼叫中
@@ -128,7 +132,7 @@ enum class CallStateType(val value: Int) {
     }
 }
 
-public interface ICallApiListener {
+interface ICallApiListener {
     /**
      * 状态响应回调
      * @param state 状态类型
@@ -155,6 +159,9 @@ public interface ICallApiListener {
      * @param toUserId 接收呼叫的用户id
      */
     fun onOneForOneCache(oneForOneRoomId: String, fromUserId: Int, toUserId: Int) {}
+
+    /// token快要过期了
+    fun tokenPrivilegeWillExpire() {}
 }
 
 data class AGError(
@@ -162,7 +169,7 @@ data class AGError(
     val code: Int
 )
 
-public interface ICallApi {
+interface ICallApi {
 
     // 初始化配置
     fun initialize(config: CallConfig, token: CallTokenConfig, completion: ((AGError?) -> Unit))
@@ -172,6 +179,9 @@ public interface ICallApi {
 
     // 更新 rtc/rtm 的token
     fun renewToken(config: CallTokenConfig)
+
+    // 更新呼叫token
+    fun renewRemoteCallerChannelToken(roomId: String, token: String)
 
     // 连接(对RTM进行login和subscribe)， 观众调用
     fun prepareForCall(prepareConfig: PrepareConfig, completion: ((AGError?) -> Unit)?)
@@ -207,4 +217,9 @@ public interface ICallApi {
      * @return callId，非呼叫到通话之外的消息为空
      */
     fun getCallId(): String
+
+    //
+    fun addRTCListener(listener: IRtcEngineEventHandler)
+    //
+    fun removeRTCListener(listener: IRtcEngineEventHandler)
 }

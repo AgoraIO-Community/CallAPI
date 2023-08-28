@@ -2,7 +2,6 @@ package io.agora.onetoone
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
@@ -19,17 +18,16 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import io.agora.onetoone.callAPI.*
+import io.agora.callapi.*
 import io.agora.onetoone.databinding.ActivityLivingBinding
 import io.agora.onetoone.model.EnterRoomInfoModel
-import io.agora.onetoone.utils.KeyCenter
 import io.agora.onetoone.utils.PermissionHelp
 import io.agora.onetoone.utils.SPUtil
 import io.agora.rtc2.*
 import io.agora.rtc2.video.CameraCapturerConfiguration
 import io.agora.rtc2.video.VideoCanvas
 import io.agora.rtc2.video.VideoEncoderConfiguration
-import io.agora.rtm.RtmClient
+import io.agora.rtm2.RtmClient
 
 class LivingActivity : AppCompatActivity(),  ICallApiListener {
 
@@ -119,6 +117,11 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         )
     }
 
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        closeAction()
+    }
+
     private fun updateCallState(state: CallStateType) {
         mCallState = state
         when(mCallState) {
@@ -128,6 +131,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
                 mViewBinding.vLeft.isVisible = false
                 mViewBinding.vRight.isVisible = false
                 mCenterCanvas.isVisible = false
+                mViewBinding.vCenter.removeView(mCenterCanvas)
                 mViewBinding.btnHangUp.isVisible = !enterModel.isBrodCaster
                 mViewBinding.btnCall.isVisible = false
             }
@@ -136,6 +140,8 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             CallStateType.Failed -> {
                 publishMedia(true)
                 setupCanvas(mCenterCanvas)
+                mViewBinding.vCenter.removeAllViews()
+                mViewBinding.vCenter.addView(mCenterCanvas)
                 mViewBinding.vLeft.isVisible = false
                 mViewBinding.vRight.isVisible = false
                 mCenterCanvas.isVisible = true
@@ -143,11 +149,10 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
                 mViewBinding.btnHangUp.isVisible = false
             }
             CallStateType.Connected -> {
-                publishMedia(false)
-                setupCanvas(null)
                 mViewBinding.vLeft.isVisible = true
                 mViewBinding.vRight.isVisible = true
                 mCenterCanvas.isVisible = false
+                mViewBinding.vCenter.removeView(mCenterCanvas)
                 mViewBinding.btnHangUp.isVisible = !enterModel.isBrodCaster
                 mViewBinding.btnCall.isVisible = false
             }
@@ -174,6 +179,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         val config = CallConfig(
             BuildConfig.AG_APP_ID,
             enterModel.currentUid.toInt(),
+            null,
             enterModel.showRoomId,
             _createRtcEngine(),
             CallMode.ShowTo1v1,

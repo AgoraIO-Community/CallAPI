@@ -513,4 +513,13 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
             })
             .show()
     }
+    
+    
+    @objc func callDebugInfo(message: String) {
+        print("[CallApi]\(message)")
+    }
+    
+    @objc func callDebugWarning(message: String) {
+        print("[CallApi]\(message)")
+    }
 }
