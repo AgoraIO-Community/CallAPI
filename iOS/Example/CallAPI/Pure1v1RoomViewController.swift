@@ -367,4 +367,12 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
             break
         }
     }
+    
+    @objc func callDebugInfo(message: String) {
+        print("[CallApi]\(message)")
+    }
+    
+    @objc func callDebugWarning(message: String) {
+        print("[CallApi]\(message)")
+    }
 }

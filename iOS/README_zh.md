@@ -25,12 +25,10 @@ static var Certificate: String = <#Your Certificate#>
   
 ## 快速接入
 
-- 拷贝上一步包含SDK的[libs](Example/libs)到自己的工程里，例如与Podfile文件同级
 - 把示例代码的[iOS](iOS)目录拷贝至自己的工程里，例如与Podfile文件同级
 - 在Podfile文件里加入
   ```
   pod 'CallAPI', :path => './iOS'
-  pod 'AgoraRtcEngine_iOS', :path => './libs'
   ```
 - 打开终端，执行`pod install`命令，CallAPI代码即可集成进项目里
 - 创建CallAPI实例

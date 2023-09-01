@@ -12,16 +12,15 @@ This document mainly introduces how to quickly get through the CallAPI example p
 ## Getting Started
 
 - Clone or download source code
-- Fill in the AppId/Certificate in the [local.properties](local.properties) of the project
+- Fill in the AppId/Certificate in the [gradle.properties](gradle.properties) of the project
 ```
-AG_APP_ID=""
-AG_APP_CERTIFICATE=""
+AG_APP_ID=
+AG_APP_CERTIFICATE=
 ```
 - Run the project with Android Studio to begin your experience
   
 ## Integration
 
-- Copy the [app/libs](app/libs) and [app/src/main/jniLibs](app/src/main/jniLibs) containing the SDK from the previous step to the same directory as your own project
 - Copy [app/src/main/java/io.agora.onetoone/callAPI](app/src/main/java/io.agora.onetoone/callAPI) to the same directory as your own project
 - Open Android Studio
 - Create CallAPI instance
@@ -137,7 +136,7 @@ AG_APP_CERTIFICATE=""
     }
   ```
 - If it is a show to 1v1 mode, it does not need to be processed by default. If it needs to be processed, you can set the autoAccept in CallConfig to false to indicate that the call cannot be automatically accepted. If the call is not automatically accepted, the callee needs to agree or reject it on their own, and the caller can cancel the call.
-  ```swift
+  ```kotlin
     //同意,需要根据fromRoomId获取对应token
     api.accept(fromRoomId, fromUserId, rtcToken) { err ->
     }
@@ -154,7 +153,7 @@ AG_APP_CERTIFICATE=""
 - If rejected, onCallStateChanged will return state=.prepared, event=.localRejected/.remoteRejected.
 - If not agreed/rejected, onCallStateChanged will return state=.prepared, event=.callingTimeout.
 - If the call needs to end, you can call hang up. At this time, the local onCallStateChanged will return state=. prepared, event=. localHangup, and the remote will receive state=. prepared, event=. remoteHangup.
-  ```swift
+  ```kotlin
     api.hangup(enterModel.showRoomId) {
     }
   ```

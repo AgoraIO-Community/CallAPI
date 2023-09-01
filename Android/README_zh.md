@@ -12,16 +12,15 @@
 ## 运行示例
 
 - 克隆或者直接下载项目源码
-- 在项目的[local.properties](local.properties) 中填入声网的AppId和Certificate
+- 在项目的[gradle.properties](gradle.properties) 中填入声网的AppId和Certificate
 ```
-AG_APP_ID=""
-AG_APP_CERTIFICATE=""
+AG_APP_ID=
+AG_APP_CERTIFICATE=
 ```
 - 最后打开 Android Studio 运行项目即可开始您的体验
   
 ## 快速接入
 
-- 拷贝上一步包含SDK的[app/libs](app/libs)和[app/src/main/jniLibs](app/src/main/jniLibs)到自己的工程相同目录上
 - 拷贝[app/src/main/java/io.agora.onetoone/callAPI](app/src/main/java/io.agora.onetoone/callAPI)到自己的工程相同目录上
 - 打开 Android Studio
 - 创建CallAPI实例
@@ -137,7 +136,7 @@ AG_APP_CERTIFICATE=""
     }
   ```
 - 如果是秀场转1v1，默认不需要处理，如果需要处理可以吧CallConfig的autoAccept设置为false表示不可自动接受呼叫，如果非自动接受呼叫，被叫需要自行同意或者拒绝，主叫可以取消呼叫
-  ```swift
+  ```kotlin
     //同意,需要根据fromRoomId获取对应token
     api.accept(fromRoomId, fromUserId, rtcToken) { err ->
     }
@@ -154,7 +153,7 @@ AG_APP_CERTIFICATE=""
 - 如果拒绝，onCallStateChanged会返回state = .prepared, event = .localRejected/.remoteRejected
 - 如未同意/拒绝，onCallStateChanged会返回state = .prepared, event = .callingTimeout
 - 如果呼叫需要结束，可以调用挂断，此时本地onCallStateChanged会返回state = .prepared, event = .localHangup，远端则会收到state = .prepared, event = .remoteHangup
-  ```swift
+  ```kotlin
     api.hangup(enterModel.showRoomId) {
     }
   ```

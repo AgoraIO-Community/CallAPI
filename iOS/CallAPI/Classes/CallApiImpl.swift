@@ -226,10 +226,11 @@ extension CallApiImpl {
         if prevState != state, state == .idle {
             _leaveRTC(force: true)
             _cleanCallCache()
-            delegates.removeAllObjects()
             config = nil
             tokenConfig = nil
+            messageManager?.logout()
             messageManager = nil
+            delegates.removeAllObjects()
         } else if prevState != .idle, state == .prepared {
             _leaveRTC()
             _cleanCallCache()
@@ -338,17 +339,13 @@ extension CallApiImpl {
         var rtcError: NSError? = nil
         let date = Date()
         isPreparing = true
-        callPrint("prepareForCall")
+        let tag = UUID().uuidString
+        callPrint("prepareForCall[\(tag)]")
         group.enter()
         messageManager.rtmInitialize(prepareConfig: prepareConfig, tokenConfig: tokenConfig) {[weak self] err in
             guard let self = self else {return}
             rtmError = err
-            if let err = err {
-                self.callWarningPrint("_rtmInitialize failed: \(err.localizedDescription)")
-                self._notifyEvent(event: .rtmSetupFailed)
-            } else {
-                self._notifyEvent(event: .rtmSetupSuccessed)
-            }
+            self.callWarningPrint("prepareForCall[\(tag)] rtmInitialize completion: \(err?.localizedDescription ?? "success")")
             group.leave()
         }
         
@@ -356,6 +353,7 @@ extension CallApiImpl {
             group.enter()
             _joinRTC(roomId: tokenConfig?.roomId ?? "", token: tokenConfig?.rtcToken ?? "", joinOnly: true) { err in
                 rtcError = err
+                self.callWarningPrint("prepareForCall[\(tag)] joinRTC completion: \(err?.localizedDescription ?? "success")")
                 group.leave()
             }
         }
@@ -372,6 +370,7 @@ extension CallApiImpl {
                 } else {
                     self.isPreparing = false
                     self._prepareForCall(prepareConfig: prepareConfig, retryCount: retryCount - 1, completion: completion)
+                    self._notifyEvent(event: .rtmSetupSuccessed)
                 }
                 return
             }
@@ -500,6 +499,12 @@ extension CallApiImpl {
                 return
             }
             
+            if error.code == AgoraErrorCode.tokenExpired.rawValue {
+                completion?(error)
+                self._notifyTokenPrivilegeWillExpire()
+                return
+            }
+            
             self.rtcConnection = nil
             if retryCount <= 1 {
                 completion?(error)
@@ -594,7 +599,7 @@ extension CallApiImpl {
         
         let info = CallReportInfo(msgId: msgId, category: category, event: event, label: label, value: 0)
         reportInfoList.append(info)
-        callPrint("sendCustomReportMessage not join channel cache it! event: \(event) label: \(label)")
+//        callPrint("sendCustomReportMessage not join channel cache it! event: \(event) label: \(label)")
     }
     
     private func _reportEvent(key: String, value: Int, messageId: String) {
@@ -619,16 +624,17 @@ extension CallApiImpl {
                                           event: String,
                                           label: String,
                                           value: Int) {
-        guard let config = config, isChannelJoined else {
+        guard let config = config, isChannelJoined, let rtcConnection = rtcConnection else {
             return
         }
         let ret =
-        config.rtcEngine.sendCustomReportMessage(msgId,
-                                                 category: category,
-                                                 event: event,
-                                                 label: label,
-                                                 value: value)
-        callPrint("sendCustomReportMessage msgId: \(msgId) category: \(category) event: \(event) label: \(label) value: \(value) : \(ret)")
+        config.rtcEngine.sendCustomReportMessageEx(msgId,
+                                                   category: category,
+                                                   event: event,
+                                                   label: label,
+                                                   value: value,
+                                                   connection: rtcConnection)
+        callPrint("sendCustomReportMessage msgId: \(msgId) category: \(category) event: \(event) : \(ret)")
     }
 }
 
@@ -763,9 +769,8 @@ extension CallApiImpl: CallApiProtocol {
         }
         self.config = config
         self.tokenConfig = token
-        
-        self.messageManager = CallMessageManager(config: config, delegate: self)
-        messageManager?.delegate = self
+        self.messageManager?.logout()
+        self.messageManager = CallMessageManager(config: config, rtmDelegate: self, delegate: self)
 //        config.rtcEngine.setCameraCapturerConfiguration(captureConfig)
         
         //纯1v1需要设置成caller
@@ -790,7 +795,17 @@ extension CallApiImpl: CallApiProtocol {
         callPrint("deinitialize")
         
         if let callingRoomId = self.callingRoomId {
-            let roomId = config?.role == .callee ? callingRoomId : config?.ownerRoomId ?? ""
+            var roomId = ""
+            if config?.mode == .pure1v1 {
+                roomId = callingRoomId
+            } else {
+                if config?.role == .callee {
+                    roomId = callingRoomId
+                } else {
+                    roomId = config?.ownerRoomId ?? ""
+                }
+            }
+            
             _hangup(roomId: roomId) {[weak self] err, message in
                 self?._deinitialize()
                 completion()
@@ -1209,7 +1224,7 @@ extension CallApiImpl {
         for element in delegates.allObjects {
             (element as? CallApiListenerProtocol)?.callDebugInfo?(message: message)
         }
-//        guard delegates.count == 0 else {return}
+        guard delegates.count == 0 else {return}
     
         debugPrint("[CallApi]\(message)")
     }

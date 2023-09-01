@@ -22,7 +22,6 @@ static var Certificate: String = <#Your Certificate#>
   
 ## Integration
 
-- Copy the [libs](Example/libs) containing the SDK from the previous step into your own project, for example, at the same level as the Podfile file file.
 - Copy the [iOS](iOS) directory of the sample code to your own project, for example, at the same level as the Podfile file.
 
 
