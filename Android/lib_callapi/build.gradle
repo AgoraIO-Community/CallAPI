@@ -3,7 +3,6 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'maven-publish'
 apply plugin: 'de.undercouch.download'
-apply from: 'rtm.gradle'
 
 android {
     namespace 'io.agora.callapi'
@@ -26,11 +25,7 @@ android {
             minifyEnabled false
         }
     }
-    sourceSets {
-        main {
-            jniLibs.srcDirs = ['src/main/jniLibs']
-        }
-    }
+
     compileOptions {
         sourceCompatibility = 1.8
         targetCompatibility = 1.8
@@ -47,26 +42,7 @@ android {
     }
 }
 
-task unzipJar(type: Copy) {
-    delete("$buildDir/libs/agora-rtm-sdk-new")
-    delete("$buildDir/libs/agora-rtm-sdk.jar")
-    from zipTree('third-party/agora-rtm-sdk.jar')
-    exclude "io/agora/base/internal/**"
-    into ("$buildDir/libs/agora-rtm-sdk-new")
-}
-task jar(type: Jar, dependsOn: ['unzipJar']){
-    baseName 'agora-rtm-sdk'
-    from("$buildDir/libs/agora-rtm-sdk-new")
-}
-task copyJarFromlib(type: Copy, dependsOn:["jar"]){
-    from files("$buildDir/libs/agora-rtm-sdk.jar")
-    into("$projectDir/libs")
-}
-
 dependencies {
-    implementation files("libs/agora-rtm-sdk.jar") {
-        builtBy "copyJarFromlib"
-    }
 
     implementation 'androidx.core:core-ktx:1.7.0'
     implementation 'androidx.appcompat:appcompat:1.4.1'
@@ -80,3 +56,5 @@ dependencies {
     // rtc
     api 'io.agora.rtc:agora-special-full:4.1.1.13'
 }
+
+apply from: 'rtm.gradle'
