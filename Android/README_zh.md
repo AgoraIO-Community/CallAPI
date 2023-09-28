@@ -61,15 +61,15 @@ AG_APP_CERTIFICATE=
 - 初始化(秀场转1v1模式)
   ```kotlin
     val config = CallConfig(
-      BuildConfig.AG_APP_ID,
-      enterModel.currentUid.toInt(),
-      enterModel.showRoomId,
-      _createRtcEngine(),
-      CallMode.ShowTo1v1,
-      role,
-      mLeftCanvas,
-      mRightCanvas,
-      true
+        BuildConfig.AG_APP_ID,
+        enterModel.currentUid.toInt(),
+        null,
+        _createRtcEngine(),
+        CallMode.ShowTo1v1,
+        role,
+        mLeftCanvas,
+        mRightCanvas,
+        true
     )
     if (role == CallRole.CALLER) {
       config.localView = mRightCanvas
@@ -111,15 +111,19 @@ AG_APP_CERTIFICATE=
     ) {
     }
     
-    override fun onOneForOneCache(oneForOneRoomId: String, fromUserId: Int, toUserId: Int) {
-    }
-
     override fun onCallEventChanged(event: CallEvent, elapsed: Long) {
     }
+  
   ```
-- 变更成呼叫状态，onCallStateChanged会返回state = .calling
+- 呼叫
+  - 如果是主叫，调用call方法呼叫远端用户  
+    ```kotlin
+      callApi.call(remoteRoomId, remoteUserId) { err ->
+      }
+    ```
+  - 如果是被叫, 变更成呼叫状态，onCallStateChanged会返回state = .calling
   ```kotlin
-    override fun onCallStateChanged(
+  override fun onCallStateChanged(
         state: CallStateType,
         stateReason: CallReason,
         eventReason: String,
@@ -135,26 +139,27 @@ AG_APP_CERTIFICATE=
         }
     }
   ```
-- 如果是秀场转1v1，默认不需要处理，如果需要处理可以吧CallConfig的autoAccept设置为false表示不可自动接受呼叫，如果非自动接受呼叫，被叫需要自行同意或者拒绝，主叫可以取消呼叫
+
+- 如果是秀场转1v1，默认不需要处理，如果需要处理可以吧CallConfig的autoAccept设置为false表示不自动接受呼叫，如果非自动接受呼叫，被叫需要自行同意或者拒绝，主叫可以取消呼叫
   ```kotlin
     //同意,需要根据fromRoomId获取对应token
     api.accept(fromRoomId, fromUserId, rtcToken) { err ->
     }
 
     // 拒绝
-    api.reject(fromRoomId, fromUserId, "reject by user") { err ->
+    api.reject(fromUserId, "reject by user") { err ->
     }
 
     //取消呼叫
     api.cancelCall { err ->
     }
   ```
-- 如果同意，onCallStateChanged会先变成连接中(state = .connecting)，然后渲染出远端画面后则会变成state = .connected，表示呼叫成功
-- 如果拒绝，onCallStateChanged会返回state = .prepared, event = .localRejected/.remoteRejected
-- 如未同意/拒绝，onCallStateChanged会返回state = .prepared, event = .callingTimeout
-- 如果呼叫需要结束，可以调用挂断，此时本地onCallStateChanged会返回state = .prepared, event = .localHangup，远端则会收到state = .prepared, event = .remoteHangup
+- 如果同意，onCallStateChanged会先变成连接中(state = CallStateType.Connecting)，然后渲染出远端画面后则会变成state = CallStateType.Connected，表示呼叫成功
+- 如果拒绝，onCallStateChanged会返回state = CallStateType.Prepared, event = CallReason.LocalRejected/RemoteRejected
+- 如未同意/拒绝，onCallStateChanged会返回state = CallStateType.Prepared, event = CallReason.CallingTimeout
+- 如果呼叫需要结束，可以调用挂断，此时本地onCallStateChanged会返回state = CallStateType.Prepared, event = CallReason.LocalHangup，远端则会收到state = CallStateType.Prepared, event = CallReason.RemoteHangup
   ```kotlin
-    api.hangup(enterModel.showRoomId) {
+    api.hangup(enterModel.showUserId.toInt()) {
     }
   ```
 ## 许可证

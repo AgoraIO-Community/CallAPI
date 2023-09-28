@@ -2,8 +2,8 @@ PODS:
   - AgoraRtcEngine_Special_iOS (4.1.1.247)
   - AgoraRtm_iOS (2.1.4)
   - CallAPI (0.1.0):
-    - AgoraRtcEngine_Special_iOS (~> 4.1.1.147)
-    - AgoraRtm_iOS (~> 2.1.4)
+    - AgoraRtcEngine_Special_iOS
+    - AgoraRtm_iOS (= 2.1.4)
   - FBSnapshotTestCase (2.1.4):
     - FBSnapshotTestCase/SwiftSupport (= 2.1.4)
   - FBSnapshotTestCase/Core (2.1.4)
@@ -51,7 +51,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   AgoraRtcEngine_Special_iOS: 1da915f9ea50947b0c01f3a7f9674df4e3c90820
   AgoraRtm_iOS: 11b767ee81a7202dcf09e045cd2d359b5abbc965
-  CallAPI: 0479fc354ee11539e6df45d3d729074f64c108d9
+  CallAPI: f40f9694c310b613f20958fabdbe69f8bc1d6ca5
   FBSnapshotTestCase: 094f9f314decbabe373b87cc339bea235a63e07a
   iOSSnapshotTestCase: a670511f9ee3829c2b9c23e6e68f315fd7b6790f
   Nimble: 5316ef81a170ce87baf72dd961f22f89a602ff84

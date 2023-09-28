@@ -226,7 +226,7 @@ extension Pure1v1RoomViewController {
     }
     
     @objc func hangupAction() {
-        api.hangup(roomId: "\(connectedUserId ?? 0)") { error in
+        api.hangup(userId: connectedUserId ?? 0) { error in
         }
         
         leftView.isHidden = true
@@ -271,7 +271,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
             let fromRoomId = eventInfo[kFromRoomId] as? String ?? ""
             let toUserId = eventInfo[kRemoteUserId] as? UInt ?? 0
             if let connectedUserId = connectedUserId, connectedUserId != fromUserId {
-                api.reject(roomId: fromRoomId, remoteUserId: fromUserId, reason: "already calling") { err in
+                api.reject(remoteUserId: fromUserId, reason: "already calling") { err in
                 }
                 return
             }
@@ -285,7 +285,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                     .leftButton(title: "拒绝")
                     .leftButtonTapClosure {[weak self] in
                         guard let self = self else { return }
-                        self.api.reject(roomId: fromRoomId, remoteUserId: fromUserId, reason: "reject by user") { err in
+                        self.api.reject(remoteUserId: fromUserId, reason: "reject by user") { err in
                         }
                     }
                     .rightButtonTapClosure(onTap: {[weak self] text in

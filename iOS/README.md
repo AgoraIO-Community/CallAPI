@@ -101,34 +101,36 @@ static var Certificate: String = <#Your Certificate#>
                                        eventInfo: [String : Any]) {
         }
 
-
-        func onOneForOneCache(oneForOneRoomId: String, fromUserId: UInt, toUserId: UInt) {
-        }
-
         @objc func onCallEventChanged(with event: CallEvent, elapsed: Int) {
 
         }
     }
   ```
-- Change to call state, onCallStateChanged will return state=. calling.
-  ```swift
-    public func onCallStateChanged(with state: CallStateType,
-                                   stateReason: CallReason,
-                                   eventReason: String,
-                                   elapsed: Int,
-                                   eventInfo: [String : Any]) {
-        let publisher = UInt(eventInfo[kPublisher] as? String ?? "") ?? currentUid
-        
-        // The user who triggered the status only handles it themselves
-        guard publisher == currentUid else {
-            return
-        }
-        
-        if state == .calling {
-            //If it is a call in progress
-        }
-    }
-  ```
+- Call
+  - If it is the caller, call the call method to call the remote user
+    ```swift
+      callApi.call(roomId: remoteRoomId, remoteUserId: remoteUserId) { err in
+          }
+    ```
+  - If it is the callee, Change to call state, onCallStateChanged will return state=. calling.
+    ```swift
+      public func onCallStateChanged(with state: CallStateType,
+                                     stateReason: CallReason,
+                                     eventReason: String,
+                                     elapsed: Int,
+                                     eventInfo: [String : Any]) {
+          let publisher = UInt(eventInfo[kPublisher] as? String ?? "") ?? currentUid
+          
+          // The user who triggered the status only handles it themselves
+          guard publisher == currentUid else {
+              return
+          }
+          
+          if state == .calling {
+              //If it is a call in progress
+          }
+      }
+    ```
 - If it is a show to 1v1 mode, it does not need to be processed by default. If it needs to be processed, you can set the autoAccept in CallConfig to false to indicate that the call cannot be automatically accepted. If the call is not automatically accepted, the callee needs to agree or reject it on their own, and the caller can cancel the call.
   ```swift
     //Agree, we need to obtain the corresponding token based on FromRoomId
@@ -148,7 +150,7 @@ static var Certificate: String = <#Your Certificate#>
 - If not agreed/rejected, onCallStateChanged will return state=.prepared, event=.callingTimeout.
 - If the call needs to end, you can call hang up. At this time, the local onCallStateChanged will return state=. prepared, event=. localHangup, and the remote will receive state=. prepared, event=. remoteHangup.
   ```swift
-    api.hangup(roomId: showRoomId) { error in
+    api.hangup(userId: showUserId) { error in
     }
   ```
 ## License

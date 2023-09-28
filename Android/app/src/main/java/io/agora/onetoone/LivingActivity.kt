@@ -180,7 +180,6 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             BuildConfig.AG_APP_ID,
             enterModel.currentUid.toInt(),
             null,
-            enterModel.showRoomId,
             _createRtcEngine(),
             CallMode.ShowTo1v1,
             role,
@@ -201,10 +200,12 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         tokenConfig.rtcToken = enterModel.rtcToken
         tokenConfig.rtmToken = enterModel.rtmToken
 
+        // 如果是被叫会隐式调用prepare
         api.initialize(config, tokenConfig) {
             if (enterModel.isBrodCaster) {
                 completion?.invoke(true)
             }
+            // 如果是主叫并且想加快呼叫，可以在init完成之后调用prepare
             val prepareConfig = PrepareConfig.callerConfig()
             prepareConfig.autoLoginRTM = true
             prepareConfig.autoSubscribeRTM = true
@@ -404,7 +405,10 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
     }
 
     private fun hangupAction() {
-        api.hangup(enterModel.showRoomId) {
+        if (role != CallRole.CALLER) {
+            return
+        }
+        api.hangup(enterModel.showUserId.toInt()) {
         }
     }
 
@@ -438,7 +442,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
                         hangupAction()
                     }, 1000)
                 }
-
+                //setup configuration after join channel
                 videoEncoderConfig?.let { config ->
                     rtcEngine.setVideoEncoderConfiguration(config)
                     val cameraConfig = CameraCapturerConfiguration(CameraCapturerConfiguration.CAMERA_DIRECTION.CAMERA_FRONT)
@@ -474,31 +478,12 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             else -> {}
         }
     }
+    override fun callDebugInfo(message: String) {
+        Log.d(TAG, message)
+    }
 
-    override fun onOneForOneCache(oneForOneRoomId: String, fromUserId: Int, toUserId: Int) {
-        //有缓存
-        if (fromUserId == enterModel.currentUid.toInt() && role == CallRole.CALLER) {
-        } else if (toUserId == enterModel.currentUid.toInt() && role == CallRole.CALLEE) {
-        } else {
-            return
-        }
-        val token = enterModel.rtcToken
-        AlertDialog.Builder(this)
-            .setTitle("提示")
-            .setMessage("需要恢复上次的一对一")
-            .setPositiveButton("确定") { p0, p1 ->
-                if (role == CallRole.CALLER) {
-                    api.call(enterModel.showRoomId, toUserId) { }
-                } else if (role == CallRole.CALLEE) {
-                    api.accept(oneForOneRoomId, fromUserId, token) { }
-                }
-            }.setNegativeButton("取消") { p0, p1 ->
-                if (role == CallRole.CALLER) {
-                    api.reject(enterModel.showRoomId, toUserId, "") { }
-                } else if (role == CallRole.CALLEE) {
-                    api.reject(oneForOneRoomId, fromUserId, "") { }
-                }
-            }.create().show()
+    override fun callDebugWarning(message: String) {
+        Log.e(TAG, message)
     }
     private fun saveInfoMaps() {
         val jsonStr = Gson().toJson(infoMaps)

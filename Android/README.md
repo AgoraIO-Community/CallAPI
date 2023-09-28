@@ -35,7 +35,7 @@ AG_APP_CERTIFICATE=
       null,
       _createRtcEngine(),
       CallMode.Pure1v1,
-      CallRole.CALLER,  // Pure 1v1 can only be set as the callier
+      CallRole.CALLER,  // Pure 1v1 can only be set as the caller
       mLeftCanvas,
       mRightCanvas,
       false
@@ -61,15 +61,15 @@ AG_APP_CERTIFICATE=
 - Initialize(Show to 1v1 mode)
   ```kotlin
     val config = CallConfig(
-      BuildConfig.AG_APP_ID,
-      enterModel.currentUid.toInt(),
-      enterModel.showRoomId,
-      _createRtcEngine(),
-      CallMode.ShowTo1v1,
-      role,
-      mLeftCanvas,
-      mRightCanvas,
-      true
+        BuildConfig.AG_APP_ID,
+        enterModel.currentUid.toInt(),
+        null,
+        _createRtcEngine(),
+        CallMode.ShowTo1v1,
+        role,
+        mLeftCanvas,
+        mRightCanvas,
+        true
     )
     if (role == CallRole.CALLER) {
       config.localView = mRightCanvas
@@ -110,16 +110,19 @@ AG_APP_CERTIFICATE=
       eventInfo: Map<String, Any>
     ) {
     }
-    
-    override fun onOneForOneCache(oneForOneRoomId: String, fromUserId: Int, toUserId: Int) {
-    }
-
+  
     override fun onCallEventChanged(event: CallEvent, elapsed: Long) {
     }
   ```
-- Change to call state, onCallStateChanged will return state=. calling.
+- Call
+  - If it is the caller, call the call method to call the remote user
+    ```kotlin
+      callApi.call(remoteRoomId, remoteUserId) { err ->
+      }
+    ```
+  - If it is the callee, Change to call state, onCallStateChanged will return state == calling.
   ```kotlin
-    override fun onCallStateChanged(
+  override fun onCallStateChanged(
         state: CallStateType,
         stateReason: CallReason,
         eventReason: String,
@@ -127,34 +130,35 @@ AG_APP_CERTIFICATE=
         eventInfo: Map<String, Any>
     ) {
         val publisher = eventInfo.getOrDefault(CallApiImpl.kPublisher, enterModel.currentUid)
-        // 触发状态的用户是自己才处理
+        // handle trigger state when publisher is not local user
         if (publisher != enterModel.currentUid) {return}
 
-        if (CallStateType.Calling == state) {
-          //如果是呼叫中
+        if (state == CallStateType.Calling) {
+            // If it is a call in progress
         }
     }
-  ```
+  ``` 
+  
 - If it is a show to 1v1 mode, it does not need to be processed by default. If it needs to be processed, you can set the autoAccept in CallConfig to false to indicate that the call cannot be automatically accepted. If the call is not automatically accepted, the callee needs to agree or reject it on their own, and the caller can cancel the call.
   ```kotlin
-    //同意,需要根据fromRoomId获取对应token
+    // accept, need fromRoomId to fetch tokens
     api.accept(fromRoomId, fromUserId, rtcToken) { err ->
     }
 
-    // 拒绝
-    api.reject(fromRoomId, fromUserId, "reject by user") { err ->
+    // reject
+    api.reject(fromUserId, "reject by user") { err ->
     }
 
-    //取消呼叫
+    // cancel call
     api.cancelCall { err ->
     }
   ```
-- If agreed, onCallStateChanged will first become connected(state=.connecting), and then after rendering the remote screen, it will become state=.connected, indicating that the call was successful.
-- If rejected, onCallStateChanged will return state=.prepared, event=.localRejected/.remoteRejected.
-- If not agreed/rejected, onCallStateChanged will return state=.prepared, event=.callingTimeout.
-- If the call needs to end, you can call hang up. At this time, the local onCallStateChanged will return state=. prepared, event=. localHangup, and the remote will receive state=. prepared, event=. remoteHangup.
+- If agreed, onCallStateChanged will first become connected(state=CallStateType.Connecting), and then after rendering the remote screen, it will become CallStateType.Connected, indicating that the call was successful.
+- If rejected, onCallStateChanged will return state=CallStateType.Prepared, event=CallReason.LocalRejected/RemoteRejected
+- If not agreed/rejected, onCallStateChanged will return state=CallStateType.Prepared, event=CallReason.CallingTimeout.
+- If the call needs to end, you can call hang up. At this time, the local onCallStateChanged will return state=CallStateType.Prepared, event=CallReason.LocalHangup, and the remote will receive CallStateType.Prepared, event=CallReason.RemoteHangup.
   ```kotlin
-    api.hangup(enterModel.showRoomId) {
+    api.hangup(enterModel.showUserId.toInt()) {
     }
   ```
 ## 许可证
