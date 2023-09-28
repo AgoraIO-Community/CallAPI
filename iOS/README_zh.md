@@ -61,7 +61,6 @@ static var Certificate: String = <#Your Certificate#>
   ```swift
     let config = CallConfig()
     config.role = role
-    config.ownerRoomId = showRoomId
     config.appId = KeyCenter.AppId
     config.userId = currentUid
     config.rtcEngine = _createRtcEngine()
@@ -100,35 +99,37 @@ static var Certificate: String = <#Your Certificate#>
                                        eventInfo: [String : Any]) {
         }
 
-
-        func onOneForOneCache(oneForOneRoomId: String, fromUserId: UInt, toUserId: UInt) {
-        }
-
         @objc func onCallEventChanged(with event: CallEvent, elapsed: Int) {
 
         }
     }
   ```
-- 变更成呼叫状态，onCallStateChanged会返回state = .calling
-  ```swift
-    public func onCallStateChanged(with state: CallStateType,
-                                   stateReason: CallReason,
-                                   eventReason: String,
-                                   elapsed: Int,
-                                   eventInfo: [String : Any]) {
-        let publisher = UInt(eventInfo[kPublisher] as? String ?? "") ?? currentUid
-        
-        // 触发状态的用户是自己才处理
-        guard publisher == currentUid else {
-            return
+- 呼叫
+  - 如果是主叫，调用call方法呼叫远端用户
+    ```swift
+      callApi.call(roomId: remoteRoomId, remoteUserId: remoteUserId) { err in
+          }
+    ```
+  - 如果是被叫, 变更成呼叫状态，onCallStateChanged会返回state = .calling
+      ```swift
+        public func onCallStateChanged(with state: CallStateType,
+                                       stateReason: CallReason,
+                                       eventReason: String,
+                                       elapsed: Int,
+                                       eventInfo: [String : Any]) {
+            let publisher = UInt(eventInfo[kPublisher] as? String ?? "") ?? currentUid
+            
+            // 触发状态的用户是自己才处理
+            guard publisher == currentUid else {
+                return
+            }
+            
+            if state == .calling {
+                //如果是呼叫中
+            }
         }
-        
-        if state == .calling {
-            //如果是呼叫中
-        }
-    }
-  ```
-- 如果是秀场转1v1，默认不需要处理，如果需要处理可以吧CallConfig的autoAccept设置为false表示不可自动接受呼叫，如果非自动接受呼叫，被叫需要自行同意或者拒绝，主叫可以取消呼叫
+      ```
+- 如果是秀场转1v1，默认不需要处理，如果需要处理可以吧CallConfig的autoAccept设置为false表示不自动接受呼叫，如果非自动接受呼叫，被叫需要自行同意或者拒绝，主叫可以取消呼叫
   ```swift
     //同意,需要根据fromRoomId获取对应token
     api.accept(roomId: fromRoomId, remoteUserId: fromUserId, rtcToken: rtcToken) { err in
@@ -147,7 +148,7 @@ static var Certificate: String = <#Your Certificate#>
 - 如未同意/拒绝，onCallStateChanged会返回state = .prepared, event = .callingTimeout
 - 如果呼叫需要结束，可以调用挂断，此时本地onCallStateChanged会返回state = .prepared, event = .localHangup，远端则会收到state = .prepared, event = .remoteHangup
   ```swift
-    api.hangup(roomId: showRoomId) { error in
+    api.hangup(userId: showUserId) { error in
     }
   ```
 ## 许可证

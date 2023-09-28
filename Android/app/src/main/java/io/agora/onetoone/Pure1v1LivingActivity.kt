@@ -141,7 +141,6 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
             BuildConfig.AG_APP_ID,
             enterModel.currentUid.toInt(),
             null,
-            null,
             _createRtcEngine(),
             CallMode.Pure1v1,
             CallRole.CALLER,
@@ -163,6 +162,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         tokenConfig.rtmToken = enterModel.rtmToken
 
         api.initialize(config, tokenConfig) {
+            // 需要主动调用prepareForCall
             val prepareConfig = PrepareConfig.callerConfig()
             prepareConfig.autoLoginRTM = true
             prepareConfig.autoSubscribeRTM = true
@@ -269,7 +269,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
     }
 
     private fun hangupAction() {
-        api.hangup(enterModel.showRoomId) {
+        api.hangup(connectedUserId ?: 0) {
         }
     }
 
@@ -296,7 +296,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
                 val toUserId = eventInfo[kRemoteUserId] as? Int ?: 0
 
                 if (connectedUserId != null && connectedUserId != fromUserId) {
-                    api.reject(fromRoomId, fromUserId, "already calling") {
+                    api.reject(fromUserId, "already calling") {
                     }
                     return
                 }
@@ -316,7 +316,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
                                     }
                                 }
                             }.setNegativeButton("拒绝") { p0, p1 ->
-                                api.reject(fromRoomId, fromUserId, "reject by user") { err ->
+                                api.reject(fromUserId, "reject by user") { err ->
                                 }
                             }.create()
                         callDialog?.show()
@@ -382,5 +382,13 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
                 hangupAction()
             } else -> {}
         }
+    }
+
+    override fun callDebugInfo(message: String) {
+        Log.d(TAG, message)
+    }
+
+    override fun callDebugWarning(message: String) {
+        Log.e(TAG, message)
     }
 }

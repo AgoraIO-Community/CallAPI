@@ -262,7 +262,6 @@ extension ShowTo1v1RoomViewController {
     private func _initialize(role: CallRole, completion: @escaping ((Bool)->())) {
         let config = CallConfig()
         config.role = role
-        config.ownerRoomId = showRoomId
         config.appId = KeyCenter.AppId
         config.userId = currentUid
         config.rtcEngine = _createRtcEngine()
@@ -325,7 +324,7 @@ extension ShowTo1v1RoomViewController {
             return
         }
         
-        api.hangup(roomId: showRoomId) { error in
+        api.hangup(userId: showUserId) { error in
         }
         
         leftView.isHidden = true
@@ -472,48 +471,6 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
             break
         }
     }
-    
-    func onOneForOneCache(oneForOneRoomId: String, fromUserId: UInt, toUserId: UInt) {
-        
-        //有缓存
-        if fromUserId == currentUid, role == .caller {
-            
-        } else if toUserId == currentUid, role == .callee {
-            
-        } else {
-            return
-        }
-        
-        let token = tokenConfig?.rtcToken ?? ""
-        AUIAlertView()
-            .isShowCloseButton(isShow: true)
-            .title(title: "需要恢复上次的一对一")
-            .rightButton(title: "是")
-            .leftButton(title: "否")
-            .leftButtonTapClosure {[weak self] in
-                guard let self = self else { return }
-                if self.role == .caller {
-                    self.api.reject(roomId: self.showRoomId, remoteUserId: toUserId, reason: "") { err in
-                    }
-                } else if self.role == .callee {
-                    self.api.reject(roomId: oneForOneRoomId, remoteUserId: fromUserId, reason: "") { err in
-                    }
-                }
-            }
-            .rightButtonTapClosure(onTap: {[weak self] text in
-                guard let self = self else { return }
-                if self.role == .caller {
-                    self.api.call(roomId: self.showRoomId, remoteUserId: toUserId) { err in
-                    }
-                } else if self.role == .callee {
-                    self.api.accept(roomId: oneForOneRoomId, remoteUserId: fromUserId, rtcToken: token) { err in
-                        
-                    }
-                }
-            })
-            .show()
-    }
-    
     
     @objc func callDebugInfo(message: String) {
         print("[CallApi]\(message)")

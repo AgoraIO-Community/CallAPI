@@ -25,8 +25,7 @@ public enum CallMode: UInt {
 public class CallConfig: NSObject {
     public var appId: String = ""               //声网App Id
     public var userId: UInt = 0                 //用户id
-    public var userExtension: [String: Any]?    //用户扩展字段,用在呼叫上，对端收到calling时可以通过kFromUserExtension字段读到
-    public var ownerRoomId: String?             //房主房间id，秀场转1v1可用，用于订阅房主频道
+    public var userExtension: [String: Any]?    //[可选]用户扩展字段,用在呼叫上，对端收到calling时可以通过kFromUserExtension字段读到
     public var rtcEngine: AgoraRtcEngineKit!    //rtc engine实例
     public var mode: CallMode = .showTo1v1      //模式
     public var role: CallRole = .callee         //角色，纯1v1需要设置成caller
@@ -61,7 +60,7 @@ public class PrepareConfig: NSObject {
 
 /// token renew时的配置
 public class CallTokenConfig: NSObject {
-    public var roomId: String = ""            //频道名(主叫需要设置为1v1的频道，被叫需要设置为自己的广播频道)
+    public var roomId: String = ""            //频道名(主叫需要设置为1v1的频道，被叫可设置为自己的广播频道)
     public var rtcToken: String = ""          //rtc token，被叫需要使用万能token，token创建的时候channel name为空字符串
     public var rtmToken: String = ""          //rtm token
 }
@@ -82,6 +81,7 @@ public class CallTokenConfig: NSObject {
     case remoteCancel         //远端用户取消呼叫
     case recvRemoteFirstFrame //收到远端首帧
     case callingTimeout       //呼叫超时
+    case cancelByCallerRecall //同样的主叫呼叫不同频道导致取消
 }
 
 @objc public enum CallEvent: UInt {
@@ -109,6 +109,7 @@ public class CallTokenConfig: NSObject {
     case localJoin                //本地用户加入RTC频道
     case localLeave               //本地用户离开RTC频道
     case recvRemoteFirstFrame     //收到远端首帧
+    case cancelByCallerRecall     //同样的主叫呼叫不同频道导致取消
 }
 
 @objc public enum CallStateType: UInt {
@@ -140,18 +141,17 @@ public class CallTokenConfig: NSObject {
     ///   - elapsed: 耗时(只有呼叫到通话中间事件可统计)
     @objc optional func onCallEventChanged(with event: CallEvent, elapsed: Int)
     
-    /// 第一次进入房间时获取到的1v1信息，用于异常退出之后重连，秀场转1v1模式可用
-    /// - Parameters:
-    ///   - oneForOneRoomId: 1v1频道号
-    ///   - fromUserId: 发起呼叫的用户id
-    ///   - toUserId: 接收呼叫的用户id
-    @objc optional func onOneForOneCache(oneForOneRoomId: String, fromUserId: UInt, toUserId: UInt)
-    
-    
-    /// token快要过期了
+    /// token快要过期了(需要外部获取新token调用renewToken更新)
     @objc optional func tokenPrivilegeWillExpire()
     
+    
+    /// 打印的日志回调
+    /// - Parameter message: <#message description#>
     @objc optional func callDebugInfo(message: String)
+    
+    
+    /// 打印的日志回调
+    /// - Parameter message: <#message description#>
     @objc optional func callDebugWarning(message: String)
 }
 
@@ -202,7 +202,6 @@ public class CallTokenConfig: NSObject {
     /// - Parameter completion: <#completion description#>
     func cancelCall(completion: ((NSError?)->())?)
     
-    
     /// 接受通话，调用后主叫会收到onAccept
     /// - Parameters:
     ///   - roomId: 频道号
@@ -213,24 +212,27 @@ public class CallTokenConfig: NSObject {
     
     /// 被叫拒绝通话，调用后主叫会收到onReject
     /// - Parameters:
-    ///   - roomId: 频道号
     ///   - remoteUserId: 呼叫的用户id
     ///   - reason: 拒绝原因
     ///   - completion: <#completion description#>
-    func reject(roomId: String, remoteUserId: UInt, reason: String?, completion: ((NSError?)->())?)
+    func reject(remoteUserId: UInt, reason: String?, completion: ((NSError?)->())?)
     
     /// 结束通话，调用后被叫会收到onHangup
     /// - Parameters:
-    ///   - roomId: 频道号
+    ///   - userId: 用户id
     ///   - completion: <#completion description#>
-    func hangup(roomId: String, completion: ((NSError?)->())?)
+    func hangup(userId: UInt, completion: ((NSError?)->())?)
     
     /// 获取callId，callId为通话过程中消息的标识，通过argus可以查询到从呼叫到通话的耗时和状态变迁的时间戳
     /// - Returns: callId，非呼叫到通话之外的消息为空
     func getCallId() -> String
     
-    //
+    /// 添加RTC接口回调
+    /// - Parameter listener: <#listener description#>
     @objc optional func addRTCListener(listener: AgoraRtcEngineDelegate)
-    //
+    
+    
+    /// 移除RTC接口回调
+    /// - Parameter listener: <#listener description#>
     @objc optional func removeRTCListener(listener: AgoraRtcEngineDelegate)
 }
