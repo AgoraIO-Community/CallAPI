@@ -21,7 +21,7 @@ AG_APP_CERTIFICATE=
   
 ## 快速接入
 
-- 拷贝[app/src/main/java/io.agora.onetoone/callAPI](app/src/main/java/io.agora.onetoone/callAPI)到自己的工程相同目录上
+- 拷贝[app/src/main/java/io.agora.onetoone/callAPI](app/src/main/java/io.agora.onetoone/callAPI)到自己的工程中
 - 打开 Android Studio
 - 创建CallAPI实例
   ```kotlin
