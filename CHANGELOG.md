@@ -1,6 +1,13 @@
 
 English | [中文](CHANGELOG.zh.md)
 
+## [0.3.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.3.0)
+
+- Update RTM SDK to 2.1.7
+- CallConfig supports external incoming AgoraRtmClientKit instances
+- Implicit call to prepareForCall for initialize method in pure 1v1 mode
+- Add RTM disconnection callback
+
 ## [0.2.2](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.2.2)
 
 - Update the channelName for message sending and subscription from channel ID to user ID

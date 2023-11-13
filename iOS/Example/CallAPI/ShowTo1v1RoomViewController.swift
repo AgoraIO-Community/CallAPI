@@ -10,6 +10,7 @@ import UIKit
 import CallAPI
 import AgoraRtcKit
 import CoreData
+import AgoraRtmKit
 
 class ShowTo1v1RoomViewController: UIViewController {
     var showRoomId: String = ""          //直播频道名
@@ -19,8 +20,10 @@ class ShowTo1v1RoomViewController: UIViewController {
     var currentUid: UInt = 0             //当前用户UID
     var tokenConfig: CallTokenConfig?
     var videoEncoderConfig: AgoraVideoEncoderConfiguration?
+    private var connectedUserId: UInt?
     
     private var isAutoCall: Bool = false
+    private var rtmClient: AgoraRtmClientKit?
     
     private lazy var debugPath: String = {
         let path = "\(NSHomeDirectory())/Documents/ts/"
@@ -47,7 +50,7 @@ class ShowTo1v1RoomViewController: UIViewController {
                 setupCanvas(nil)
                 self.leftView.isHidden = false
                 self.rightView.isHidden = false
-                hangupButton.isHidden = role == .caller ? false : true
+                hangupButton.isHidden = false
                 callButton.isHidden = true
             case .prepared, .idle, .failed:
                 self.publishMedia(true)
@@ -183,9 +186,24 @@ class ShowTo1v1RoomViewController: UIViewController {
         showView.frame = view.bounds
         
         self.callState = .idle
-        _initialize(role: role) { success in
-            print("_initialize: \(success)")
+        
+        //外部创建rtmClient
+        rtmClient = _createRtmClient()
+        //外部创建需要自行管理login
+        rtmClient?.login(tokenConfig?.rtmToken) {[weak self] resp, err in
+            guard let self = self else {return}
+            if let err = err {
+                print("login error = \(err.localizedDescription)")
+                return
+            }
+            self._initialize(rtmClient: self.rtmClient, role: role) { success in
+                print("_initialize: \(success)")
+            }
         }
+        //内部创建rtmclient
+//        _initialize(role: role) { success in
+//            print("_initialize: \(success)")
+//        }
         
         print("will joinChannel  \(self.showRoomId) \(self.currentUid)")
         let options = AgoraRtcChannelMediaOptions()
@@ -200,6 +218,25 @@ class ShowTo1v1RoomViewController: UIViewController {
                               mediaOptions: options) { channel, uid, elapsed in
             print("joinChannel success")
         }
+    }
+    
+    //创建RTM
+    private func _createRtmClient() -> AgoraRtmClientKit {
+        let rtmConfig = AgoraRtmClientConfig(appId: KeyCenter.AppId, userId: "\(currentUid)")
+        if rtmConfig.userId.count == 0 {
+            print("userId is empty")
+        }
+        if rtmConfig.appId.count == 0 {
+            print("appId is empty")
+        }
+
+        var rtmClient: AgoraRtmClientKit? = nil
+        do {
+            rtmClient = try AgoraRtmClientKit(rtmConfig, delegate: nil)
+        } catch {
+            print("create rtm client fail: \(error.localizedDescription)")
+        }
+        return rtmClient!
     }
 }
 
@@ -259,12 +296,13 @@ extension ShowTo1v1RoomViewController {
 
 extension ShowTo1v1RoomViewController {
     
-    private func _initialize(role: CallRole, completion: @escaping ((Bool)->())) {
+    private func _initialize(rtmClient: AgoraRtmClientKit?, role: CallRole, completion: @escaping ((Bool)->())) {
         let config = CallConfig()
         config.role = role
         config.appId = KeyCenter.AppId
         config.userId = currentUid
         config.rtcEngine = _createRtcEngine()
+        config.rtmClient = rtmClient
         if role == .caller {
             config.localView = rightView
             config.remoteView = leftView
@@ -275,6 +313,10 @@ extension ShowTo1v1RoomViewController {
         
         // 如果是被叫会隐式调用prepare
         self.api.initialize(config: config, token: tokenConfig!) { error in
+            if let error = error {
+                completion(false)
+                return
+            }
             self.role = role
             
             guard role == .caller else {
@@ -302,6 +344,8 @@ extension ShowTo1v1RoomViewController {
             self.rtcEngine.delegate = nil
             self.rtcEngine.leaveChannel()
             AgoraRtcEngineKit.destroy()
+            self.rtmClient?.logout()
+            self.rtmClient?.destroy()
             self.dismiss(animated: true)
         }
     }
@@ -320,11 +364,7 @@ extension ShowTo1v1RoomViewController {
     }
     
     @objc func hangupAction() {
-        guard role == .caller else {
-            return
-        }
-        
-        api.hangup(userId: showUserId) { error in
+        api.hangup(userId: connectedUserId ?? 0) { error in
         }
         
         leftView.isHidden = true
@@ -400,6 +440,38 @@ extension ShowTo1v1RoomViewController: AgoraRtcEngineDelegate {
 
 
 extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
+    func tokenPrivilegeWillExpire() {
+        //更新自己的token
+        let channelName = role == .callee ? "" : tokenConfig!.roomId
+        NetworkManager.shared.generateTokens(channelName: channelName,
+                                             uid: "\(currentUid)",
+                                             tokenGeneratorType: .token007,
+                                             tokenTypes: [.rtc, .rtm]) {[weak self] tokens in
+            guard let self = self else {return}
+            self.tokenConfig?.rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
+            self.tokenConfig?.rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
+            self.api.renewToken(with: self.tokenConfig!)
+            
+            self.showRoomToken = tokens[AgoraTokenType.rtc.rawValue]!
+            //主播用万能token自己更新主播频道token
+            if self.role == .callee {
+                rtcEngine.renewToken(self.showRoomToken)
+            }
+        }
+        
+        //观众更新主播频道token
+        if role == .caller {
+            NetworkManager.shared.generateTokens(channelName: showRoomId,
+                                                 uid: "\(currentUid)",
+                                                 tokenGeneratorType: .token007,
+                                                 tokenTypes: [.rtc, .rtm]) {[weak self] tokens in
+                guard let self = self else {return}
+                self.showRoomToken = tokens[AgoraTokenType.rtc.rawValue]!
+                rtcEngine.renewToken(self.showRoomToken)
+            }
+        }
+    }
+    
     public func onCallStateChanged(with state: CallStateType,
                                    stateReason: CallReason,
                                    eventReason: String,
@@ -423,6 +495,7 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
         
         switch state {
         case .connected:
+            connectedUserId = eventInfo[kFromUserId] as? UInt
             if let debugMap = eventInfo[kDebugInfoMap] as? [String: Int], debugMap.count == 6 {
                 if let data = try? NSKeyedArchiver.archivedData(withRootObject: debugMap, requiringSecureCoding: false) {
                     let path = "\(debugPath)/\(Int(Date().timeIntervalSince1970)).debug"
@@ -467,6 +540,17 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
             }
         case .failed:
             AUIToast.show(text: eventReason, postion: .bottom)
+            closeAction()
+        default:
+            break
+        }
+    }
+    
+    @objc func onCallEventChanged(with event: CallEvent, elapsed: Int) {
+        print("onCallEventChanged: \(event.rawValue), elapsed: \(elapsed)")
+        switch event {
+        case .remoteLeave:
+            hangupAction()
         default:
             break
         }
