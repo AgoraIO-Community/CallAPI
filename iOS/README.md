@@ -38,23 +38,17 @@ static var Certificate: String = <#Your Certificate#>
 - Initialization(pure 1v1)
   ```swift
     let config = CallConfig()
-    config.role = .caller  // Pure 1v1 can only be set as the caller
     config.mode = .pure1v1
     config.appId = KeyCenter.AppId
     config.userId = currentUid
     config.autoAccept = false
     config.rtcEngine = _createRtcEngine()
+    config.rtmClient = _createRtmClient() //If RTM is already used, it can be passed in as an RTM instance, otherwise it can be set to nil
     config.localView = rightView
     config.remoteView = leftView
         
     self.api.initialize(config: config, token: tokenConfig!) { error in
-        // Requires active call to prepareForCall
-        let prepareConfig = PrepareConfig.callerConfig()
-        prepareConfig.autoLoginRTM = true
-        prepareConfig.autoSubscribeRTM = true
-        self.api.prepareForCall(prepareConfig: prepareConfig) { err in
-            completion(err == nil)
-        }
+        // error
     }
   ```
 - Initialize(Show to 1v1 mode)
@@ -65,15 +59,16 @@ static var Certificate: String = <#Your Certificate#>
     config.appId = KeyCenter.AppId
     config.userId = currentUid
     config.rtcEngine = _createRtcEngine()
-    if role == .caller {
-        config.localView = rightView
-        config.remoteView = leftView
-    } else {
-        config.localView = leftView
-        config.remoteView = rightView
-    }
+    config.rtmClient = _createRtmClient() //If RTM is already used, it can be passed in as an RTM instance, otherwise it can be set to nil
+    config.localView = rightView
+    config.remoteView = leftView
+
     // If it is called, it will implicitly call prepare
     self.api.initialize(config: config, token: tokenConfig!) { error in
+        if let error = error {
+            completion(false)
+            return
+        }
         self.role = role
         guard role == .caller else {
             completion(true)
@@ -88,6 +83,7 @@ static var Certificate: String = <#Your Certificate#>
         }
     }
   ```
+    >take care ⚠️： If the rtmClient is passed in externally, it is necessary to maintain the login status externally
 
 - Set callback
   ```swift
@@ -110,9 +106,11 @@ static var Certificate: String = <#Your Certificate#>
   - If it is the caller, call the call method to call the remote user
     ```swift
       callApi.call(roomId: remoteRoomId, remoteUserId: remoteUserId) { err in
-          }
+      }
     ```
-  - If it is the callee, Change to call state, onCallStateChanged will return state=. calling.
+  - At this point, both the caller and the called will receive onCallStateChanged and return state = . calling, changing to the calling state
+    > take care ⚠️: When receiving a call, it is necessary to turn off the external enabled audio and video streaming, otherwise the call will fail
+
     ```swift
       public func onCallStateChanged(with state: CallStateType,
                                      stateReason: CallReason,
@@ -131,7 +129,7 @@ static var Certificate: String = <#Your Certificate#>
           }
       }
     ```
-- If it is a show to 1v1 mode, it does not need to be processed by default. If it needs to be processed, you can set the autoAccept in CallConfig to false to indicate that the call cannot be automatically accepted. If the call is not automatically accepted, the callee needs to agree or reject it on their own, and the caller can cancel the call.
+- If it is a show to 1v1 mode, the default is not to process the call response. If it needs to be processed, you can set the autoAccept in CallConfig to false to indicate that the call will not be automatically accepted. If the call is not automatically accepted, the called party needs to agree or refuse on their own, and the caller can cancel the call.
   ```swift
     //Agree, we need to obtain the corresponding token based on FromRoomId
     api.accept(roomId: fromRoomId, remoteUserId: fromUserId, rtcToken: rtcToken) { err in

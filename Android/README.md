@@ -30,24 +30,17 @@ AG_APP_CERTIFICATE=
 - Initialization(pure 1v1)
   ```kotlin
     val config = CallConfig(
-      BuildConfig.AG_APP_ID,
-      enterModel.currentUid.toInt(),
-      null,
-      _createRtcEngine(),
-      CallMode.Pure1v1,
-      CallRole.CALLER,  // Pure 1v1 can only be set as the caller
-      mLeftCanvas,
-      mRightCanvas,
-      false
+      appId = BuildConfig.AG_APP_ID,
+      userId = enterModel.currentUid.toInt(),
+      userExtension = null,
+      rtcEngine = _createRtcEngine(),
+      rtmClient = _createRtmClient(), //如果已经使用了rtm，可以传入rtm实例，否则可以设置为nil
+      mode = CallMode.Pure1v1,
+      role = CallRole.CALLER,
+      localView = mLeftCanvas,
+      remoteView = mRightCanvas,
+      autoAccept = false
     )
-    config.localView = mRightCanvas
-    config.remoteView = mLeftCanvas
-
-    val tokenConfig = CallTokenConfig()
-    tokenConfig.roomId = enterModel.tokenRoomId
-    tokenConfig.rtcToken = enterModel.rtcToken
-    tokenConfig.rtmToken = enterModel.rtmToken
-
     api.initialize(config, tokenConfig) {
       // Requires active call to prepareForCall
       val prepareConfig = PrepareConfig.callerConfig()
@@ -61,28 +54,17 @@ AG_APP_CERTIFICATE=
 - Initialize(Show to 1v1 mode)
   ```kotlin
     val config = CallConfig(
-        BuildConfig.AG_APP_ID,
-        enterModel.currentUid.toInt(),
-        null,
-        _createRtcEngine(),
-        CallMode.ShowTo1v1,
-        role,
-        mLeftCanvas,
-        mRightCanvas,
-        true
+      appId = BuildConfig.AG_APP_ID,
+      userId = enterModel.currentUid.toInt(),
+      userExtension = null,
+      rtcEngine = _createRtcEngine(),
+      rtmClient = _createRtmClient(), //如果已经使用了rtm，可以传入rtm实例，否则可以设置为nil
+      mode = CallMode.ShowTo1v1,
+      role = CallRole.CALLER,
+      localView = mLeftCanvas,
+      remoteView = mRightCanvas,
+      autoAccept = true
     )
-    if (role == CallRole.CALLER) {
-      config.localView = mRightCanvas
-      config.remoteView = mLeftCanvas
-    } else {
-      config.localView = mLeftCanvas
-      config.remoteView = mRightCanvas
-    }
-
-    val tokenConfig = CallTokenConfig()
-    tokenConfig.roomId = enterModel.tokenRoomId
-    tokenConfig.rtcToken = enterModel.rtcToken
-    tokenConfig.rtmToken = enterModel.rtmToken
     // If it is called, it will implicitly call prepare
     api.initialize(config, tokenConfig) {
       if (enterModel.isBrodCaster) {
@@ -97,7 +79,8 @@ AG_APP_CERTIFICATE=
       }
     }
   ```
-
+  >take care ⚠️： If the rtmClient is passed in externally, it is necessary to maintain the login status externally
+  
 - Set callback
   ```kotlin
     api.addListener(this)
@@ -115,12 +98,16 @@ AG_APP_CERTIFICATE=
     }
   ```
 - Call
-  - If it is the caller, call the call method to call the remote user
+  - If it is the caller, call the call method to call the remote user 
+  
     ```kotlin
       callApi.call(remoteRoomId, remoteUserId) { err ->
       }
-    ```
-  - If it is the callee, Change to call state, onCallStateChanged will return state == calling.
+    ``` 
+    
+  - At this point, both the caller and the called will receive onCallStateChanged and return state = . calling, changing to the calling state
+    > take care ⚠️: When receiving a call, it is necessary to turn off the external enabled audio and video streaming, otherwise the call will fail
+
   ```kotlin
   override fun onCallStateChanged(
         state: CallStateType,

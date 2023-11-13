@@ -9,6 +9,7 @@
 import UIKit
 import CallAPI
 import AgoraRtcKit
+import AgoraRtmKit
 
 class Pure1v1RoomViewController: UIViewController {
     var currentUid: UInt = 0             //当前用户UID
@@ -19,8 +20,10 @@ class Pure1v1RoomViewController: UIViewController {
     private let leftView: UIView = UIView()
     private let rightView: UIView = UIView()
     private lazy var rtcEngine = _createRtcEngine()
+    private var rtmClient: AgoraRtmClientKit?
     
     private var connectedUserId: UInt?
+    private var connectedRoomId: String?
     
     private var callState: CallStateType = .idle {
         didSet {
@@ -169,8 +172,26 @@ class Pure1v1RoomViewController: UIViewController {
         rightView.isHidden = true
         
         self.callState = .idle
-        _initialize() { success in
-            print("_initialize: \(success)")
+        //外部创建rtmClient
+        rtmClient = _createRtmClient()
+        initCallApi { success in
+        }
+    }
+    
+    private func initCallApi(completion: @escaping ((Bool)->())) {
+        //外部创建需要自行管理login
+        NSLog("login")
+        rtmClient?.login(tokenConfig?.rtmToken) {[weak self] resp, err in
+            guard let self = self else {return}
+            if let err = err {
+                NSLog("login error = \(err.localizedDescription)")
+                completion(false)
+                return
+            }
+            self._initialize(rtmClient: self.rtmClient) { success in
+                NSLog("_initialize: \(success)")
+                completion(success)
+            }
         }
     }
     
@@ -181,7 +202,7 @@ class Pure1v1RoomViewController: UIViewController {
 }
 
 extension Pure1v1RoomViewController {
-    private func _initialize(completion: @escaping ((Bool)->())) {
+    private func _initialize(rtmClient: AgoraRtmClientKit?, completion: @escaping ((Bool)->())) {
         let config = CallConfig()
         config.role = .caller   // 纯1v1只能设置成主叫
         config.mode = .pure1v1
@@ -189,17 +210,14 @@ extension Pure1v1RoomViewController {
         config.userId = currentUid
         config.autoAccept = false
         config.rtcEngine = _createRtcEngine()
+        config.rtmClient = rtmClient
         config.localView = rightView
         config.remoteView = leftView
         
         self.api.initialize(config: config, token: tokenConfig!) { error in
-            // 需要主动调用prepareForCall
-            let prepareConfig = PrepareConfig.callerConfig()
-            prepareConfig.autoLoginRTM = true
-            prepareConfig.autoSubscribeRTM = true
-//            prepareConfig.autoJoinRTC = true
-            self.api.prepareForCall(prepareConfig: prepareConfig) { err in
-                completion(err == nil)
+            if let _ = error {
+                completion(false)
+                return
             }
         }
         
@@ -213,11 +231,19 @@ extension Pure1v1RoomViewController {
             self.rtcEngine.delegate = nil
             self.rtcEngine.leaveChannel()
             AgoraRtcEngineKit.destroy()
+            self.rtmClient?.logout()
+            self.rtmClient?.destroy()
             self.dismiss(animated: true)
         }
     }
 
     @objc func callAction() {
+        guard self.callState == .prepared else {
+            initCallApi { err in
+            }
+            AUIToast.show(text: "CallAPi初始化中")
+            return
+        }
         api.call(roomId: "\(targetUserId)", remoteUserId: targetUserId) { error in
         }
 
@@ -231,6 +257,25 @@ extension Pure1v1RoomViewController {
         
         leftView.isHidden = true
         rightView.isHidden = true
+    }
+    
+    //创建RTM
+    private func _createRtmClient() -> AgoraRtmClientKit {
+        let rtmConfig = AgoraRtmClientConfig(appId: KeyCenter.AppId, userId: "\(currentUid)")
+        if rtmConfig.userId.count == 0 {
+            print("userId is empty")
+        }
+        if rtmConfig.appId.count == 0 {
+            print("appId is empty")
+        }
+
+        var rtmClient: AgoraRtmClientKit? = nil
+        do {
+            rtmClient = try AgoraRtmClientKit(rtmConfig, delegate: nil)
+        } catch {
+            print("create rtm client fail: \(error.localizedDescription)")
+        }
+        return rtmClient!
     }
 }
 
@@ -251,6 +296,31 @@ extension Pure1v1RoomViewController: AgoraRtcEngineDelegate {
 
 
 extension Pure1v1RoomViewController:CallApiListenerProtocol {
+    func tokenPrivilegeWillExpire() {
+        //更新自己的token
+        NetworkManager.shared.generateTokens(channelName: connectedRoomId ?? "",
+                                             uid: "\(currentUid)",
+                                             tokenGeneratorType: .token007,
+                                             tokenTypes: [.rtc, .rtm]) {[weak self] tokens in
+            guard let self = self else {return}
+            self.tokenConfig?.rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
+            self.tokenConfig?.rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
+            self.api.renewToken(with: self.tokenConfig!)
+        }
+        
+        //如果是被叫(即1v1的频道是对方的频道)，需要更新对方频道的token
+        if let connectedRoomId = connectedRoomId, connectedRoomId != "\(currentUid)" {
+            NetworkManager.shared.generateTokens(channelName: connectedRoomId,
+                                                 uid: "\(currentUid)",
+                                                 tokenGeneratorType: .token007,
+                                                 tokenTypes: [.rtc, .rtm]) {[weak self] tokens in
+                
+                let rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
+                self?.api.renewRemoteCallerChannelToken(roomId: connectedRoomId, token: rtcToken)
+            }
+        }
+    }
+    
     public func onCallStateChanged(with state: CallStateType,
                                    stateReason: CallReason,
                                    eventReason: String,
@@ -275,6 +345,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                 }
                 return
             }
+            connectedRoomId = fromRoomId
             // 触发状态的用户是自己才处理
             if currentUid == toUserId {
                 connectedUserId = fromUserId
@@ -353,6 +424,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
             AUIToast.show(text: eventReason, postion: .bottom)
             AUIAlertManager.hiddenView()
             connectedUserId = nil
+            closeAction()
         default:
             break
         }
@@ -369,10 +441,10 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
     }
     
     @objc func callDebugInfo(message: String) {
-        print("[CallApi]\(message)")
+        NSLog("[CallApi]%@", message)
     }
     
     @objc func callDebugWarning(message: String) {
-        print("[CallApi]\(message)")
+        NSLog("[CallApi][Warning]%@", message)
     }
 }

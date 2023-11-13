@@ -1,6 +1,5 @@
 package io.agora.onetoone.model
 
-import io.agora.rtc2.video.VideoEncoderConfiguration
 import java.io.Serializable
 
 /**  加入房间时携带的信息

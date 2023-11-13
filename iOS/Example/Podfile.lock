@@ -1,47 +1,21 @@
 PODS:
-  - AgoraRtcEngine_Special_iOS (4.1.1.247)
-  - AgoraRtm_iOS (2.1.4)
-  - CallAPI (0.1.0):
-    - AgoraRtcEngine_Special_iOS
-    - AgoraRtm_iOS (= 2.1.4)
-  - FBSnapshotTestCase (2.1.4):
-    - FBSnapshotTestCase/SwiftSupport (= 2.1.4)
-  - FBSnapshotTestCase/Core (2.1.4)
-  - FBSnapshotTestCase/SwiftSupport (2.1.4):
-    - FBSnapshotTestCase/Core
-  - iOSSnapshotTestCase (8.0.0):
-    - iOSSnapshotTestCase/SwiftSupport (= 8.0.0)
-  - iOSSnapshotTestCase/Core (8.0.0)
-  - iOSSnapshotTestCase/SwiftSupport (8.0.0):
-    - iOSSnapshotTestCase/Core
-  - Nimble (10.0.0)
-  - Nimble-Snapshots (9.4.0):
-    - Nimble-Snapshots/Core (= 9.4.0)
-  - Nimble-Snapshots/Core (9.4.0):
-    - iOSSnapshotTestCase (~> 8.0)
-    - Nimble
-  - Quick (2.2.1)
+  - AgoraRtcEngine_Special_iOS (4.1.1.17)
+  - AgoraRtm_iOS (2.1.7)
+  - CallAPI (0.3.0):
+    - AgoraRtcEngine_Special_iOS (= 4.1.1.17)
+    - AgoraRtm_iOS (= 2.1.7)
   - YYCategories (1.0.4):
     - YYCategories/no-arc (= 1.0.4)
   - YYCategories/no-arc (1.0.4)
 
 DEPENDENCIES:
   - CallAPI (from `../`)
-  - FBSnapshotTestCase (~> 2.1.4)
-  - Nimble (~> 10.0.0)
-  - Nimble-Snapshots (~> 9.4.0)
-  - Quick (~> 2.2.0)
   - YYCategories
 
 SPEC REPOS:
-  trunk:
+  https://github.com/CocoaPods/Specs.git:
     - AgoraRtcEngine_Special_iOS
     - AgoraRtm_iOS
-    - FBSnapshotTestCase
-    - iOSSnapshotTestCase
-    - Nimble
-    - Nimble-Snapshots
-    - Quick
     - YYCategories
 
 EXTERNAL SOURCES:
@@ -49,16 +23,11 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
-  AgoraRtcEngine_Special_iOS: 1da915f9ea50947b0c01f3a7f9674df4e3c90820
-  AgoraRtm_iOS: 11b767ee81a7202dcf09e045cd2d359b5abbc965
-  CallAPI: f40f9694c310b613f20958fabdbe69f8bc1d6ca5
-  FBSnapshotTestCase: 094f9f314decbabe373b87cc339bea235a63e07a
-  iOSSnapshotTestCase: a670511f9ee3829c2b9c23e6e68f315fd7b6790f
-  Nimble: 5316ef81a170ce87baf72dd961f22f89a602ff84
-  Nimble-Snapshots: ef281b908c604f78c8313587e25ea92c8ab513d7
-  Quick: f5754d69b7013f5864c29aab9ae6f0c79c5bc200
+  AgoraRtcEngine_Special_iOS: 5b3106aad2d76959393cc6497affe83dbdc926a0
+  AgoraRtm_iOS: cd26cf8a377a79934864d37e184866dbd1430eaf
+  CallAPI: c6ca611aaa56f268713e261513340c7b7a4663df
   YYCategories: 6bcd4314c6661a561410dce4a793379ebd306abd
 
-PODFILE CHECKSUM: 7d24f05f7d1f46ab2daf63faedac52b8a404985e
+PODFILE CHECKSUM: 001572e2b62fba2a376de5284b36202d3cebc8fd
 
 COCOAPODS: 1.12.1

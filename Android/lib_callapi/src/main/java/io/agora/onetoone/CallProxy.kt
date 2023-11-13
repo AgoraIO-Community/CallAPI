@@ -1,8 +1,7 @@
-package io.agora.callapi
+package io.agora.onetoone
 
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import io.agora.rtc2.Constants
 import io.agora.rtc2.IRtcEngineEventHandler
 

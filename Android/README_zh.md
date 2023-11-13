@@ -20,8 +20,7 @@ AG_APP_CERTIFICATE=
 - 最后打开 Android Studio 运行项目即可开始您的体验
   
 ## 快速接入
-
-- 拷贝[app/src/main/java/io.agora.onetoone/callAPI](app/src/main/java/io.agora.onetoone/callAPI)到自己的工程中
+- 拷贝[lib_callapi/src/main/java/io/agora/callapi](lib_callapi/src/main/java/io/agora/callapi)到自己的工程中
 - 打开 Android Studio
 - 创建CallAPI实例
   ```kotlin
@@ -30,59 +29,34 @@ AG_APP_CERTIFICATE=
 - 初始化(纯1v1)
   ```kotlin
     val config = CallConfig(
-      BuildConfig.AG_APP_ID,
-      enterModel.currentUid.toInt(),
-      null,
-      _createRtcEngine(),
-      CallMode.Pure1v1,
-      CallRole.CALLER,  //纯1v1只能设置成主叫
-      mLeftCanvas,
-      mRightCanvas,
-      false
+      appId = BuildConfig.AG_APP_ID,
+      userId = enterModel.currentUid.toInt(),
+      userExtension = null,
+      rtcEngine = _createRtcEngine(),
+      rtmClient = _createRtmClient(), //如果已经使用了rtm，可以传入rtm实例，否则可以设置为nil
+      mode = CallMode.Pure1v1,
+      role = CallRole.CALLER,
+      localView = mLeftCanvas,
+      remoteView = mRightCanvas,
+      autoAccept = false
     )
-    config.localView = mRightCanvas
-    config.remoteView = mLeftCanvas
-
-    val tokenConfig = CallTokenConfig()
-    tokenConfig.roomId = enterModel.tokenRoomId
-    tokenConfig.rtcToken = enterModel.rtcToken
-    tokenConfig.rtmToken = enterModel.rtmToken
-
-    api.initialize(config, tokenConfig) {
-      // 需要主动调用prepareForCall
-      val prepareConfig = PrepareConfig.callerConfig()
-      prepareConfig.autoLoginRTM = true
-      prepareConfig.autoSubscribeRTM = true
-      api.prepareForCall(prepareConfig) { err ->
-        completion?.invoke(err == null)
-      }
+    api.initialize(config, tokenConfig) { error ->
     }
   ```
 - 初始化(秀场转1v1模式)
   ```kotlin
     val config = CallConfig(
-        BuildConfig.AG_APP_ID,
-        enterModel.currentUid.toInt(),
-        null,
-        _createRtcEngine(),
-        CallMode.ShowTo1v1,
-        role,
-        mLeftCanvas,
-        mRightCanvas,
-        true
+      appId = BuildConfig.AG_APP_ID,
+      userId = enterModel.currentUid.toInt(),
+      userExtension = null,
+      rtcEngine = _createRtcEngine(),
+      rtmClient = _createRtmClient(), //如果已经使用了rtm，可以传入rtm实例，否则可以设置为nil
+      mode = CallMode.ShowTo1v1,
+      role = CallRole.CALLER,
+      localView = mLeftCanvas,
+      remoteView = mRightCanvas,
+      autoAccept = true
     )
-    if (role == CallRole.CALLER) {
-      config.localView = mRightCanvas
-      config.remoteView = mLeftCanvas
-    } else {
-      config.localView = mLeftCanvas
-      config.remoteView = mRightCanvas
-    }
-
-    val tokenConfig = CallTokenConfig()
-    tokenConfig.roomId = enterModel.tokenRoomId
-    tokenConfig.rtcToken = enterModel.rtcToken
-    tokenConfig.rtmToken = enterModel.rtmToken
     // 如果是被叫会隐式调用prepare
     api.initialize(config, tokenConfig) {
       if (enterModel.isBrodCaster) {
@@ -97,6 +71,7 @@ AG_APP_CERTIFICATE=
       }
     }
   ```
+  >注意⚠️：如果通过外部传入rtmClient，则需要外部维持登陆状态
 
 - 设置回调
   ```kotlin
@@ -121,7 +96,10 @@ AG_APP_CERTIFICATE=
       callApi.call(remoteRoomId, remoteUserId) { err ->
       }
     ```
-  - 如果是被叫, 变更成呼叫状态，onCallStateChanged会返回state = .calling
+    
+  - 此时不管主叫还是被叫都会收到onCallStateChanged会返回state = .calling，变更成呼叫状态
+    > 注意⚠️: 收到calling时需要把外部开启的音视频推流关闭，否则呼叫会失败  
+
   ```kotlin
   override fun onCallStateChanged(
         state: CallStateType,

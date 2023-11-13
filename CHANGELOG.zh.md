@@ -1,6 +1,13 @@
 
 [English](CHANGELOG.md) | 中文
 
+## [0.3.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.3.0)
+
+- 更新RTM SDK至2.1.7
+- CallConfig支持外部传入AgoraRtmClientKit实例
+- 纯1v1模式下initialize方法隐式调用prepareForCall
+- 增加rtm断连回调
+
 ## [0.2.2](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.2.2)
 
 - 更新消息发送和订阅的channelName从频道id改为用户id

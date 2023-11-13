@@ -1,4 +1,4 @@
-package io.agora.callapi
+package io.agora.onetoone
 
 data class CallReportInfo(
     var msgId: String,

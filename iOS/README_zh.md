@@ -35,26 +35,20 @@ static var Certificate: String = <#Your Certificate#>
   ```swift
     let api = CallApiImpl()
   ```
-- 初始化(纯1v1)
+- 初始化(纯1v1模式)
   ```swift
     let config = CallConfig()
-    config.role = .caller  // 纯1v1只能设置成主叫
     config.mode = .pure1v1
     config.appId = KeyCenter.AppId
     config.userId = currentUid
     config.autoAccept = false
     config.rtcEngine = _createRtcEngine()
+    config.rtmClient = _createRtmClient() //如果已经使用了rtm，可以传入rtm实例，否则可以设置为nil
     config.localView = rightView
     config.remoteView = leftView
         
     self.api.initialize(config: config, token: tokenConfig!) { error in
-        // 需要主动调用prepareForCall
-        let prepareConfig = PrepareConfig.callerConfig()
-        prepareConfig.autoLoginRTM = true
-        prepareConfig.autoSubscribeRTM = true
-        self.api.prepareForCall(prepareConfig: prepareConfig) { err in
-            completion(err == nil)
-        }
+        //error
     }
   ```
 - 初始化(秀场转1v1模式)
@@ -64,15 +58,16 @@ static var Certificate: String = <#Your Certificate#>
     config.appId = KeyCenter.AppId
     config.userId = currentUid
     config.rtcEngine = _createRtcEngine()
-    if role == .caller {
-        config.localView = rightView
-        config.remoteView = leftView
-    } else {
-        config.localView = leftView
-        config.remoteView = rightView
-    }
+    config.rtmClient = _createRtmClient() //如果已经使用了rtm，可以传入rtm实例，否则可以设置为nil    
+    config.localView = rightView
+    config.remoteView = leftView
+
     // 如果是被叫会隐式调用prepare
     self.api.initialize(config: config, token: tokenConfig!) { error in
+        if let error = error {
+            completion(false)
+            return
+        }
         self.role = role
         guard role == .caller else {
             completion(true)
@@ -87,6 +82,7 @@ static var Certificate: String = <#Your Certificate#>
         }
     }
   ```
+  >注意⚠️：如果通过外部传入rtmClient，则需要外部维持登陆状态
 
 - 设置回调
   ```swift
@@ -108,9 +104,11 @@ static var Certificate: String = <#Your Certificate#>
   - 如果是主叫，调用call方法呼叫远端用户
     ```swift
       callApi.call(roomId: remoteRoomId, remoteUserId: remoteUserId) { err in
-          }
+      }
     ```
-  - 如果是被叫, 变更成呼叫状态，onCallStateChanged会返回state = .calling
+  - 此时不管主叫还是被叫都会收到onCallStateChanged会返回state = .calling，变更成呼叫状态
+    > 注意⚠️: 收到calling时需要把外部开启的音视频推流关闭，否则呼叫会失败
+
       ```swift
         public func onCallStateChanged(with state: CallStateType,
                                        stateReason: CallReason,
@@ -129,7 +127,7 @@ static var Certificate: String = <#Your Certificate#>
             }
         }
       ```
-- 如果是秀场转1v1，默认不需要处理，如果需要处理可以吧CallConfig的autoAccept设置为false表示不自动接受呼叫，如果非自动接受呼叫，被叫需要自行同意或者拒绝，主叫可以取消呼叫
+- 如果是秀场转1v1，默认不需要处理呼叫响应，如果需要处理可以吧CallConfig的autoAccept设置为false表示不自动接受呼叫，如果非自动接受呼叫，被叫需要自行同意或者拒绝，主叫可以取消呼叫
   ```swift
     //同意,需要根据fromRoomId获取对应token
     api.accept(roomId: fromRoomId, remoteUserId: fromUserId, rtcToken: rtcToken) { err in
