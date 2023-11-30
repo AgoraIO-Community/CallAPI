@@ -21,7 +21,7 @@ AG_APP_CERTIFICATE=
   
 ## Integration
 
-- Copy [lib_callapi/src/main/java/io/agora/callapi](lib_callapi/src/main/java/io/agora/callapi) to your own project
+- Copy [lib_callapi/src/main/java/io/agora/onetoone](lib_callapi/src/main/java/io/agora/onetoone) to your own project
 - Open Android Studio
 - Create CallAPI instance
   ```kotlin
