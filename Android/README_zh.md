@@ -20,7 +20,7 @@ AG_APP_CERTIFICATE=
 - 最后打开 Android Studio 运行项目即可开始您的体验
   
 ## 快速接入
-- 拷贝[lib_callapi/src/main/java/io/agora/callapi](lib_callapi/src/main/java/io/agora/callapi)到自己的工程中
+- 拷贝[lib_callapi/src/main/java/io/agora/onetoone](lib_callapi/src/main/java/io/agora/onetoone)到自己的工程中
 - 打开 Android Studio
 - 创建CallAPI实例
   ```kotlin
