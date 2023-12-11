@@ -29,15 +29,6 @@ CallAPI支持如下场景的1v1呼叫。
 - **拒绝呼叫**：被叫在接收到主叫的呼叫请求后可以拒绝当次呼叫。
 - **挂断**：主叫/被叫在通话中时可以发起挂断请求来中断本次通话。
 
-
-
-## Demo 体验     
-
-| iOS                                                                              | Android                                                                          |  
-|----------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
-| ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_ios.png?x-oss-process=image/resize,w_200) | ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_android.png?x-oss-process=image/resize,w_200) |  
-|                                                                                  |                                                                                  |  
-
 ## 快速集成
 
 
@@ -46,22 +37,15 @@ CallAPI支持如下场景的1v1呼叫。
 | Android | [CallAPI(Android)](Android) |
 | iOS     | [CallAPI(iOS)](iOS)   |
 
+## Demo 体验     
+
+| iOS                                                                              | Android                                                                          |  
+|----------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_ios.png?x-oss-process=image/resize,w_200) | ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_android.png?x-oss-process=image/resize,w_200) |  
+|                                                                                  |                                                                                  |  
+
+
 ---
-
-## FAQ
-
-### 如何获取声网 APPID
-
-> 声网 APPID 申请：[https://www.agora.io/cn/](https://www.agora.io/cn/)
-
-### 如何开启RTM
-请按照如下步骤开启
-> ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config1.jpg)
-> 
-> ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config2.jpg)
-> 
-> ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config3.jpg)
-
 
 ### 集成遇到困难，该如何联系声网获取协助
 

@@ -32,6 +32,13 @@
   > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/1641871111769.png)
   > 点击主要证书下面的复制图标，即可获取项目的 App 证书。
   > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/1637637672988.png)
+
+    - 开启RTM
+  > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config1.jpg)
+  > 
+  > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config2.jpg)
+  > 
+  > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config3.jpg)
 - 在项目根目录找到[gradle.properties](gradle.properties)，填入声网的AppId和Certificate
 ```
 AG_APP_ID=
