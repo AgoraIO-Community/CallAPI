@@ -48,19 +48,6 @@ Pure 1v1 scenarios do not require specifying roles, all roles can be called and 
 
 ---
 
-## FAQ
-
-### How to Get Agora APPID
-
-> Apply for Agora AppID：[https://www.agora.io/cn/](https://www.agora.io/cn/)
-
-### How to enable RTM
-Please follow the steps below to enable it
-> ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config1.jpg)
-> 
-> ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config2.jpg)
-> 
-> ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config3.jpg)
 
 ### How to Contact Agora for Support
 

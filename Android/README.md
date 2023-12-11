@@ -31,6 +31,14 @@ This document mainly introduces how to quickly get through the CallAPI example p
   > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/1641871111769.png)
   > Click on the copy icon below the main certificate to obtain the App certificate for the project.
   > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/1637637672988.png)
+
+  - How to enable RTM
+  > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config1.jpg)
+  > 
+  > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config2.jpg)
+  > 
+  > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config3.jpg)
+  > 
 - In the project's root directory, locate the gradle.properties file and fill in the AppId and Certificate for Agora as follows:
 ```
 AG_APP_ID=
