@@ -36,7 +36,7 @@ Pure 1v1 scenarios do not require specifying roles, all roles can be called and 
 
 | iOS                                                          | Android                                                      |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_ios.png) | ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_android.png) |
+| ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_ios.png?x-oss-process=image/resize,w_200) | ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_android.png?x-oss-process=image/resize,w_200) |
 
 ## Quick Start
 
@@ -54,6 +54,13 @@ Pure 1v1 scenarios do not require specifying roles, all roles can be called and 
 
 > Apply for Agora AppID：[https://www.agora.io/cn/](https://www.agora.io/cn/)
 
+### How to enable RTM
+Please follow the steps below to enable it
+> ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config1.jpg)
+> 
+> ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config2.jpg)
+> 
+> ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config3.jpg)
 
 ### How to Contact Agora for Support
 

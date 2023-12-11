@@ -11,13 +11,32 @@ This document mainly introduces how to quickly get through the CallAPI example p
 
 ## Getting Started
 
-- Clone or download source code
-- Fill in the AppId/Certificate in the [gradle.properties](gradle.properties) of the project
+- Clone the project source code or download it directly.
+- Open Android Studio and use it to open the [Android](../Android) directory of the project. This will trigger the IDE to start building the project automatically.
+- Wait for the build to complete.
+  
+- Obtain App ID -------- [声网Agora - 文档中心 - 如何获取 App ID](https://docs.agora.io/cn/Agora%20Platform/get_appid_token?platform=All%20Platforms#%E8%8E%B7%E5%8F%96-app-id)
+  
+  > - Click to create an application
+  >   
+  >   ![](https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/create_app_1.jpg)
+  > 
+  > - Select the type of application you want to create
+  >   
+  >   ![](https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/create_app_2.jpg)
+  > 
+
+- Obtain App Certificate ----- [声网Agora - 文档中心 - 获取 App 证书](https://docs.agora.io/cn/Agora%20Platform/get_appid_token?platform=All%20Platforms#%E8%8E%B7%E5%8F%96-app-%E8%AF%81%E4%B9%A6)
+  > On the project management page of the Agora console, locate your project and click on Configure.
+  > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/1641871111769.png)
+  > Click on the copy icon below the main certificate to obtain the App certificate for the project.
+  > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/1637637672988.png)
+- In the project's root directory, locate the gradle.properties file and fill in the AppId and Certificate for Agora as follows:
 ```
 AG_APP_ID=
 AG_APP_CERTIFICATE=
 ```
-- Run the project with Android Studio to begin your experience
+- In the top toolbar of Android Studio, click "File" -> select "Sync Project with Gradle Files", wait for Gradle sync to complete, then you can run and debug the project.
   
 ## Integration
 
@@ -148,6 +167,13 @@ AG_APP_CERTIFICATE=
     api.hangup(enterModel.showUserId.toInt()) {
     }
   ```
+## Call timing diagram
+### Pure 1v1
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/sequence_pure1v1.en.png)
+
+### Live to 1v1
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/sequence_pure1v1.en.png)
+
 ## 许可证
 
 Call API uses MIT License, see LICENSE file for details.

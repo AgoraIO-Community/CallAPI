@@ -12,7 +12,25 @@
 ## 运行示例
 
 - 克隆或者直接下载项目源码
-- 在项目的[KeyCenter.swift](Example/CallAPI/KeyCenter.swift) 中填入声网的AppId和Certificate
+- 获取声网App ID -------- [声网Agora - 文档中心 - 如何获取 App ID](https://docs.agora.io/cn/Agora%20Platform/get_appid_token?platform=All%20Platforms#%E8%8E%B7%E5%8F%96-app-id)
+  
+  > - 点击创建应用
+  >   
+  >   ![](https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/create_app_1.jpg)
+  > 
+  > - 选择你要创建的应用类型
+  >   
+  >   ![](https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/create_app_2.jpg)
+  > 
+
+- 获取App 证书 ----- [声网Agora - 文档中心 - 获取 App 证书](https://docs.agora.io/cn/Agora%20Platform/get_appid_token?platform=All%20Platforms#%E8%8E%B7%E5%8F%96-app-%E8%AF%81%E4%B9%A6)
+  
+  > 在声网控制台的项目管理页面，找到你的项目，点击配置。
+  > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/1641871111769.png)
+  > 点击主要证书下面的复制图标，即可获取项目的 App 证书。
+  > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/1637637672988.png)
+
+- 在项目的[KeyCenter.swift](Example/CallAPI/KeyCenter.swift) 中填入上两部获取到的声网AppId和Certificate
 ```
 static var AppId: String = <#Your AppId#>
 static var Certificate: String = <#Your Certificate#>
@@ -149,6 +167,14 @@ static var Certificate: String = <#Your Certificate#>
     api.hangup(userId: showUserId) { error in
     }
   ```
+
+## 调用时序图
+### 纯1v1
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/sequence_pure1v1.zh.png)
+
+### 秀场转1v1
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/sequence_pure1v1.zh.png)
+
 ## 许可证
 
 CallAPI 使用 MIT 许可证，详情见 LICENSE 文件

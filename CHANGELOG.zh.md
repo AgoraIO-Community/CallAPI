@@ -1,6 +1,10 @@
 
 [English](CHANGELOG.md) | 中文
 
+## [0.3.1](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.3.1)
+
+- 修复时间戳获取异常
+
 ## [0.3.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.3.0)
 
 - 更新RTM SDK至2.1.7

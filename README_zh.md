@@ -35,7 +35,7 @@ CallAPI支持如下场景的1v1呼叫。
 
 | iOS                                                                              | Android                                                                          |  
 |----------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
-| ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_ios.png) | ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_android.png) |  
+| ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_ios.png?x-oss-process=image/resize,w_200) | ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_android.png?x-oss-process=image/resize,w_200) |  
 |                                                                                  |                                                                                  |  
 
 ## 快速集成
@@ -53,6 +53,14 @@ CallAPI支持如下场景的1v1呼叫。
 ### 如何获取声网 APPID
 
 > 声网 APPID 申请：[https://www.agora.io/cn/](https://www.agora.io/cn/)
+
+### 如何开启RTM
+请按照如下步骤开启
+> ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config1.jpg)
+> 
+> ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config2.jpg)
+> 
+> ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config3.jpg)
 
 
 ### 集成遇到困难，该如何联系声网获取协助
