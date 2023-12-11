@@ -12,6 +12,22 @@ This document mainly introduces how to quickly get through the CallAPI example p
 ## Getting Started
 
 - Clone or download source code
+- Obtain App ID -------- [声网Agora - 文档中心 - 如何获取 App ID](https://docs.agora.io/cn/Agora%20Platform/get_appid_token?platform=All%20Platforms#%E8%8E%B7%E5%8F%96-app-id)
+  
+  > - Click to create an application
+  >   
+  >   ![](https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/create_app_1.jpg)
+  > 
+  > - Select the type of application you want to create
+  >   
+  >   ![](https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/create_app_2.jpg)
+  > 
+
+- Obtain App Certificate ----- [声网Agora - 文档中心 - 获取 App 证书](https://docs.agora.io/cn/Agora%20Platform/get_appid_token?platform=All%20Platforms#%E8%8E%B7%E5%8F%96-app-%E8%AF%81%E4%B9%A6)
+  > On the project management page of the Agora console, locate your project and click on Configure.
+  > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/1641871111769.png)
+  > Click on the copy icon below the main certificate to obtain the App certificate for the project.
+  > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/1637637672988.png)
 - Fill in the AppId/Certificate in the [KeyCenter.swift](Example/CallAPI/KeyCenter.swift) of the project
 ```
 static var AppId: String = <#Your AppId#>
