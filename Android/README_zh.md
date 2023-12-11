@@ -17,7 +17,7 @@
 AG_APP_ID=
 AG_APP_CERTIFICATE=
 ```
-- 最后打开 Android Studio 运行项目即可开始您的体验
+- 最后使用 Android Studio 打开本项目，即可运行并开始您的体验
   
 ## 快速接入
 - 拷贝[lib_callapi/src/main/java/io/agora/onetoone](lib_callapi/src/main/java/io/agora/onetoone)到自己的工程中
@@ -140,6 +140,13 @@ AG_APP_CERTIFICATE=
     api.hangup(enterModel.showUserId.toInt()) {
     }
   ```
+
+## 调用时序图
+### 纯1v1
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/sequence_pure1v1.zh.png)
+
+### 秀场转1v1
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/sequence_pure1v1.zh.png)
 ## 许可证
 
 CallAPI 使用 MIT 许可证，详情见 LICENSE 文件

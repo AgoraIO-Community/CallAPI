@@ -1,6 +1,10 @@
 
 English | [中文](CHANGELOG.zh.md)
 
+## [0.3.1](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.3.1)
+
+- Fix timestamp retrieval exception.
+
 ## [0.3.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.3.0)
 
 - Update RTM SDK to 2.1.7

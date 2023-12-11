@@ -151,6 +151,13 @@ static var Certificate: String = <#Your Certificate#>
     api.hangup(userId: showUserId) { error in
     }
   ```
+
+## Call timing diagram
+### Pure 1v1
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/sequence_pure1v1.en.png)
+
+### Live to 1v1
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/sequence_pure1v1.en.png)
 ## License
 
 Call API uses MIT License, see LICENSE file for details.

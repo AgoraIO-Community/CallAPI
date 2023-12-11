@@ -149,6 +149,14 @@ static var Certificate: String = <#Your Certificate#>
     api.hangup(userId: showUserId) { error in
     }
   ```
+
+## 调用时序图
+### 纯1v1
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/sequence_pure1v1.zh.png)
+
+### 秀场转1v1
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/sequence_pure1v1.zh.png)
+
 ## 许可证
 
 CallAPI 使用 MIT 许可证，详情见 LICENSE 文件

@@ -17,7 +17,7 @@ This document mainly introduces how to quickly get through the CallAPI example p
 AG_APP_ID=
 AG_APP_CERTIFICATE=
 ```
-- Run the project with Android Studio to begin your experience
+- Finally, open this project with Android Studio, and you can run it to start your experience.
   
 ## Integration
 
@@ -148,6 +148,13 @@ AG_APP_CERTIFICATE=
     api.hangup(enterModel.showUserId.toInt()) {
     }
   ```
+## Call timing diagram
+### Pure 1v1
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/sequence_pure1v1.en.png)
+
+### Live to 1v1
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/sequence_pure1v1.en.png)
+
 ## 许可证
 
 Call API uses MIT License, see LICENSE file for details.
