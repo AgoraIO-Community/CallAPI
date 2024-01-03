@@ -68,11 +68,14 @@ class CallMessageManager(
     /** RTM是否已经登录 */
     private var isLoginedRTM = false
 
+    /** 是否外部传入的rtm，如果是则不需要手动logout */
+    private var isExternalRTM = false
+
     private var prepareConfig: PrepareConfig? = null
     /** 消息id */
     private var messageId: Int = 0
     /** 待接收回执队列，保存没有接收到回执或者等待未超时的消息 */
-    private var receiptsQueue: MutableList<CallQueueInfo>? = mutableListOf()
+//    private var receiptsQueue: MutableList<CallQueueInfo>? = mutableListOf()
 
     private val mHandler = Handler(Looper.getMainLooper())
     init {
@@ -80,6 +83,7 @@ class CallMessageManager(
         if (rtm != null) {
             //如果外部传入rtmclient，默认登陆成功
             isLoginedRTM = true
+            isExternalRTM = true
             rtmClient = rtm
         } else {
             rtmClient = _createRtmClient()
@@ -144,12 +148,12 @@ class CallMessageManager(
                 callMessagePrint("_sendMessage[$msgId] publish cost ${startTime.getCostMilliseconds()} ms")
                 runOnUiThread { completion?.invoke(null) }
                 //发送成功检查回执，没收到则重试
-                receiptsQueue?.let { queue ->
-                    queue.firstOrNull { it.messageId == msgId }?.let { receiptInfo ->
-                        receiptInfo.checkReceipt()
-                        return
-                    }
-                }
+//                receiptsQueue?.let { queue ->
+//                    queue.firstOrNull { it.messageId == msgId }?.let { receiptInfo ->
+//                        receiptInfo.checkReceipt()
+//                        return
+//                    }
+//                }
             }
             override fun onFailure(errorInfo: ErrorInfo?) {
                 val msg = errorInfo?.errorReason ?: "error"
@@ -159,31 +163,31 @@ class CallMessageManager(
             }
         })
     }
-    private fun addReceipt(userId: String, msgId: Int, message: Map<String, Any>) {
-        val receiptInfo = CallQueueInfo()
-        receiptInfo.toUserId = userId
-        receiptInfo.messageId = msgId
-        receiptInfo.messageInfo = message
-        receiptInfo.checkReceiptsFail = { info ->
-            if (info.retryTimes > 0) else {
-                val message = info.messageInfo ?: emptyMap()
-                receiptsQueue = receiptsQueue?.filter { it.messageId != msgId }?.toMutableList()
-                listener?.onMissReceipts(message)
-            }
-            callMessagePrint("retry receipts: $msgId msgIds${receiptsQueue?.map { it.messageId }}")
-            _sendMessage(userId, message) {
-            }
-        }
-        //过滤老的重试消息，防止老的消息在新的消息之后收到
-        val filterQueue = receiptsQueue?.filter { it.toUserId != userId }?.toMutableList()
-        if (filterQueue?.size != receiptsQueue?.size) {
-            callMessagePrint("remove old message of retry")
-        }
-        filterQueue?.add(receiptInfo)
-        receiptsQueue = filterQueue
-        receiptInfo.checkReceipt()
-        callMessagePrint("add receipts: $msgId msgIds${receiptsQueue?.map { it.messageId }}")
-    }
+//    private fun addReceipt(userId: String, msgId: Int, message: Map<String, Any>) {
+//        val receiptInfo = CallQueueInfo()
+//        receiptInfo.toUserId = userId
+//        receiptInfo.messageId = msgId
+//        receiptInfo.messageInfo = message
+//        receiptInfo.checkReceiptsFail = { info ->
+//            if (info.retryTimes > 0) else {
+//                val message = info.messageInfo ?: emptyMap()
+//                receiptsQueue = receiptsQueue?.filter { it.messageId != msgId }?.toMutableList()
+//                listener?.onMissReceipts(message)
+//            }
+//            callMessagePrint("retry receipts: $msgId msgIds${receiptsQueue?.map { it.messageId }}")
+//            _sendMessage(userId, message) {
+//            }
+//        }
+//        //过滤老的重试消息，防止老的消息在新的消息之后收到
+//        val filterQueue = receiptsQueue?.filter { it.toUserId != userId }?.toMutableList()
+//        if (filterQueue?.size != receiptsQueue?.size) {
+//            callMessagePrint("remove old message of retry")
+//        }
+//        filterQueue?.add(receiptInfo)
+//        receiptsQueue = filterQueue
+//        receiptInfo.checkReceipt()
+//        callMessagePrint("add receipts: $msgId msgIds${receiptsQueue?.map { it.messageId }}")
+//    }
     private fun loginRTM(rtmClient: RtmClient, token: String, completion: (ErrorInfo?) -> Unit) {
         if (isLoginedRTM) {
             completion(null)
@@ -211,8 +215,15 @@ class CallMessageManager(
     // MARK: - Public
     fun deinitialize() {
         rtmClient.removeEventListener(this)
-        receiptsQueue?.forEach { it.finish() }
-        receiptsQueue = null
+        if (!isExternalRTM) {
+            rtmClient.logout(object : ResultCallback<Void> {
+                override fun onSuccess(responseInfo: Void?) {}
+                override fun onFailure(errorInfo: ErrorInfo?) {}
+            })
+            RtmClient.release()
+        }
+//        receiptsQueue?.forEach { it.finish() }
+//        receiptsQueue = null
     }
     /** 根据配置初始化RTM
      * @param prepareConfig: <#prepareConfig description#>
@@ -342,24 +353,24 @@ class CallMessageManager(
     }
 
     override fun onMessageEvent(event: MessageEvent?) {
-        val message = event?.message?.data as? ByteArray ?: return
-        val jsonString = String(message, Charsets.UTF_8)
-        callMessagePrint("on event message: $jsonString")
-        val map = jsonStringToMap(jsonString)
-        val messageId = map[kMessageId] as? Int
-        val receiptsRoomId = map[kReceiptsRoomIdKey] as? String
-        val receiptsId = map[kReceiptsKey] as? Int
-        if (receiptsRoomId != null && messageId != null) {
-            _sendReceipts(receiptsRoomId, messageId)
-        } else if (receiptsId != null) {
-            receiptsQueue?.let { queue ->
-                queue.filter {it.messageId == receiptsId}.forEach { it.finish() }
-                queue.removeAll { it.messageId == receiptsId }
-            }
-            callMessagePrint("recv receipts: $receiptsId msgIds${receiptsQueue?.map { it.messageId }}")
-        } else {
-            callMessagePrint("on event message parse fail, ${event.message.type} ${event.message.data}", 1)
-        }
+//        val message = event?.message?.data as? ByteArray ?: return
+//        val jsonString = String(message, Charsets.UTF_8)
+//        callMessagePrint("on event message: $jsonString")
+//        val map = jsonStringToMap(jsonString)
+//        val messageId = map[kMessageId] as? Int
+//        val receiptsRoomId = map[kReceiptsRoomIdKey] as? String
+//        val receiptsId = map[kReceiptsKey] as? Int
+//        if (receiptsRoomId != null && messageId != null) {
+//            _sendReceipts(receiptsRoomId, messageId)
+//        } else if (receiptsId != null) {
+//            receiptsQueue?.let { queue ->
+//                queue.filter {it.messageId == receiptsId}.forEach { it.finish() }
+//                queue.removeAll { it.messageId == receiptsId }
+//            }
+//            callMessagePrint("recv receipts: $receiptsId msgIds${receiptsQueue?.map { it.messageId }}")
+//        } else {
+//            callMessagePrint("on event message parse fail, ${event.message.type} ${event.message.data}", 1)
+//        }
         runOnUiThread {
             listener?.onMessageEvent(event)
         }

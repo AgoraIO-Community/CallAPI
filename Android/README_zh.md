@@ -101,7 +101,7 @@ AG_APP_CERTIFICATE=
 - 
 ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_solution_1v1.zh.png){width=600px}
 
-### 3.6 衡量通话速度的指标
+### 3.6 影响通话速度的指标
 - 主叫
   - 呼叫-被叫收到呼叫的耗时
   - 呼叫-收到被叫接受呼叫的耗时

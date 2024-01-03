@@ -80,7 +80,7 @@ AG_APP_CERTIFICATE=
 - 
 ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_solution_1v1.en.png){width=600px}
 
-### 3.6 Indicators for Measuring Call Speed
+### 3.6 Metrics that affect call speed
 - Caller:
   - Call-to-receiver time
   - Call-to-receiver-acceptance time

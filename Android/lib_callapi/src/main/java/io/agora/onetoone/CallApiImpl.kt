@@ -2,6 +2,7 @@ package io.agora.onetoone
 
 import android.content.Context
 import android.graphics.Color
+import android.os.Debug
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -46,7 +47,7 @@ class CallApiImpl constructor(
 
     companion object {
         val calleeJoinRTCType = CalleeJoinRTCType.OnCall
-        val kReportCategory = "2_Android_0.4.0"
+        val kReportCategory = "2_Android_1.0.0"
         val kPublisher = "publisher"
         val kCostTimeMap = "costTimeMap"    //呼叫时的耗时信息，会在connected时抛出分步耗时
         val kRemoteUserId = "remoteUserId"
@@ -568,7 +569,10 @@ class CallApiImpl constructor(
                                          value: Int) {
         val c = config
         if (c != null && isChannelJoined && rtcConnection != null) else { return }
-        c.rtcEngine?.sendCustomReportMessageEx(msgId, category, event, label, value, rtcConnection)
+        val ret = c.rtcEngine?.sendCustomReportMessageEx(msgId, category, event, label, value, rtcConnection)
+        if (BuildConfig.DEBUG) {
+            callPrint("sendCustomReportMessage[$ret] msgId:$msgId event:$event label:$label value: $value")
+        }
     }
 
     //MARK: on Message
@@ -796,10 +800,12 @@ class CallApiImpl constructor(
         messageManager?.sendMessage(remoteUserId.toString(), fromUserId.toString(), message) { err ->
             if (err != null) {
                 _updateAndNotifyState(CallStateType.Prepared, CallReason.MessageFailed, err.msg)
-                _notifyEvent(CallEvent.MessageFailed)
+                _notifyEvent(CallEvent.MessageFailed, "${err.code}")
+                completion?.invoke(err)
                 return@sendMessage
             }
             _notifyEvent(CallEvent.RemoteUserRecvCall)
+            completion?.invoke(null)
         }
         _updateAndNotifyState(CallStateType.Calling, eventInfo = message)
         _notifyEvent(CallEvent.OnCalling)
@@ -817,6 +823,7 @@ class CallApiImpl constructor(
         }
         val message = _messageDic(CallAction.CancelCall)
         messageManager?.sendMessage(userId.toString(), fromUserId.toString(), message) { err ->
+            completion?.invoke(err)
         }
         _updateAndNotifyState(CallStateType.Prepared, CallReason.LocalCancel)
         _notifyEvent(CallEvent.LocalCancel)
@@ -846,6 +853,7 @@ class CallApiImpl constructor(
         //先查询presence里是不是正在呼叫的被叫是自己，如果是则不再发送消息
         val message = _messageDic(CallAction.Accept)
         messageManager?.sendMessage(remoteUserId.toString(), fromUserId.toString(), message) { err ->
+            completion?.invoke(err)
         }
         _updateAndNotifyState(CallStateType.Connecting, CallReason.LocalAccepted, eventInfo = message)
         _notifyEvent(CallEvent.LocalAccepted)
@@ -859,14 +867,18 @@ class CallApiImpl constructor(
 
     override fun reject(remoteUserId: Int, reason: String?, completion: ((AGError?) -> Unit)?) {
         _reportMethod("reject", "remoteUserId=$remoteUserId&reason=$reason")
-        _reject(remoteUserId, reason)
+        _reject(remoteUserId, reason) { error, _ ->
+            completion?.invoke(error)
+        }
         _updateAndNotifyState(CallStateType.Prepared, CallReason.LocalRejected)
         _notifyEvent(CallEvent.LocalRejected)
     }
 
     override fun hangup(remoteUserId: Int, completion: ((AGError?) -> Unit)?) {
         _reportMethod("hangup", "remoteUserId=$remoteUserId")
-        _hangup(remoteUserId.toString())
+        _hangup(remoteUserId.toString()) { error, _ ->
+            completion?.invoke(error)
+        }
         _updateAndNotifyState(CallStateType.Prepared, CallReason.LocalHangup)
         _notifyEvent(CallEvent.LocalHangup)
     }

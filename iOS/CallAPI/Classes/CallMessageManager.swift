@@ -60,6 +60,9 @@ class CallMessageManager: NSObject {
     /// RTM是否已经登录
     private var isLoginedRTM: Bool = false
     
+    /// 是否外部传入的rtm，如果是则不需要手动logout
+    private var isExternalRTM: Bool = false
+    
     private var prepareConfig: PrepareConfig?
     
     // 消息id
@@ -80,6 +83,7 @@ class CallMessageManager: NSObject {
         if let rtmClient = config.rtmClient {
             //如果外部传入rtmclient，默认登陆成功
             self.isLoginedRTM = true
+            self.isExternalRTM = true
             self.rtmClient = rtmClient
         } else {
             self.rtmClient = _createRtmClient(delegate: nil)
@@ -234,6 +238,10 @@ extension CallMessageManager {
 extension CallMessageManager {
     func deinitialize() {
         rtmClient.removeDelegate(self)
+        if isExternalRTM == false {
+            rtmClient.logout()
+            rtmClient.destroy()
+        }
 //        callMessagePrint("unsubscribe[\(config.userId)]")
 //        rtmClient.unsubscribe("\(config.userId)")
 //        receiptsQueue.removeAll()

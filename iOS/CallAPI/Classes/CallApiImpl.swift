@@ -627,8 +627,8 @@ extension CallApiImpl {
                                           event: String,
                                           label: String,
                                           value: Int) {
-        guard let config = config/*, isChannelJoined, let rtcConnection = rtcConnection*/ else { return }
-        let ret = config.rtcEngine.sendCustomReportMessage(msgId, category: category, event: event, label: label, value: value)
+        guard let config = config, isChannelJoined, let rtcConnection = rtcConnection else { return }
+        let ret = config.rtcEngine.sendCustomReportMessageEx(msgId, category: category, event: event, label: label, value: value, connection: rtcConnection)
         #if DEBUG
         callPrint("sendCustomReportMessage[\(ret)] msgId:\(msgId) event:\(event) label:\(label) value: \(value)")
         #endif
@@ -880,6 +880,9 @@ extension CallApiImpl: CallApiProtocol {
         let message: [String: Any] = _callMessageDic(remoteUserId: remoteUserId, fromRoomId: fromRoomId)
         messageManager?.sendMessage(userId: "\(remoteUserId)", fromUserId: "\(fromUserId)", message: message) {[weak self] err in
             guard let self = self else { return }
+            defer {
+                completion?(err)
+            }
             if let error = err {
                 self._updateAndNotifyState(state: .prepared, stateReason: .messageFailed, eventReason: error.localizedDescription)
                 self._notifyEvent(event: .messageFailed, eventReason: err?.code == nil ? nil: "\(err?.code ?? 0)")
@@ -905,6 +908,7 @@ extension CallApiImpl: CallApiProtocol {
         }
         let message: [String: Any] = _messageDic(action: .cancelCall)
         messageManager?.sendMessage(userId: "\(userId)", fromUserId: "\(fromUserId)", message: message) { err in
+            completion?(err)
         }
         _updateAndNotifyState(state: .prepared, stateReason: .localCancel)
         _notifyEvent(event: .localCancel)
@@ -934,6 +938,7 @@ extension CallApiImpl: CallApiProtocol {
         
         let message: [String: Any] = _messageDic(action: .accept)
         messageManager?.sendMessage(userId: "\(remoteUserId)", fromUserId: "\(fromUserId)", message: message) { err in
+            completion?(err)
         }
         _updateAndNotifyState(state: .connecting, stateReason: .localAccepted, eventInfo: message)
         _notifyEvent(event: .localAccepted)
@@ -948,7 +953,9 @@ extension CallApiImpl: CallApiProtocol {
     //拒绝
     public func reject(remoteUserId: UInt, reason: String?, completion: ((NSError?) -> ())?) {
         _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)&reason=\(reason ?? "")")
-        _reject(remoteUserId: remoteUserId, reason: reason)
+        _reject(remoteUserId: remoteUserId, reason: reason) { err, _ in
+            completion?(err)
+        }
         _updateAndNotifyState(state: .prepared, stateReason: .localRejected)
         _notifyEvent(event: .localRejected)
     }
@@ -956,7 +963,9 @@ extension CallApiImpl: CallApiProtocol {
     //挂断
     public func hangup(remoteUserId: UInt, completion: ((NSError?) -> ())?) {
         _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)")
-        _hangup(remoteUserId: "\(remoteUserId)")
+        _hangup(remoteUserId: "\(remoteUserId)") { err, _ in
+            completion?(err)
+        }
         _updateAndNotifyState(state: .prepared, stateReason: .localHangup)
         _notifyEvent(event: .localHangup)
     }

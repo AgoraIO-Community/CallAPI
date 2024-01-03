@@ -13,8 +13,13 @@ This document mainly introduces how to quickly get through the CallAPI example p
 
 - Clone or download source code
 - Follow [The Account Document](https://docs.agora.io/en/video-calling/reference/manage-agora-account) to get the **App ID** and **App Certificate(if enable token)**.
-- **How to enable RTM**
-  > To try out this service, please contact sales@agora.io
+- How to enable RTM
+  > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config1.jpg)
+  > 
+  > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config2.jpg)
+  > 
+  > ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config3.jpg)
+  > 
 - <a id="custom-report">Activate Agora custom data reporting and analysis services</a>
   > This service is currently in the free beta period. If you need to try this service, please contact sales@agora.io
 - Fill in the AppId/Certificate in the [KeyCenter.swift](Example/CallAPI/KeyCenter.swift) of the project
