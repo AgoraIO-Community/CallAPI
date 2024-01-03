@@ -10,7 +10,6 @@ data class EnterRoomInfoModel (
     var showRoomId: String = "",
     var showUserId: String = "",
 
-    var tokenRoomId: String = "",
     var rtcToken: String = "",
     var rtmToken: String = "",
     var showRoomToken: String = "",
@@ -19,4 +18,7 @@ data class EnterRoomInfoModel (
     var dimensionsHeight: String = "",
     var frameRate: String = "",
     var bitrate: String = "0",
+
+    var autoAccept: Boolean = true,
+    var autoJoinRTC: Boolean = false
 ) : Serializable

@@ -3,20 +3,18 @@ package io.agora.onetoone
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.TextureView
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import es.dmoral.toasty.Toasty
 import io.agora.onetoone.*
 import io.agora.onetoone.databinding.ActivityLivingBinding
@@ -24,13 +22,16 @@ import io.agora.onetoone.http.HttpManager
 import io.agora.onetoone.model.EnterRoomInfoModel
 import io.agora.onetoone.utils.Ov1Logger
 import io.agora.onetoone.utils.PermissionHelp
-import io.agora.onetoone.utils.SPUtil
 import io.agora.rtc2.*
 import io.agora.rtc2.video.CameraCapturerConfiguration
 import io.agora.rtc2.video.VideoCanvas
 import io.agora.rtc2.video.VideoEncoderConfiguration
 import io.agora.rtm.*
 
+enum class CallRole(val value: Int) {
+    CALLEE(0),
+    CALLER(1)
+}
 class LivingActivity : AppCompatActivity(),  ICallApiListener {
 
     companion object {
@@ -62,24 +63,22 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
 
     private lateinit var rtcEngine: RtcEngine
 
-    val api = CallApiImpl(this)
+    private lateinit var api: CallApiImpl
 
     private var mCallState = CallStateType.Idle
     private var role: CallRole = CallRole.CALLEE         //角色
+    private lateinit var prepareConfig: PrepareConfig
     private var rtmClient: RtmClient? = null
 
-    private val mLeftCanvas by lazy { TextureView(this) }
-    private val mRightCanvas by lazy { TextureView(this) }
     private val mCenterCanvas by lazy { TextureView(this) }
 
-    private var isAutoCall = false
-
-    private var infoMaps = mutableListOf<Map<String, Int>>()
+    private var callDialog: AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(mViewBinding.root)
 
+        api = CallApiImpl(this)
         var isEncoderConfig = false
         val encoderConfig = VideoEncoderConfiguration()
         enterModel.dimensionsWidth.toIntOrNull()?.let {
@@ -101,10 +100,14 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         if (isEncoderConfig) {
             this.videoEncoderConfig = encoderConfig
         }
+        prepareConfig = PrepareConfig()
+        prepareConfig.rtcToken = enterModel.rtcToken
+        prepareConfig.rtmToken = enterModel.rtmToken
+        prepareConfig.autoJoinRTC = enterModel.autoJoinRTC
+        prepareConfig.autoAccept = enterModel.autoAccept
 
         role = if (enterModel.isBrodCaster) CallRole.CALLEE else CallRole.CALLER
 
-        readInfoMaps()
         rtcEngine = _createRtcEngine()
         setupView()
         updateCallState(CallStateType.Idle)
@@ -156,12 +159,13 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             CallStateType.Idle,
             CallStateType.Failed -> {
                 publishMedia(true)
+                if (mViewBinding.vCenter.indexOfChild(mCenterCanvas) == -1) {
+                    mViewBinding.vCenter.addView(mCenterCanvas)
+                }
                 setupCanvas(mCenterCanvas)
-                mViewBinding.vCenter.removeAllViews()
-                mViewBinding.vCenter.addView(mCenterCanvas)
+                mCenterCanvas.isVisible = true
                 mViewBinding.vLeft.isVisible = false
                 mViewBinding.vRight.isVisible = false
-                mCenterCanvas.isVisible = true
                 mViewBinding.btnCall.isVisible = !enterModel.isBrodCaster
                 mViewBinding.btnHangUp.isVisible = false
             }
@@ -196,47 +200,23 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         val config = CallConfig(
             appId = BuildConfig.AG_APP_ID,
             userId = enterModel.currentUid.toInt(),
-            userExtension = null,
             rtcEngine = _createRtcEngine(),
-            rtmClient = rtmClient,
-            mode = CallMode.ShowTo1v1,
-            role = role,
-            localView = mLeftCanvas,
-            remoteView = mRightCanvas,
-            autoAccept = true
+            rtmClient = rtmClient
         )
+        api.initialize(config)
+
+        prepareConfig.roomId = enterModel.currentUid
         if (role == CallRole.CALLER) {
-            config.localView = mRightCanvas
-            config.remoteView = mLeftCanvas
+            prepareConfig.localView = mViewBinding.vRight
+            prepareConfig.remoteView = mViewBinding.vLeft
         } else {
-            config.localView = mLeftCanvas
-            config.remoteView = mRightCanvas
-        }
-
-        val tokenConfig = CallTokenConfig()
-        tokenConfig.roomId = enterModel.tokenRoomId
-        tokenConfig.rtcToken = enterModel.rtcToken
-        tokenConfig.rtmToken = enterModel.rtmToken
-
-        // 如果是被叫会隐式调用prepare
-        api.initialize(config, tokenConfig) { error ->
-            if (error != null) {
-                completion?.invoke(false)
-                return@initialize
-            }
-            if (enterModel.isBrodCaster) {
-                completion?.invoke(true)
-            }
-            // 如果是主叫并且想加快呼叫，可以在init完成之后调用prepare
-            val prepareConfig = PrepareConfig.callerConfig()
-            prepareConfig.autoLoginRTM = true
-            prepareConfig.autoSubscribeRTM = true
-//            prepareConfig.autoJoinRTC = true
-            api.prepareForCall(prepareConfig) { err ->
-                completion?.invoke(err == null)
-            }
+            prepareConfig.localView = mViewBinding.vLeft
+            prepareConfig.remoteView = mViewBinding.vRight
         }
         api.addListener(this)
+        api.prepareForCall(prepareConfig){ error ->
+            completion?.invoke(error == null)
+        }
     }
 
     private fun _createRtcEngine(): RtcEngineEx {
@@ -331,12 +311,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
         )
-        mLeftCanvas.layoutParams = layoutParams
-        mRightCanvas.layoutParams = layoutParams
         mCenterCanvas.layoutParams = layoutParams
-        mViewBinding.vLeft.addView(mLeftCanvas)
-        mViewBinding.vRight.addView(mRightCanvas)
-        mViewBinding.vCenter.addView(mCenterCanvas)
 
         mViewBinding.tvChannelName.text = getString(R.string.app_current_channel, enterModel.showRoomId)
         mViewBinding.btnQuitChannel.setOnClickListener {
@@ -352,9 +327,6 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         if (enterModel.isBrodCaster) {
             mViewBinding.btnCall.visibility = View.INVISIBLE
             mViewBinding.btnHangUp.visibility = View.INVISIBLE
-            mViewBinding.btnAutoCall.visibility = View.INVISIBLE
-            mViewBinding.btnShowAvgTs.visibility = View.INVISIBLE
-            mViewBinding.btnReset.visibility = View.INVISIBLE
         }
         var btnCallThrottling = false
         mViewBinding.btnCall.setOnClickListener {
@@ -371,25 +343,6 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
                 btnHangUpThrottling = true
                 it.postDelayed({ btnHangUpThrottling = false }, 1000L)
             }
-        }
-        mViewBinding.btnAutoCall.setOnClickListener {
-            it.isSelected = !it.isSelected
-            isAutoCall = it.isSelected
-            if (isAutoCall) {
-                mViewBinding.btnAutoCall.text = "自动呼叫：开"
-                if (mCallState == CallStateType.Prepared) {
-                    callAction()
-                }
-            } else {
-                mViewBinding.btnAutoCall.text = "自动呼叫：关"
-            }
-        }
-        mViewBinding.btnShowAvgTs.setOnClickListener {
-            showAvgTs()
-        }
-        mViewBinding.btnReset.setOnClickListener {
-            infoMaps.clear()
-            saveInfoMaps()
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(mViewBinding.root) { _, insets ->
@@ -409,27 +362,6 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         WindowCompat.setDecorFitsSystemWindows(window, false)
     }
 
-    private fun showAvgTs() {
-        val tsMap = mutableMapOf<String, Float>()
-        val count = infoMaps.count().toFloat()
-        Log.d(TAG, "showAvgTs: $infoMaps")
-        infoMaps.forEach { infoMap ->
-            infoMap.forEach { e ->
-                val oldValue = (tsMap[e.key] ?: 0).toFloat()
-                tsMap[e.key] = (oldValue + e.value) / count
-            }
-        }
-        var toastStr = "[$count]次呼叫平均耗时\n"
-        val tsArray = mutableListOf<String>()
-        tsMap.forEach { e ->
-            tsArray.add("${e.key}: ${e.value} ms\n")
-        }
-        tsArray.forEach { str ->
-            toastStr += str
-        }
-        Toasty.normal(this, toastStr, Toast.LENGTH_SHORT).show()
-    }
-
     private fun closeAction() {
         api.deinitialize {
             api.removeListener(this)
@@ -443,12 +375,14 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
     }
 
     private fun callAction() {
-        api.call(enterModel.showRoomId, enterModel.showUserId.toInt()) { error ->
+        publishMedia(false)
+        api.call(enterModel.showUserId.toInt()) { error ->
         }
     }
 
     private fun hangupAction() {
-        api.hangup(connectedUserId ?: 0) {
+        val connectedUserId = connectedUserId ?: return
+        api.hangup(connectedUserId) {
         }
     }
 
@@ -461,28 +395,70 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         state: CallStateType,
         stateReason: CallReason,
         eventReason: String,
-        elapsed: Long,
         eventInfo: Map<String, Any>
     ) {
         val publisher = eventInfo.getOrDefault(CallApiImpl.kPublisher, enterModel.currentUid)
-        if (publisher != enterModel.currentUid) {return}
+        if (publisher != enterModel.currentUid) {
+            when (state) {
+                CallStateType.Calling, CallStateType.Connecting, CallStateType.Connected -> {
+                    setupCanvas(null)
+                }
+                else -> {
+                    setupCanvas(mCenterCanvas)
+                }
+            }
+            return
+        }
+        Log.d(TAG, "onCallStateChanged state: ${state.value}, stateReason: ${stateReason.value}, eventReason: $eventReason, eventInfo: $eventInfo publisher: $publisher / ${enterModel.currentUid}")
         updateCallState(state)
 
         when (state) {
+            CallStateType.Calling -> {
+                val fromUserId = eventInfo[CallApiImpl.kFromUserId] as? Int ?: 0
+                val toUserId = eventInfo[CallApiImpl.kRemoteUserId] as? Int ?: 0
+                if (connectedUserId != null && connectedUserId != fromUserId) {
+                    api.reject(fromUserId, "already calling") {
+                    }
+                    return
+                }
+                // 触发状态的用户是自己才处理
+                if (enterModel.currentUid.toIntOrNull() == toUserId) {
+                    connectedUserId = fromUserId
+                    if (!prepareConfig.autoAccept) {
+                        callDialog = AlertDialog.Builder(this)
+                            .setTitle("提示")
+                            .setMessage("用户 $fromUserId 邀请您1对1通话")
+                            .setPositiveButton("同意") { p0, p1 ->
+                                api.accept(fromUserId) { err ->
+                                }
+                            }.setNegativeButton("拒绝") { p0, p1 ->
+                                api.reject(fromUserId, "reject by user") { err ->
+                                }
+                            }.create()
+                        callDialog?.setCancelable(false)
+                        callDialog?.show()
+                    }
+                } else if (enterModel.currentUid.toIntOrNull() == fromUserId) {
+                    connectedUserId = toUserId
+                    if (!prepareConfig.autoAccept) {
+                        callDialog = AlertDialog.Builder(this)
+                            .setTitle("提示")
+                            .setMessage("呼叫用户 $toUserId 中")
+                            .setNegativeButton("取消") { p0, p1 ->
+                                api.cancelCall { err ->
+                                }
+                            }.create()
+                        callDialog?.setCancelable(false)
+                        callDialog?.show()
+                    }
+                }
+            }
             CallStateType.Connected -> {
-                connectedUserId = eventInfo[CallApiImpl.kFromUserId] as? Int
-                val infoMap = eventInfo[CallApiImpl.kDebugInfoMap] as? Map<String, Int>
-                if (infoMap != null && infoMap.keys.count() == 6) {
-                    infoMaps.add(infoMap.toMap())
-                    saveInfoMaps()
-                }
-                Toasty.normal(this, "通话开始${eventInfo.getOrDefault(CallApiImpl.kDebugInfo, "")}", Toast.LENGTH_LONG).show()
+                callDialog?.dismiss()
+                callDialog = null
 
-                if (isAutoCall) {
-                    Handler().postDelayed({
-                        hangupAction()
-                    }, 1000)
-                }
+                Toasty.normal(this, "通话开始${eventInfo.getOrDefault(CallApiImpl.kCostTimeMap, "")}", Toast.LENGTH_LONG).show()
+
                 //setup configuration after join channel
                 videoEncoderConfig?.let { config ->
                     rtcEngine.setVideoEncoderConfiguration(config)
@@ -495,13 +471,9 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             }
             CallStateType.Prepared -> {
                 when (stateReason) {
-                    CallReason.LocalHangup, CallReason.RemoteHangup -> {
+                    CallReason.LocalHangup,
+                    CallReason.RemoteHangup -> {
                         Toasty.normal(this, "通话结束", Toast.LENGTH_SHORT).show()
-                        if (isAutoCall) {
-                            Handler().postDelayed({
-                                callAction()
-                            }, 1000)
-                        }
                     }
                     CallReason.LocalRejected,
                     CallReason.RemoteRejected -> {
@@ -512,6 +484,9 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
                     }
                     else -> {}
                 }
+                connectedUserId = null
+                callDialog?.dismiss()
+                callDialog = null
             }
             CallStateType.Failed -> {
                 Toasty.normal(this, eventReason, Toast.LENGTH_LONG).show()
@@ -521,8 +496,8 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         }
     }
 
-    override fun onCallEventChanged(event: CallEvent, elapsed: Long) {
-        Log.d(TAG, "onCallEventChanged: ${event}, elapsed: $elapsed")
+    override fun onCallEventChanged(event: CallEvent) {
+        Log.d(TAG, "onCallEventChanged: $event")
         when(event) {
             CallEvent.RemoteLeave -> {
                 hangupAction()
@@ -531,32 +506,28 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
     }
 
     override fun tokenPrivilegeWillExpire() {
-        //更新自己的token
-        val tokenConfig = CallTokenConfig()
-        tokenConfig.roomId = enterModel.showRoomId
+        var rtcTokenTemp = ""
+        var rtmTokenTemp = ""
         val runnable = Runnable {
-            if (tokenConfig.rtcToken.isNotEmpty() && tokenConfig.rtmToken.isNotEmpty()) {
-                api.renewToken(tokenConfig)
-                //主播用万能token自己更新主播频道token
+            if (rtcTokenTemp.isNotEmpty() && rtmTokenTemp.isNotEmpty()) {
+                api.renewToken(rtcTokenTemp, rtmTokenTemp)
                 if (enterModel.isBrodCaster) {
                     rtcEngine.renewToken(enterModel.showRoomToken)
                 }
             }
         }
-        val channelName = if (enterModel.isBrodCaster) "" else tokenConfig.roomId
-        HttpManager.token007(channelName, enterModel.currentUid, 1) { rtcToken ->
+        HttpManager.token007("", enterModel.currentUid, 1) { rtcToken ->
             runOnUiThread {
                 if (rtcToken != null) {
-                    tokenConfig.rtcToken = rtcToken
-                    enterModel.showRoomToken = rtcToken
+                    rtcTokenTemp = rtcToken
                     runnable.run()
                 }
             }
         }
-        HttpManager.token007(channelName, enterModel.currentUid, 2) { rtmToken ->
+        HttpManager.token007("", enterModel.currentUid, 2) { rtmToken ->
             runOnUiThread {
                 if (rtmToken != null) {
-                    tokenConfig.rtmToken = rtmToken
+                    rtmTokenTemp = rtmToken
                     runnable.run()
                 }
             }
@@ -574,21 +545,11 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         }
     }
 
-    override fun callDebugInfo(message: String) {
-        Ov1Logger.d(TAG, message)
-    }
-
-    override fun callDebugWarning(message: String) {
-        Ov1Logger.e(TAG, message)
-    }
-    private fun saveInfoMaps() {
-        val jsonStr = Gson().toJson(infoMaps)
-        SPUtil.putString(kMapListSave, jsonStr)
-    }
-    private fun readInfoMaps() {
-        val content = SPUtil.getString(kMapListSave, "[]")
-        val listType = object : TypeToken<List<Map<String, Int>>>() {}.type
-        val list = Gson().fromJson<MutableList<Map<String, Int>>?>(content, listType)
-        infoMaps = list.toMutableList()
+    override fun callDebugInfo(message: String, logLevel: CallLogLevel) {
+        when (logLevel) {
+            CallLogLevel.Normal -> Ov1Logger.d(TAG, message)
+            CallLogLevel.Warning -> Ov1Logger.w(TAG, message)
+            CallLogLevel.Error -> Ov1Logger.e(TAG, message)
+        }
     }
 }

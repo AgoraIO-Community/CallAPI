@@ -163,6 +163,24 @@ class ViewController: UIViewController {
         }
     }
     
+    private var isAutoJoinRTC: Bool {
+        get {
+            let val = UserDefaults.standard.bool(forKey: "autoJoinRTC")
+            return val
+        } set {
+            UserDefaults.standard.set(newValue, forKey: "autoJoinRTC")
+        }
+    }
+    
+    private var isAutoAccept: Bool {
+        get {
+            let val = UserDefaults.standard.bool(forKey: "autoAccept")
+            return val
+        } set {
+            UserDefaults.standard.set(newValue, forKey: "autoAccept")
+        }
+    }
+    
     private lazy var userLabel: UILabel = {
         let label = UILabel()
         label.text = "当前的用户id"
@@ -239,6 +257,34 @@ class ViewController: UIViewController {
         return tf
     }()
     
+    private lazy var autoAcceptLabel: UILabel = {
+        let label = UILabel()
+        label.text = "收到呼叫自动接受"
+        label.textColor = .black
+        return label
+    }()
+    
+    private lazy var autoAcceptSwitch: UISwitch = {
+        let uiSwitch = UISwitch()
+        uiSwitch.isOn = isAutoAccept
+        uiSwitch.addTarget(self, action: #selector(onAutoAcceptAction), for: .touchUpInside)
+        return uiSwitch
+    }()
+    
+    private lazy var autoJointRTCLabel: UILabel = {
+        let label = UILabel()
+        label.text = "提前加入RTC频道"
+        label.textColor = .black
+        return label
+    }()
+    
+    private lazy var autoJoinRTCSwitch: UISwitch = {
+        let uiSwitch = UISwitch()
+        uiSwitch.addTarget(self, action: #selector(onAutoJoinAction), for: .touchUpInside)
+        uiSwitch.isOn = isAutoJoinRTC
+        return uiSwitch
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -260,6 +306,12 @@ class ViewController: UIViewController {
         view.addSubview(dimensionsLabel)
         view.addSubview(dimensionsWTf)
         view.addSubview(dimensionsHTf)
+        
+        view.addSubview(autoAcceptLabel)
+        view.addSubview(autoAcceptSwitch)
+        
+        view.addSubview(autoJointRTCLabel)
+        view.addSubview(autoJoinRTCSwitch)
         
         view.addSubview(enterButton1)
         view.addSubview(enterButton2)
@@ -306,6 +358,27 @@ class ViewController: UIViewController {
         dimensionsLabel.frame = CGRect(x: 10, y: topEdge, width: dimensionsLabel.frame.width, height: 40)
         dimensionsWTf.frame = CGRect(x: dimensionsLabel.frame.size.width + dimensionsLabel.frame.origin.x + 10, y: topEdge, width: 80, height: 40)
         dimensionsHTf.frame = CGRect(x: dimensionsWTf.frame.size.width + dimensionsWTf.frame.origin.x + 10, y: topEdge, width: 80, height: 40)
+        
+        autoAcceptLabel.sizeToFit()
+        autoAcceptLabel.frame = CGRect(x: 10, 
+                                       y: dimensionsLabel.frame.origin.y + dimensionsLabel.frame.height + 10,
+                                       width: autoAcceptLabel.frame.width,
+                                       height: 40)
+        autoAcceptSwitch.frame = CGRect(x: autoAcceptLabel.frame.origin.x + autoAcceptLabel.frame.width + 10,
+                                        y: autoAcceptLabel.frame.origin.y,
+                                        width: 60,
+                                        height: 40)
+        
+        
+        autoJointRTCLabel.sizeToFit()
+        autoJointRTCLabel.frame = CGRect(x: 10,
+                                         y: autoAcceptLabel.frame.origin.y + autoAcceptLabel.frame.height + 10,
+                                         width: autoJointRTCLabel.frame.width,
+                                         height: 40)
+        autoJoinRTCSwitch.frame = CGRect(x: autoJointRTCLabel.frame.origin.x + autoJointRTCLabel.frame.width + 10,
+                                         y: autoJointRTCLabel.frame.origin.y,
+                                         width: 60,
+                                         height: 40)
     }
     
     @objc func currentUserChanged() {
@@ -337,6 +410,14 @@ class ViewController: UIViewController {
         dimW = Int(dimensionsWTf.text ?? "") ?? 0
     }
     
+    @objc func onAutoAcceptAction() {
+        self.isAutoAccept = autoAcceptSwitch.isOn
+    }
+    
+    @objc func onAutoJoinAction() {
+        self.isAutoJoinRTC = autoJoinRTCSwitch.isOn
+    }
+    
     @objc func tapView() {
         view.endEditing(true)
     }
@@ -357,53 +438,43 @@ class ViewController: UIViewController {
         
         view.isUserInteractionEnabled = false
         
-        let vc = ShowTo1v1RoomViewController()
-        vc.modalPresentationStyle = .fullScreen
-        vc.role = role
-        vc.currentUid = currentUserId
-        vc.showRoomId = vc.role == .caller ? "\(callUserId)" : "\(currentUserId)"
-        vc.showUserId = vc.role == .callee ? currentUserId : callUserId
-        vc.videoEncoderConfig = videoEncoderConfig
-        
-        let tokenConfig = CallTokenConfig()
-        tokenConfig.roomId = "\(currentUserId)"
-        //被叫(房主)采用万能token
-        let channelName = vc.role == .callee ? "" : tokenConfig.roomId
-        NetworkManager.shared.generateTokens(channelName: channelName,
+        let prepareConfig = PrepareConfig()
+        prepareConfig.autoAccept = autoAcceptSwitch.isOn
+        prepareConfig.autoJoinRTC = autoJoinRTCSwitch.isOn
+        NetworkManager.shared.generateTokens(channelName: "",
                                              uid: "\(currentUserId)",
                                              tokenGeneratorType: .token007,
                                              tokenTypes: [.rtc, .rtm]) {[weak self] tokens in
             guard let self = self else {return}
+            self.view.isUserInteractionEnabled = true
             guard tokens.count == 2 else {
                 print("generateTokens fail")
-                self.view.isUserInteractionEnabled = true
                 return
             }
-            tokenConfig.rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
-            tokenConfig.rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
+            prepareConfig.rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
+            prepareConfig.rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
             
-            vc.tokenConfig = tokenConfig
+            let targetUserId = role == .caller ? "\(callUserId)" : "\(currentUserId)"
             
-            NetworkManager.shared.generateToken(channelName: vc.showRoomId, uid: "\(self.currentUserId)", tokenType: .token007, type: .rtc) { token in
-                self.view.isUserInteractionEnabled = true
-                vc.showRoomToken = token!
-                self.present(vc, animated: true)
-            }
+            let vc = ShowTo1v1RoomViewController(showRoomId: "\(targetUserId)_live",
+                                                 showUserId: role == .callee ? currentUserId : callUserId,
+                                                 showRoomToken: prepareConfig.rtcToken,
+                                                 currentUid: currentUserId,
+                                                 role: role,
+                                                 prepareConfig: prepareConfig)
+            vc.modalPresentationStyle = .fullScreen
+            vc.videoEncoderConfig = videoEncoderConfig
+            self.present(vc, animated: true)
         }
     }
     
     @objc func enterPure1v1(_ button: UIButton) {
         view.isUserInteractionEnabled = false
         
-        let vc = Pure1v1RoomViewController()
-        vc.modalPresentationStyle = .fullScreen
-        vc.currentUid = currentUserId
-        vc.videoEncoderConfig = videoEncoderConfig
-        
-        let tokenConfig = CallTokenConfig()
-        tokenConfig.roomId = "\(currentUserId)"
-        let channelName = tokenConfig.roomId
-        NetworkManager.shared.generateTokens(channelName: channelName,
+        let prepareConfig = PrepareConfig()
+        prepareConfig.autoAccept = autoAcceptSwitch.isOn
+        prepareConfig.autoJoinRTC = autoJoinRTCSwitch.isOn
+        NetworkManager.shared.generateTokens(channelName: "",
                                              uid: "\(currentUserId)",
                                              tokenGeneratorType: .token007,
                                              tokenTypes: [.rtc, .rtm]) {[weak self] tokens in
@@ -413,10 +484,12 @@ class ViewController: UIViewController {
                 self.view.isUserInteractionEnabled = true
                 return
             }
-            tokenConfig.rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
-            tokenConfig.rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
+            prepareConfig.rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
+            prepareConfig.rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
             
-            vc.tokenConfig = tokenConfig
+            let vc = Pure1v1RoomViewController(currentUid: currentUserId, prepareConfig: prepareConfig)
+            vc.modalPresentationStyle = .fullScreen
+            vc.videoEncoderConfig = videoEncoderConfig
             self.view.isUserInteractionEnabled = true
             self.present(vc, animated: true)
         }

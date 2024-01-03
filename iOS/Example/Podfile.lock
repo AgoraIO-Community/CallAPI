@@ -1,9 +1,9 @@
 PODS:
   - AgoraRtcEngine_Special_iOS (4.1.1.17)
-  - AgoraRtm_iOS (2.1.7)
+  - AgoraRtm_iOS (2.1.8)
   - CallAPI (0.3.0):
     - AgoraRtcEngine_Special_iOS (= 4.1.1.17)
-    - AgoraRtm_iOS (= 2.1.7)
+    - AgoraRtm_iOS (= 2.1.8)
   - YYCategories (1.0.4):
     - YYCategories/no-arc (= 1.0.4)
   - YYCategories/no-arc (1.0.4)
@@ -24,8 +24,8 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   AgoraRtcEngine_Special_iOS: 5b3106aad2d76959393cc6497affe83dbdc926a0
-  AgoraRtm_iOS: cd26cf8a377a79934864d37e184866dbd1430eaf
-  CallAPI: c6ca611aaa56f268713e261513340c7b7a4663df
+  AgoraRtm_iOS: 9fb76b5f71900d012aaed6c033e235d6fd201ed9
+  CallAPI: 698b2c4681e162d560f5a2328dc02956b82987ca
   YYCategories: 6bcd4314c6661a561410dce4a793379ebd306abd
 
 PODFILE CHECKSUM: 001572e2b62fba2a376de5284b36202d3cebc8fd

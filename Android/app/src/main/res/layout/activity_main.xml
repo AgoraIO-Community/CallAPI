@@ -234,6 +234,25 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <com.google.android.material.checkbox.MaterialCheckBox
+        android:id="@+id/cbAutoAccept"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="收到呼叫自动接受"
+        android:checked="true"
+        app:layout_constraintTop_toBottomOf="@+id/layoutFrameRate"
+        app:layout_constraintStart_toStartOf="parent"
+        />
+
+    <com.google.android.material.checkbox.MaterialCheckBox
+        android:id="@+id/cbJoinRTC"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="提前加入RTC频道"
+        app:layout_constraintTop_toBottomOf="@+id/cbAutoAccept"
+        app:layout_constraintStart_toStartOf="parent"
+        />
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnEnter"
         android:layout_width="match_parent"

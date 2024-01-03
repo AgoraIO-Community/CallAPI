@@ -99,7 +99,7 @@ class MainActivity : AppCompatActivity() {
         SPUtil.putString(kDimensionsHeight, mViewBinding.etResolutionHeight.text.toString())
         SPUtil.putString(kFrameRate, mViewBinding.etFps.text.toString())
 
-        val showRoomId = if (isBrodCaster) currentUserId else remoteUserId
+        val showRoomId = "${if (isBrodCaster) currentUserId else remoteUserId}_live"
         val showUserId = if (isBrodCaster) currentUserId else remoteUserId
 
         val enterModel = EnterRoomInfoModel(
@@ -112,44 +112,42 @@ class MainActivity : AppCompatActivity() {
         enterModel.dimensionsHeight = mViewBinding.etResolutionHeight.text.toString()
         enterModel.frameRate = mViewBinding.etFps.text.toString()
 
+        enterModel.autoAccept = mViewBinding.cbAutoAccept.isChecked
+        enterModel.autoJoinRTC = mViewBinding.cbJoinRTC.isChecked
+
         val runnable = Runnable {
-            if (enterModel.rtcToken.isNotEmpty() && enterModel.rtmToken.isNotEmpty() && enterModel.showRoomToken.isNotEmpty()) {
-                if (isShowMode) {
+            if (isShowMode) {
+                if (enterModel.rtcToken.isNotEmpty() && enterModel.rtmToken.isNotEmpty() && enterModel.showRoomToken.isNotEmpty()) {
                     LivingActivity.launch(this, enterModel)
-                } else {
+                }
+            } else {
+                if (enterModel.rtcToken.isNotEmpty() && enterModel.rtmToken.isNotEmpty()) {
                     Pure1v1LivingActivity.launch(this, enterModel)
                 }
             }
         }
-        enterModel.tokenRoomId = currentUserId
-        val channelName = if (isBrodCaster) "" else enterModel.tokenRoomId
-        HttpManager.token007(channelName, currentUserId, 1) { rtcToken ->
+        HttpManager.token007("", currentUserId, 1) { rtcToken ->
             runOnUiThread {
                 if (rtcToken != null) {
-                    enterModel.rtcToken = rtcToken
+                    if (isShowMode) {
+                        enterModel.rtcToken = rtcToken
+                        enterModel.showRoomToken = rtcToken
+                    } else {
+                        enterModel.rtcToken = rtcToken
+                    }
                     runnable.run()
                 } else {
                     Toasty.normal(this, "get RTC token failed", Toast.LENGTH_SHORT).show()
                 }
             }
         }
-        HttpManager.token007(channelName, currentUserId, 2) { rtmToken ->
+        HttpManager.token007("", currentUserId, 2) { rtmToken ->
             runOnUiThread {
                 if (rtmToken != null) {
                     enterModel.rtmToken = rtmToken
                     runnable.run()
                 } else {
                     Toasty.normal(this, "get RTM token failed", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-        HttpManager.token007(showRoomId, currentUserId, 1) { rtcToken ->
-            runOnUiThread {
-                if (rtcToken != null) {
-                    enterModel.showRoomToken = rtcToken
-                    runnable.run()
-                } else {
-                    Toasty.normal(this, "get show room token failed", Toast.LENGTH_SHORT).show()
                 }
             }
         }
