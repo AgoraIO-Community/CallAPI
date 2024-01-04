@@ -81,7 +81,7 @@ This document mainly introduces how to quickly get through the CallAPI example p
 
 #### 3.5.4 Sequence Diagram
 - 
- ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_solution_1v1.en.png){width=600px}
+ ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_solution_1v1.en.png)
 
 ### 3.6 Metrics that affect call speed
   - Caller
@@ -247,7 +247,7 @@ This document mainly introduces how to quickly get through the CallAPI example p
 
 ## 6. Sequence Diagram for Scenario Calling
 ### 6.1 1v1 scenario
-![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_pure1v1.en.png){width=600px}
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_pure1v1.en.png)
 
 ### 6.2 Live to 1v1 scenario
-![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_showto1v1.en.png){width=600px}
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_showto1v1.en.png)

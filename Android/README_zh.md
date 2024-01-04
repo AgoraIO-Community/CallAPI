@@ -99,7 +99,7 @@ AG_APP_CERTIFICATE=
 
 #### 3.5.4 时序图
 - 
-![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_solution_1v1.zh.png){width=600px}
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_solution_1v1.zh.png)
 
 ### 3.6 影响通话速度的指标
 - 主叫
@@ -260,7 +260,7 @@ AG_APP_CERTIFICATE=
 
 ## 6. 场景调用时序图
 ### 6.1 1v1场景
-![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_pure1v1.zh.png){width=600px}
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_pure1v1.zh.png)
 
 ### 6.2 秀场转1v1场景
-![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_showto1v1.zh.png){width=600px}
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_showto1v1.zh.png)

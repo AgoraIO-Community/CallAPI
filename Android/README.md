@@ -78,7 +78,7 @@ AG_APP_CERTIFICATE=
 
 #### 3.5.4 Sequence Diagram
 - 
-![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_solution_1v1.en.png){width=600px}
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_solution_1v1.en.png)
 
 ### 3.6 Metrics that affect call speed
 - Caller:
@@ -237,7 +237,7 @@ AG_APP_CERTIFICATE=
 
 ## 6. Scenario Invocation Sequence Diagram
 ### 6.1 1v1 Scenario
-![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_pure1v1.en.png){width=600px}
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_pure1v1.en.png)
 
 ### 6.2 Live Broadcasting to 1v1 Scenario
-![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_showto1v1.en.png){width=600px}
+![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_showto1v1.en.png)
