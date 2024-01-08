@@ -26,6 +26,7 @@ class ShowTo1v1RoomViewController: UIViewController {
     private var prepareConfig: PrepareConfig
     var videoEncoderConfig: AgoraVideoEncoderConfiguration?
     private var connectedUserId: UInt?
+    private var connectedRoomId: String?
     
     private var rtmClient: AgoraRtmClientKit?
     
@@ -64,11 +65,14 @@ class ShowTo1v1RoomViewController: UIViewController {
                 hangupButton.isHidden = false
                 callButton.isHidden = true
             case .connected:
-                self.leftView.isHidden = false
+                muteAudioButton.isSelected = false
+                muteAudioButton.isHidden = false
+                leftView.isHidden = false
                 hangupButton.isHidden = false
             case .prepared, .idle, .failed:
                 self.publishMedia(true)
                 self.setupCanvas(self.showView)
+                muteAudioButton.isHidden = true
                 self.leftView.isHidden = true
                 self.rightView.isHidden = true
                 self.callButton.isHidden = isBroadcaster
@@ -92,7 +96,7 @@ class ShowTo1v1RoomViewController: UIViewController {
         let engine = AgoraRtcEngineKit.sharedEngine(with: config,
                                                     delegate: self)
         
-        engine.setClientRole(.broadcaster)
+        engine.setClientRole(isBroadcaster ? .broadcaster : .audience)
         return engine
     }
     
@@ -127,6 +131,14 @@ class ShowTo1v1RoomViewController: UIViewController {
         return btn
     }()
     
+    private lazy var muteAudioButton: UIButton = {
+        let btn = UIButton()
+        btn.addTarget(self, action: #selector(muteAudioAction), for: .touchUpInside)
+        btn.setImage(UIImage(named: "mic_unmute"), for: .normal)
+        btn.setImage(UIImage(named: "mic_mute"), for: .selected)
+        return btn
+    }()
+    
     private lazy var canvas: AgoraRtcVideoCanvas = {
         let canvas = AgoraRtcVideoCanvas()
         canvas.mirrorMode = .disabled
@@ -158,6 +170,7 @@ class ShowTo1v1RoomViewController: UIViewController {
         view.addSubview(closeButton)
         view.addSubview(callButton)
         view.addSubview(hangupButton)
+        view.addSubview(muteAudioButton)
         
         roomInfoLabel.text = " 房间Id: \(showRoomId) "
         roomInfoLabel.sizeToFit()
@@ -167,6 +180,11 @@ class ShowTo1v1RoomViewController: UIViewController {
         let top = view.frame.height - UIDevice.current.safeDistanceBottom - 40
         callButton.frame = CGRect(x: view.frame.width - 50, y: top, width: 40, height: 40)
         hangupButton.frame = callButton.frame
+        
+        muteAudioButton.frame = CGRect(x: callButton.frame.origin.x - callButton.frame.size.width - 10,
+                                       y: top,
+                                       width: callButton.frame.width,
+                                       height: callButton.frame.height)
         
         leftView.frame = CGRect(x: 5, y: 50, width: view.frame.width / 2 - 10, height: view.frame.height / 2)
         rightView.frame = CGRect(x: view.frame.width / 2 + 5, y: 50, width: view.frame.width / 2 - 10, height: view.frame.height / 2)
@@ -288,7 +306,7 @@ extension ShowTo1v1RoomViewController {
         let config = CallConfig()
         config.appId = KeyCenter.AppId
         config.userId = currentUid
-        config.rtcEngine = _createRtcEngine()
+        config.rtcEngine = rtcEngine
         config.rtmClient = rtmClient
         self.api.initialize(config: config)
         
@@ -332,6 +350,16 @@ extension ShowTo1v1RoomViewController {
         }
         api.hangup(remoteUserId: connectedUserId) { error in
         }
+    }
+    
+    @objc func muteAudioAction() {
+        guard let roomId = connectedRoomId else { return }
+        muteAudioButton.isSelected = !muteAudioButton.isSelected
+        
+        let connection = AgoraRtcConnection(channelId: roomId, localUid: Int(currentUid))
+        let mediaOptions = AgoraRtcChannelMediaOptions()
+        mediaOptions.publishMicrophoneTrack = muteAudioButton.isSelected == false ? true : false
+        rtcEngine.updateChannelEx(with: mediaOptions, connection: connection)
     }
 }
 
@@ -396,12 +424,14 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
         switch state {
         case .calling:
             let fromUserId = eventInfo[kFromUserId] as? UInt ?? 0
+            let fromRoomId = eventInfo[kFromRoomId] as? String ?? ""
             let toUserId = eventInfo[kRemoteUserId] as? UInt ?? 0
             if let connectedUserId = connectedUserId, connectedUserId != fromUserId {
                 api.reject(remoteUserId: fromUserId, reason: "already calling") { err in
                 }
                 return
             }
+            connectedRoomId = fromRoomId
             // 触发状态的用户是自己才处理
             if currentUid == toUserId {
                 connectedUserId = fromUserId
@@ -443,7 +473,6 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
             break
         case .connected:
             AUIAlertManager.hiddenView()
-//            connectedUserId = eventInfo[kFromUserId] as? UInt
             let costMap = eventInfo[kCostTimeMap] as? [String: Int] ?? [:]
             AUIToast.show(text: getCostInfo(map: costMap))
             
@@ -468,10 +497,13 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
                 break
             }
             connectedUserId = nil
+            connectedRoomId = nil
         case .failed:
             AUIAlertManager.hiddenView()
             AUIToast.show(text: eventReason, postion: .bottom)
             closeAction()
+            connectedUserId = nil
+            connectedRoomId = nil
         default:
             break
         }

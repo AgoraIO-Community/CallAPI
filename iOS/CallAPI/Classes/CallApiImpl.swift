@@ -502,6 +502,7 @@ extension CallApiImpl {
     /// - Parameter role: <#role description#>
     private func _updateRole(role: AgoraClientRole) {
         guard let config = self.config, let connection = rtcConnection else { return }
+        callPrint("_updateRole: \(role.rawValue)")
         
         //需要先开启音视频，使用enableLocalAudio而不是enableAudio，否则会导致外部mute的频道变成unmute
         if role == .broadcaster {
@@ -525,6 +526,7 @@ extension CallApiImpl {
     private func _updateAutoSubscribe(type: CallAutoSubscribeType) {
         guard let config = self.config else { return }
         guard let connection = rtcConnection else {return}
+        callPrint("_updateAutoSubscribe: \(type.rawValue)")
         let mediaOptions = AgoraRtcChannelMediaOptions()
         switch type {
         case .none:
@@ -631,7 +633,7 @@ extension CallApiImpl {
         guard let config = config, isChannelJoined, let rtcConnection = rtcConnection else { return }
         let ret = config.rtcEngine.sendCustomReportMessageEx(msgId, category: category, event: event, label: label, value: value, connection: rtcConnection)
         #if DEBUG
-        callPrint("sendCustomReportMessage[\(ret)] msgId:\(msgId) event:\(event) label:\(label) value: \(value)")
+//        callPrint("sendCustomReportMessage[\(ret)] msgId:\(msgId) event:\(event) label:\(label) value: \(value)")
         #endif
     }
 }
@@ -1075,8 +1077,8 @@ extension CallApiImpl: AgoraRtcEngineDelegate {
     }
 }
 
-#if DEBUG
 let formatter = DateFormatter()
+#if DEBUG
 func debugApiPrint(_ message: String) {
     formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
     let timeString = formatter.string(from: Date())
@@ -1086,13 +1088,15 @@ func debugApiPrint(_ message: String) {
 
 extension CallApiImpl {
     func callPrint(_ message: String, _ logLevel: CallLogLevel = .normal) {
-        #if DEBUG
-        debugApiPrint("[CallApi]\(message)")
-        #else
+//        #if DEBUG
+//        debugApiPrint("[CallApi]\(message)")
+//        #else
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+        let timeString = formatter.string(from: Date())
         for element in delegates.allObjects {
-            (element as? CallApiListenerProtocol)?.callDebugInfo?(message: message, logLevel: logLevel)
+            (element as? CallApiListenerProtocol)?.callDebugInfo?(message: "\(timeString) \(message)", logLevel: logLevel)
         }
-        #endif
+//        #endif
     }
     
     func callWarningPrint(_ message: String) {
