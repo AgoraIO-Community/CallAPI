@@ -88,6 +88,8 @@ class CallMessageManager: NSObject {
         } else {
             self.rtmClient = _createRtmClient(delegate: nil)
         }
+        // disable retry message
+        let _ = self.rtmClient.setParameters("{\"rtm.msg.tx_timeout\": 3000}")
         callMessagePrint("init-- CallMessageManager ")
     }
     
@@ -257,7 +259,7 @@ extension CallMessageManager {
         self.prepareConfig = prepareConfig
         rtmClient.addDelegate(self)
         let rtmToken = prepareConfig.rtmToken
-        if rtmToken.isEmpty {
+        if rtmToken.isEmpty, isExternalRTM == false {
             let reason = "RTM Token is Empty"
             completion?(NSError(domain: reason, code: -1))
             return
@@ -306,11 +308,9 @@ extension CallMessageManager {
     /// 发送频道消息
     /// - Parameters:
     ///   - userId: 往哪个用户发送消息
-    ///   - fromUserId: 哪个用户发送的，用来给对端发送回执
     ///   - message: 发送的消息字典
     ///   - completion: <#completion description#>
     public func sendMessage(userId: String,
-                            fromUserId: String,
                             message: [String: Any],
                             completion: ((NSError?)-> Void)?) {
         guard userId.count > 0, userId != "0" else {

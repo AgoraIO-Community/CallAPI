@@ -103,6 +103,7 @@ public class CallApiImpl: NSObject {
                 if let remoteView = prepareConfig?.remoteView {
                     tempRemoteCanvasView.frame = remoteView.bounds
                     remoteView.addSubview(tempRemoteCanvasView)
+                    tempRemoteCanvasView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
                 } else {
                     callWarningPrint("remote view not found in connected state!")
                 }
@@ -653,27 +654,17 @@ extension CallApiImpl {
     }
     
     private func _reject(remoteUserId: UInt, reason: String?, completion: ((NSError?, [String: Any]) -> ())? = nil) {
-        guard let fromUserId = config?.userId else {
-            completion?(NSError(domain: "reject fail! current userId or roomId is empty", code: -1), [:])
-            callWarningPrint("reject fail! current userId or roomId is empty")
-            return
-        }
         let message: [String: Any] = _messageDic(action: .reject)
 //        message[kRemoteUserId] = remoteUserId
 //        message[kFromRoomId] = fromRoomId
-        messageManager?.sendMessage(userId: "\(remoteUserId)", fromUserId: "\(fromUserId)", message: message) { error in
+        messageManager?.sendMessage(userId: "\(remoteUserId)", message: message) { error in
             completion?(error, message)
         }
     }
     
     private func _hangup(remoteUserId: String, completion: ((NSError?, [String: Any]) -> ())? = nil) {
-        guard let fromUserId = config?.userId else {
-            completion?(NSError(domain: "hangup fail! current userId is empty", code: -1), [:])
-            callWarningPrint("hangup fail! current userId is empty")
-            return
-        }
         let message: [String: Any] = _messageDic(action: .hangup)
-        messageManager?.sendMessage(userId: remoteUserId, fromUserId: "\(fromUserId)", message: message) { err in
+        messageManager?.sendMessage(userId: remoteUserId, message: message) { err in
             completion?(err, message)
         }
     }
@@ -856,7 +847,7 @@ extension CallApiImpl: CallApiProtocol {
     
     //呼叫
     public func call(remoteUserId: UInt, completion: ((NSError?) -> ())?) {
-        guard let fromRoomId = prepareConfig?.roomId, let fromUserId = config?.userId else {
+        guard let fromRoomId = prepareConfig?.roomId else {
             _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)")
             let reason = "call fail! config or roomId is empty"
             completion?(NSError(domain: reason, code: -1))
@@ -878,7 +869,7 @@ extension CallApiImpl: CallApiProtocol {
         _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)")
         
         let message: [String: Any] = _callMessageDic(remoteUserId: remoteUserId, fromRoomId: fromRoomId)
-        messageManager?.sendMessage(userId: "\(remoteUserId)", fromUserId: "\(fromUserId)", message: message) {[weak self] err in
+        messageManager?.sendMessage(userId: "\(remoteUserId)", message: message) {[weak self] err in
             guard let self = self else { return }
             defer {
                 completion?(err)
@@ -901,13 +892,13 @@ extension CallApiImpl: CallApiProtocol {
     //取消呼叫
     public func cancelCall(completion: ((NSError?) -> ())?) {
         _reportMethod(event: "\(#function)")
-        guard let userId = connectInfo.callingUserId, let fromUserId = config?.userId else {
+        guard let userId = connectInfo.callingUserId else {
             completion?(NSError(domain: "cancelCall fail! callingUserId is empty", code: -1))
             callWarningPrint("cancelCall fail! callingUserId is empty")
             return
         }
         let message: [String: Any] = _messageDic(action: .cancelCall)
-        messageManager?.sendMessage(userId: "\(userId)", fromUserId: "\(fromUserId)", message: message) { err in
+        messageManager?.sendMessage(userId: "\(userId)", message: message) { err in
             completion?(err)
         }
         _updateAndNotifyState(state: .prepared, stateReason: .localCancel)
@@ -917,7 +908,7 @@ extension CallApiImpl: CallApiProtocol {
     //接受
     public func accept(remoteUserId: UInt, completion: ((NSError?) -> ())?) {
         _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)")
-        guard let fromUserId = config?.userId, let roomId = connectInfo.callingRoomId else {
+        guard let roomId = connectInfo.callingRoomId else {
             let errReason = "accept fail! current userId or roomId is empty"
             completion?(NSError(domain: errReason, code: -1))
             callWarningPrint(errReason)
@@ -937,7 +928,7 @@ extension CallApiImpl: CallApiProtocol {
         }
         
         let message: [String: Any] = _messageDic(action: .accept)
-        messageManager?.sendMessage(userId: "\(remoteUserId)", fromUserId: "\(fromUserId)", message: message) { err in
+        messageManager?.sendMessage(userId: "\(remoteUserId)", message: message) { err in
             completion?(err)
         }
         _updateAndNotifyState(state: .connecting, stateReason: .localAccepted, eventInfo: message)
