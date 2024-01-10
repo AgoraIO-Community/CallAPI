@@ -70,6 +70,8 @@ class ShowTo1v1RoomViewController: UIViewController {
                 leftView.isHidden = false
                 hangupButton.isHidden = false
             case .prepared, .idle, .failed:
+                rtcEngine.enableLocalAudio(true)
+                rtcEngine.enableLocalVideo(true)
                 self.publishMedia(true)
                 self.setupCanvas(self.showView)
                 muteAudioButton.isHidden = true

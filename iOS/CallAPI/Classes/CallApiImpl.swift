@@ -43,13 +43,13 @@ enum CallAction: UInt {
     case hangup = 4
 }
 
-/// 被叫时加入RTC的策略
-enum CalleeJoinRTCType: Int {
-    case onCall   //在接到呼叫时即加入频道并推送音视频流，被叫时费用较高但出图更快
-    case accept   //在点击接受时才加入频道并推送音视频流，被叫时费用较低但出图较慢
+/// 被叫呼叫中加入RTC的策略
+enum CalleeJoinRTCPolicy: Int {
+    case calling    //在接到呼叫时即加入频道并推送音视频流，被叫时费用较高但出图更快
+    case accepted   //在点击接受后才加入频道并推送音视频流，被叫时费用较低但出图较慢
 }
 
-let calleeJoinRTCType: CalleeJoinRTCType = .onCall
+let calleeJoinRTCPolicy: CalleeJoinRTCPolicy = .calling
 
 public class CallApiImpl: NSObject {
     private let delegates:NSHashTable<AnyObject> = NSHashTable<AnyObject>.weakObjects()
@@ -294,7 +294,7 @@ extension CallApiImpl {
             return
         }
         
-        var enableLoginRTM = true
+        var enableLoginRtm = true
         switch state {
         case .calling, .connecting, .connected:
             let reason = "currently busy"
@@ -302,7 +302,7 @@ extension CallApiImpl {
             completion?(NSError(domain: reason, code: -1))
             return
         case .prepared:
-            enableLoginRTM = false
+            enableLoginRtm = false
         case.failed, .idle:
             break
         }
@@ -325,7 +325,7 @@ extension CallApiImpl {
         }
         
         //login rtm if need
-        if enableLoginRTM {
+        if enableLoginRtm {
             isPreparing = true
             let messageManager = CallMessageManager(config: config, delegate: self)
             self.messageManager = messageManager
@@ -436,14 +436,18 @@ extension CallApiImpl {
         if !_isCurrentRTCChannel(roomId: roomId) {
             _leaveRTC()
         }
-        if !_isChannelJoinedOrJoining() {
+        let isChannelJoinedOrJoining = _isChannelJoinedOrJoining()
+        if isChannelJoinedOrJoining {
+            completion(nil)
+        } else {
             _joinRTC(roomId: roomId){  error in
                 completion(error)
             }
-        } else {
-            completion(nil)
         }
-        _updateRole(role: role)
+        //没有加入频道又是观众的情况下，不需要update role，join默认就是观众和不推流
+        if isChannelJoinedOrJoining == true || role == .broadcaster {
+            _updateRole(role: role)
+        }
         _updateAutoSubscribe(type: subscribeType)
     }
     
@@ -493,8 +497,7 @@ extension CallApiImpl {
         }
         
         if ret != 0 {
-            callWarningPrint("join rtc fail: \(ret)!")
-            _notifyEvent(event: .rtcOccurError, eventReason: "\(ret)")
+            _notifyEvent(event: .rtcOccurError, eventReason: "join rtc fail: \(ret)!")
         }
     }
     
@@ -509,8 +512,8 @@ extension CallApiImpl {
             config.rtcEngine.enableLocalAudio(true)
             config.rtcEngine.enableLocalVideo(true)
         } else {
-//            config.rtcEngine.enableLocalAudio(false)
-//            config.rtcEngine.enableLocalVideo(false)
+            config.rtcEngine.enableLocalAudio(false)
+            config.rtcEngine.enableLocalVideo(false)
         }
         
         let mediaOptions = AgoraRtcChannelMediaOptions()
@@ -709,7 +712,7 @@ extension CallApiImpl {
             _notifyEvent(event: .onCalling)
         }
         
-        if calleeJoinRTCType == .onCall {
+        if calleeJoinRTCPolicy == .calling {
             _joinRTCAsBroadcaster(roomId: fromRoomId)
         }
         
@@ -873,16 +876,13 @@ extension CallApiImpl: CallApiProtocol {
         let message: [String: Any] = _callMessageDic(remoteUserId: remoteUserId, fromRoomId: fromRoomId)
         messageManager?.sendMessage(userId: "\(remoteUserId)", message: message) {[weak self] err in
             guard let self = self else { return }
-            defer {
-                completion?(err)
-            }
+            completion?(err)
             if let error = err {
-                self._updateAndNotifyState(state: .prepared, stateReason: .messageFailed, eventReason: error.localizedDescription)
-                self._notifyEvent(event: .messageFailed, eventReason: err?.code == nil ? nil: "\(err?.code ?? 0)")
-                return
+//                self._updateAndNotifyState(state: .prepared, stateReason: .messageFailed, eventReason: error.localizedDescription)
+                self._notifyEvent(event: .messageFailed, eventReason: "call fail: \(error.code)")
+            } else {
+                self._notifyEvent(event: .remoteUserRecvCall)
             }
-            self._notifyEvent(event: .remoteUserRecvCall)
-//            self.timeProfiling(message: "1.呼叫-呼叫回调")
         }
         
         _updateAndNotifyState(state: .calling, eventInfo: message)
@@ -902,6 +902,8 @@ extension CallApiImpl: CallApiProtocol {
         let message: [String: Any] = _messageDic(action: .cancelCall)
         messageManager?.sendMessage(userId: "\(userId)", message: message) { err in
             completion?(err)
+            guard let error = err else { return }
+            self._notifyEvent(event: .messageFailed, eventReason: "cancel call fail: \(error.code)")
         }
         _updateAndNotifyState(state: .prepared, stateReason: .localCancel)
         _notifyEvent(event: .localCancel)
@@ -913,9 +915,7 @@ extension CallApiImpl: CallApiProtocol {
         guard let roomId = connectInfo.callingRoomId else {
             let errReason = "accept fail! current userId or roomId is empty"
             completion?(NSError(domain: errReason, code: -1))
-            callWarningPrint(errReason)
-            _updateAndNotifyState(state: .prepared, stateReason: .messageFailed, eventReason: errReason)
-            _notifyEvent(event: .messageFailed)
+            _notifyEvent(event: .messageFailed, eventReason: errReason)
             return
         }
         
@@ -923,22 +923,22 @@ extension CallApiImpl: CallApiProtocol {
         guard state == .calling else {
             let errReason = "accept fail! current state[\(state.rawValue)] is not calling"
             completion?(NSError(domain: errReason, code: -1))
-            callWarningPrint(errReason)
-            _updateAndNotifyState(state: .prepared, stateReason: .none, eventReason: errReason)
-            _notifyEvent(event: .stateMismatch)
+            _notifyEvent(event: .stateMismatch, eventReason: errReason)
             return
         }
         
         let message: [String: Any] = _messageDic(action: .accept)
         messageManager?.sendMessage(userId: "\(remoteUserId)", message: message) { err in
             completion?(err)
+            guard let error = err else { return }
+            self._notifyEvent(event: .messageFailed, eventReason: "accept fail: \(error.code)")
         }
         _updateAndNotifyState(state: .connecting, stateReason: .localAccepted, eventInfo: message)
         _notifyEvent(event: .localAccepted)
         
         connectInfo.set(userId: remoteUserId, roomId: roomId)
         
-        if calleeJoinRTCType == .accept {
+        if calleeJoinRTCPolicy == .accepted {
             _joinRTCAsBroadcaster(roomId: roomId)
         }
     }
@@ -948,6 +948,8 @@ extension CallApiImpl: CallApiProtocol {
         _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)&reason=\(reason ?? "")")
         _reject(remoteUserId: remoteUserId, reason: reason) { err, _ in
             completion?(err)
+            guard let error = err else { return }
+            self._notifyEvent(event: .messageFailed, eventReason: "reject fail: \(error.code)")
         }
         _updateAndNotifyState(state: .prepared, stateReason: .localRejected)
         _notifyEvent(event: .localRejected)
@@ -958,6 +960,8 @@ extension CallApiImpl: CallApiProtocol {
         _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)")
         _hangup(remoteUserId: "\(remoteUserId)") { err, _ in
             completion?(err)
+            guard let error = err else { return }
+            self._notifyEvent(event: .messageFailed, eventReason: "hangup fail: \(error.code)")
         }
         _updateAndNotifyState(state: .prepared, stateReason: .localHangup)
         _notifyEvent(event: .localHangup)
@@ -1001,6 +1005,7 @@ extension CallApiImpl: CallMessageDelegate {
         
         //TODO: compatible other message version
         guard kCurrentMessageVersion == messageVersion else { return }
+        callPrint("on event message: \(String(data: data, encoding: .utf8) ?? "")")
         _processRespEvent(reason: messageAction, message: dic)
     }
     
@@ -1039,6 +1044,7 @@ extension CallApiImpl: AgoraRtcEngineDelegate {
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didLeaveChannelWith stats: AgoraChannelStats) {
         callPrint("didLeaveChannelWith")
         isChannelJoined = false
+        rtcConnection = nil
         _notifyEvent(event: .localLeave)
     }
 
@@ -1054,10 +1060,10 @@ extension CallApiImpl: AgoraRtcEngineDelegate {
     }
     
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didOccurError errorCode: AgoraErrorCode) {
-        callWarningPrint("didOccurError: \(errorCode.rawValue)")
+//        callWarningPrint("didOccurError: \(errorCode.rawValue)")
 //        joinRtcCompletion?(NSError(domain: "join RTC fail", code: errorCode.rawValue))
 //        joinRtcCompletion = nil
-        _notifyEvent(event: .rtcOccurError, eventReason: "\(errorCode.rawValue)")
+        _notifyEvent(event: .rtcOccurError, eventReason: "didOccurError: \(errorCode.rawValue)")
     }
     
     public func rtcEngine(_ engine: AgoraRtcEngineKit,

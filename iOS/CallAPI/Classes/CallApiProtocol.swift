@@ -137,50 +137,50 @@ import AgoraRtmKit
     /// - Parameter config: <#config description#>
     func renewToken(with rtcToken: String, rtmToken: String)
     
-    /// 连接(对RTM进行login和subscribe)， 观众调用
+    /// 准备通话环境，需要调用成功才可以进行呼叫，如需要更换通话的RTC 频道号可以重复调用，确保调用时必须是非通话状态(非calling、connecting、connected)才可调用成功
     /// - Parameters:
     ///   - config: <#config description#>
     ///   - completion: completion description
     func prepareForCall(prepareConfig: PrepareConfig, completion: ((NSError?)->())?)
     
-    /// 监听远端处理的回调
+    /// 添加回调的listener
     /// - Parameter listener: <#listener description#>
     func addListener(listener: CallApiListenerProtocol)
     
-    /// 取消监听远端回调
+    /// 移除回调的listener
     /// - Parameter listener: <#listener description#>
     func removeListener(listener: CallApiListenerProtocol)
     
-    /// 发起通话，加 RTC 频道并且发流，并且发 rtm 频道消息 申请链接，调用后被叫会收到onCall
+    /// 发起通话，主叫调用，通过prepareForCall设置的RTC频道号和远端用户建立RTC通话连接
     /// - Parameters:
     ///   - remoteUserId: 呼叫的用户id
     ///   - completion: <#completion description#>
     func call(remoteUserId: UInt, completion: ((NSError?)->())?)
     
-    /// 取消正在发起的通话，未接通的时候可用，调用后被叫会收到onCancel
+    /// 取消正在发起的通话，主叫调用
     /// - Parameter completion: <#completion description#>
     func cancelCall(completion: ((NSError?)->())?)
     
-    /// 接受通话，调用后主叫会收到onAccept
+    /// 接受通话，被叫调用
     /// - Parameters:
     ///   - remoteUserId: 呼叫的用户id
     ///   - completion: <#completion description#>
     func accept(remoteUserId: UInt, completion: ((NSError?)->())?)
     
-    /// 被叫拒绝通话，调用后主叫会收到onReject
+    /// 拒绝通话，被叫调用
     /// - Parameters:
     ///   - remoteUserId: 呼叫的用户id
     ///   - reason: 拒绝原因
     ///   - completion: <#completion description#>
     func reject(remoteUserId: UInt, reason: String?, completion: ((NSError?)->())?)
     
-    /// 结束通话，调用后被叫会收到onHangup
+    /// 结束通话，主叫和被叫均可调用
     /// - Parameters:
     ///   - userId: 用户id
     ///   - completion: <#completion description#>
     func hangup(remoteUserId: UInt, completion: ((NSError?)->())?)
     
-    /// 获取callId，callId为通话过程中消息的标识，通过argus可以查询到从呼叫到通话的耗时和状态变迁的时间戳
+    /// 获取当前通话的callId，callId为当次通话过程中唯一标识，通过该标识声网后台服务可以查询到当前通话的关键节点耗时和状态变迁的时间节点
     /// - Returns: callId，非呼叫到通话之外的消息为空
     func getCallId() -> String
 }
