@@ -1044,7 +1044,11 @@ extension CallApiImpl: AgoraRtcEngineDelegate {
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didLeaveChannelWith stats: AgoraChannelStats) {
         callPrint("didLeaveChannelWith")
         isChannelJoined = false
-        rtcConnection = nil
+        /*
+         由于leave rtc到didLeaveChannelWith是异步的
+         这里rtcConnection = nil会导致leave之后马上join，didLeaveChannelWith会在join之后错误的置空了rtc connection
+         */
+//        rtcConnection = nil
         _notifyEvent(event: .localLeave)
     }
 
