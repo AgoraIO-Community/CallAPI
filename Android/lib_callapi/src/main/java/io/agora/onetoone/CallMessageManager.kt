@@ -66,10 +66,10 @@ class CallMessageManager(
 
     private var rtmClient: RtmClient
     /** RTM是否已经登录 */
-    private var isLoginedRTM = false
+    private var isLoginedRtm = false
 
     /** 是否外部传入的rtm，如果是则不需要手动logout */
-    private var isExternalRTM = false
+    private var isExternalRtmClient = false
 
     private var prepareConfig: PrepareConfig? = null
     /** 消息id */
@@ -82,12 +82,13 @@ class CallMessageManager(
         val rtm = config.rtmClient
         if (rtm != null) {
             //如果外部传入rtmclient，默认登陆成功
-            isLoginedRTM = true
-            isExternalRTM = true
+            isLoginedRtm = true
+            isExternalRtmClient = true
             rtmClient = rtm
         } else {
             rtmClient = _createRtmClient()
         }
+        rtmClient.setParameters("{\"rtm.msg.tx_timeout\": 3000}")
         callMessagePrint("init-- CallMessageManager ")
     }
 
@@ -108,30 +109,6 @@ class CallMessageManager(
         return rtmClient!!
     }
 
-    /** 发送回执消息
-     * @param roomId: 回执消息发往的频道
-     * @param messageId: 回执的消息id
-     * @param completion: <#completion description#>
-     */
-    private fun _sendReceipts(roomId: String, messageId: Int, completion: ((AGError?)-> Unit)? = null) {
-        val message = mutableMapOf<String, Any>()
-        message[kReceiptsKey] = messageId
-        callMessagePrint("_sendReceipts to $roomId, message: $message")
-        val json = Gson().toJson(message)
-        val options = PublishOptions()
-        options.setChannelType(RtmChannelType.USER)
-        rtmClient.publish(roomId, json.toByteArray(), options, object : ResultCallback<Void> {
-            override fun onSuccess(responseInfo: Void?) {
-                runOnUiThread { completion?.invoke(null) }
-            }
-            override fun onFailure(errorInfo: ErrorInfo?) {
-                val msg = errorInfo?.errorReason ?: "error"
-                val errorCode = RtmConstants.RtmErrorCode.getValue(errorInfo?.errorCode)
-                runOnUiThread { completion?.invoke(AGError(msg, errorCode)) }
-            }
-        })
-    }
-
     private fun _sendMessage(userId: String, message: Map<String, Any>, completion:((AGError?)->Unit)?) {
         if (userId.isEmpty()) {
             completion?.invoke(AGError("send message fail! roomId is empty", -1))
@@ -147,13 +124,6 @@ class CallMessageManager(
             override fun onSuccess(p0: Void?) {
                 callMessagePrint("_sendMessage[$msgId] publish cost ${startTime.getCostMilliseconds()} ms")
                 runOnUiThread { completion?.invoke(null) }
-                //发送成功检查回执，没收到则重试
-//                receiptsQueue?.let { queue ->
-//                    queue.firstOrNull { it.messageId == msgId }?.let { receiptInfo ->
-//                        receiptInfo.checkReceipt()
-//                        return
-//                    }
-//                }
             }
             override fun onFailure(errorInfo: ErrorInfo?) {
                 val msg = errorInfo?.errorReason ?: "error"
@@ -163,33 +133,9 @@ class CallMessageManager(
             }
         })
     }
-//    private fun addReceipt(userId: String, msgId: Int, message: Map<String, Any>) {
-//        val receiptInfo = CallQueueInfo()
-//        receiptInfo.toUserId = userId
-//        receiptInfo.messageId = msgId
-//        receiptInfo.messageInfo = message
-//        receiptInfo.checkReceiptsFail = { info ->
-//            if (info.retryTimes > 0) else {
-//                val message = info.messageInfo ?: emptyMap()
-//                receiptsQueue = receiptsQueue?.filter { it.messageId != msgId }?.toMutableList()
-//                listener?.onMissReceipts(message)
-//            }
-//            callMessagePrint("retry receipts: $msgId msgIds${receiptsQueue?.map { it.messageId }}")
-//            _sendMessage(userId, message) {
-//            }
-//        }
-//        //过滤老的重试消息，防止老的消息在新的消息之后收到
-//        val filterQueue = receiptsQueue?.filter { it.toUserId != userId }?.toMutableList()
-//        if (filterQueue?.size != receiptsQueue?.size) {
-//            callMessagePrint("remove old message of retry")
-//        }
-//        filterQueue?.add(receiptInfo)
-//        receiptsQueue = filterQueue
-//        receiptInfo.checkReceipt()
-//        callMessagePrint("add receipts: $msgId msgIds${receiptsQueue?.map { it.messageId }}")
-//    }
+
     private fun loginRTM(rtmClient: RtmClient, token: String, completion: (ErrorInfo?) -> Unit) {
-        if (isLoginedRTM) {
+        if (isLoginedRtm) {
             completion(null)
             return
         }
@@ -201,13 +147,13 @@ class CallMessageManager(
         rtmClient.login(token, object : ResultCallback<Void?> {
             override fun onSuccess(p0: Void?) {
                 callMessagePrint("login completion")
-                isLoginedRTM = true
+                isLoginedRtm = true
                 runOnUiThread { completion(null) }
             }
 
             override fun onFailure(p0: ErrorInfo?) {
                 callMessagePrint("login completion: ${p0?.errorCode}")
-                isLoginedRTM = false
+                isLoginedRtm = false
                 runOnUiThread { completion(p0) }
             }
         })
@@ -215,7 +161,7 @@ class CallMessageManager(
     // MARK: - Public
     fun deinitialize() {
         rtmClient.removeEventListener(this)
-        if (!isExternalRTM) {
+        if (!isExternalRtmClient) {
             rtmClient.logout(object : ResultCallback<Void> {
                 override fun onSuccess(responseInfo: Void?) {}
                 override fun onFailure(errorInfo: ErrorInfo?) {}
@@ -240,7 +186,7 @@ class CallMessageManager(
             return
         }
         val rtmClient = this.rtmClient
-        if (!isLoginedRTM) {
+        if (!isLoginedRtm) {
             loginRTM(rtmClient, rtmToken) { err ->
                 if (err != null) {
                     val errorCode = RtmConstants.RtmErrorCode.getValue(err.errorCode)
@@ -257,7 +203,7 @@ class CallMessageManager(
     /// 更新RTM token
     /// - Parameter rtmToken: <#rtmToken description#>
     fun renewToken(rtcToken: String, rtmToken: String) {
-        if (!isLoginedRTM) {
+        if (!isLoginedRtm) {
             val prepareCfg = prepareConfig
             if (prepareCfg != null) {
                 //没有登陆成功，但是需要自动登陆，可能是初始token问题，这里重新initialize
@@ -304,32 +250,6 @@ class CallMessageManager(
         _sendMessage(userId, map, completion)
     }
 
-//    /** 根据策略订阅频道消息
-//     *  @param userId: 频道号
-//     *  @param completion: <#completion description#>
-//     */
-//    private fun _subscribeRTM(userId: String, completion: ((AGError?) -> Unit)?) {
-//        val options = SubscribeOptions()
-//        options.withMessage = true
-//        options.withMetadata = false
-//        options.withPresence = false
-//        callMessagePrint("will subscribe[$userId] message: ${options.withMessage} presence: ${options.withPresence}")
-//        rtmClient.unsubscribe(userId, object: ResultCallback<Void> {
-//            override fun onSuccess(responseInfo: Void?) {}
-//            override fun onFailure(errorInfo: ErrorInfo?) {}
-//        })
-//        rtmClient.subscribe(userId, options, object: ResultCallback<Void> {
-//            override fun onSuccess(responseInfo: Void?) {
-//                callMessagePrint("subscribe[$userId] finished = success")
-//                runOnUiThread { completion?.invoke(null) }
-//            }
-//            override fun onFailure(errorInfo: ErrorInfo?) {
-//                val msg = errorInfo?.errorReason ?: "error"
-//                val errorCode = RtmConstants.RtmErrorCode.getValue(errorInfo?.errorCode)
-//                runOnUiThread { completion?.invoke(AGError(msg, errorCode)) }
-//            }
-//        })
-//    }
     //MARK: AgoraRtmClientDelegate
     override fun onConnectionStateChanged(
         channelName: String?,

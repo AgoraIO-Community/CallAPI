@@ -47,8 +47,6 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         }
     }
 
-    private val kMapListSave = "tsMapListSaveKey"
-
     private val enterModel by lazy {
         val bundle = intent.extras
         bundle!!.getSerializable(KEY_ENTER_ROOM_MODEL) as EnterRoomInfoModel
@@ -148,9 +146,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             CallStateType.Calling ->{
                 publishMedia(false)
                 setupCanvas(null)
-                mViewBinding.vLeft.isVisible = false
-                mViewBinding.vRight.isVisible = false
-                mCenterCanvas.isVisible = false
+                mViewBinding.vRight.alpha = 1f
                 mViewBinding.vCenter.removeView(mCenterCanvas)
                 mViewBinding.btnHangUp.isVisible = false
                 mViewBinding.btnCall.isVisible = false
@@ -158,20 +154,21 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             CallStateType.Prepared,
             CallStateType.Idle,
             CallStateType.Failed -> {
+                rtcEngine.enableLocalAudio(true)
+                rtcEngine.enableLocalVideo(true)
                 publishMedia(true)
                 if (mViewBinding.vCenter.indexOfChild(mCenterCanvas) == -1) {
                     mViewBinding.vCenter.addView(mCenterCanvas)
                 }
                 setupCanvas(mCenterCanvas)
                 mCenterCanvas.isVisible = true
-                mViewBinding.vLeft.isVisible = false
-                mViewBinding.vRight.isVisible = false
+                mViewBinding.vLeft.alpha = 0f
+                mViewBinding.vRight.alpha = 0f
                 mViewBinding.btnCall.isVisible = !enterModel.isBrodCaster
                 mViewBinding.btnHangUp.isVisible = false
             }
             CallStateType.Connected -> {
-                mViewBinding.vLeft.isVisible = true
-                mViewBinding.vRight.isVisible = true
+                mViewBinding.vLeft.alpha = 1f
                 mCenterCanvas.isVisible = false
                 mViewBinding.vCenter.removeView(mCenterCanvas)
                 mViewBinding.btnHangUp.isVisible = true
@@ -206,13 +203,9 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         api.initialize(config)
 
         prepareConfig.roomId = enterModel.currentUid
-        if (role == CallRole.CALLER) {
-            prepareConfig.localView = mViewBinding.vRight
-            prepareConfig.remoteView = mViewBinding.vLeft
-        } else {
-            prepareConfig.localView = mViewBinding.vLeft
-            prepareConfig.remoteView = mViewBinding.vRight
-        }
+        prepareConfig.localView = mViewBinding.vRight
+        prepareConfig.remoteView = mViewBinding.vLeft
+
         api.addListener(this)
         api.prepareForCall(prepareConfig){ error ->
             completion?.invoke(error == null)
@@ -393,7 +386,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
 
     override fun onCallStateChanged(
         state: CallStateType,
-        stateReason: CallReason,
+        stateReason: CallStateReason,
         eventReason: String,
         eventInfo: Map<String, Any>
     ) {
@@ -471,15 +464,15 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             }
             CallStateType.Prepared -> {
                 when (stateReason) {
-                    CallReason.LocalHangup,
-                    CallReason.RemoteHangup -> {
+                    CallStateReason.LocalHangup,
+                    CallStateReason.RemoteHangup -> {
                         Toasty.normal(this, "通话结束", Toast.LENGTH_SHORT).show()
                     }
-                    CallReason.LocalRejected,
-                    CallReason.RemoteRejected -> {
+                    CallStateReason.LocalRejected,
+                    CallStateReason.RemoteRejected -> {
                         Toasty.normal(this, "通话被拒绝", Toast.LENGTH_SHORT).show()
                     }
-                    CallReason.CallingTimeout -> {
+                    CallStateReason.CallingTimeout -> {
                         Toasty.normal(this, "无应答", Toast.LENGTH_SHORT).show()
                     }
                     else -> {}

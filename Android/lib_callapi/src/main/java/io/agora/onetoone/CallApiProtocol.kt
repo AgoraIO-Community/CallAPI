@@ -17,16 +17,17 @@ open class CallConfig(
 ){}
 
 open class PrepareConfig(
-    var roomId: String = "",                //频道名(主叫需要设置为1v1的频道，被叫可设置为自己的广播频道)
-    var rtcToken: String = "",              //rtc token，需要使用万能token，token创建的时候channel name为空字符串
-    var rtmToken: String = "",              //rtm token
-    var localView: ViewGroup? = null,       //显示本地流的画布
-    var remoteView: ViewGroup? = null,      //显示远端流的画布
-    var autoAccept: Boolean = true,         //被叫收到呼叫后是否自动接受，true: CallApi内部会自动调用accept，false: 外部收到calling状态时需要手动accept/reject
-    var autoJoinRTC: Boolean = false,       //是否自动登录RTC
+    var roomId: String = "",                // 频道名(主叫需要设置为1v1的频道，被叫可设置为自己的广播频道)
+    var rtcToken: String = "",              // rtc token，需要使用万能token，token创建的时候channel name为空字符串
+    var rtmToken: String = "",              // rtm token
+    var localView: ViewGroup? = null,       // 显示本地流的画布
+    var remoteView: ViewGroup? = null,      // 显示远端流的画布
+    var autoAccept: Boolean = true,         // 被叫收到呼叫后是否自动接受，true: CallApi内部会自动调用accept，false: 外部收到calling状态时需要手动accept/reject
+    var autoJoinRTC: Boolean = false,       // 是否自动登录RTC
+    var callTimeoutMillisecond: Long = 15000L    // 呼叫超时时间，单位毫秒，如果传0内部将不做超时逻辑
 ) {}
 
-enum class CallReason(val value: Int) {
+enum class CallStateReason(val value: Int) {
     None(0),
     JoinRTCFailed(1),           // 加入RTC失败
     RtmSetupFailed(2),          // 设置RTM失败
@@ -43,7 +44,8 @@ enum class CallReason(val value: Int) {
     RecvRemoteFirstFrame(13),   // 收到远端首帧
     CallingTimeout (14),        // 呼叫超时
     CancelByCallerRecall(15),   // 同样的主叫呼叫不同频道导致取消
-    RtmLost(16)                 //rtm超时断连
+    RtmLost(16),                // rtm超时断连
+    RemoteCallBusy(17)          // 远端用户忙
 }
 
 enum class CallEvent(val value: Int) {
@@ -57,7 +59,7 @@ enum class CallEvent(val value: Int) {
     RtmSetupSuccessed(7),           // 设置RTM成功
     MessageFailed(8),               // 消息发送失败
     StateMismatch(9),               // 状态流转异常
-    PreparedRoomIdChanged(10),      //prepared了另一个roomId导致
+    PreparedRoomIdChanged(10),      // prepared了另一个roomId导致
     RemoteUserRecvCall(99),         //主叫呼叫成功
     LocalRejected(100),             // 本地用户拒绝
     RemoteRejected(101),            // 远端用户拒绝
@@ -74,8 +76,9 @@ enum class CallEvent(val value: Int) {
     LocalLeave(112),                // 本地用户离开RTC频道
     RecvRemoteFirstFrame(113),      // 收到远端首帧
     CancelByCallerRecall(114),      // 同样的主叫呼叫不同频道导致取消
-    RtmLost(115),                   //rtm超时断连
-    RtcOccurError(116)              //rtc出现错误
+    RtmLost(115),                   // rtm超时断连
+    RtcOccurError(116),             // rtc出现错误
+    RemoteCallBusy(117)             // 远端用户忙
 }
 
 /**
@@ -104,12 +107,12 @@ interface ICallApiListener {
     /**
      * 状态响应回调
      * @param state 状态类型
-     * @param stateReason 状态原因
+     * @param stateReason 状态变更的原因
      * @param eventReason 事件类型描述
      * @param eventInfo 扩展信息，不同事件类型参数不同，其中key为“publisher”为状态变更者id，空则表示是自己的状态变更
      */
     fun onCallStateChanged(state: CallStateType,
-                           stateReason: CallReason,
+                           stateReason: CallStateReason,
                            eventReason: String,
                            eventInfo: Map<String, Any>)
 
@@ -137,45 +140,50 @@ data class AGError(
 
 interface ICallApi {
 
-    /** 初始化配置
+    /**
+     * 初始化配置
      * @param config
      */
     fun initialize(config: CallConfig)
 
-    /** 释放缓存 */
+    /**
+     * 释放缓存
+     */
     fun deinitialize(completion: (() -> Unit))
 
-    /** 更新自己的rtc/rtm的token
+    /**
+     * 更新自己的rtc/rtm的token
      */
     fun renewToken(rtcToken: String, rtmToken: String)
 
-    /** 连接(对RTM进行login和subscribe)， 观众调用
-     *
+    /**
+     * 准备通话环境，需要调用成功才可以进行呼叫，如需要更换通话的RTC 频道号可以重复调用，确保调用时必须是非通话状态(非calling、connecting、connected)才可调用成功
      * @param prepareConfig
      * @param completion
      */
     fun prepareForCall(prepareConfig: PrepareConfig, completion: ((AGError?) -> Unit)?)
 
-    /** 监听远端处理的回调
-     *
+    /**
+     * 添加回调的listener
      * @param listener
      */
     fun addListener(listener: ICallApiListener)
 
-    /** 取消监听远端回调
+    /**
+     * 移除回调的listener
      * @param listener
      */
     fun removeListener(listener: ICallApiListener)
 
-    /** 发起通话，加 RTC 频道并且发流，并且发 rtm 频道消息 申请链接，调用后被叫会收到onCall
-     *
+    /**
+     * 发起通话，主叫调用，通过prepareForCall设置的RTC频道号和远端用户建立RTC通话连接
      * @param remoteUserId 呼叫的用户id
      * @param completion
      */
     fun call(remoteUserId: Int, completion: ((AGError?) -> Unit)?)
 
-    /** 取消正在发起的通话，未接通的时候可用，调用后被叫会收到onCancel
-     *
+    /**
+     * 取消正在发起的通话，主叫调用
      * @param completion
      */
     fun cancelCall(completion: ((AGError?) -> Unit)?)
@@ -187,21 +195,23 @@ interface ICallApi {
      */
     fun accept(remoteUserId: Int, completion: ((AGError?) -> Unit)?)
 
-    /** 被叫拒绝通话，调用后主叫会收到onReject
-     *
+    /**
+     * 接受通话，被叫调用
      * @param remoteUserId 呼叫的用户id
      * @param reason 拒绝原因
      * @param completion
      */
     fun reject(remoteUserId: Int, reason: String?, completion: ((AGError?) -> Unit)?)
 
-    /** 结束通话，调用后被叫会收到onHangup
+    /**
+     * 结束通话，主叫和被叫均可调用
      * @param remoteUserId 用户id
      * @param completion
      */
     fun hangup(remoteUserId: Int, completion: ((AGError?) -> Unit)?)
 
-    /** 获取callId，callId为通话过程中消息的标识，通过argus可以查询到从呼叫到通话的耗时和状态变迁的时间戳
+    /**
+     * 获取当前通话的callId，callId为当次通话过程中唯一标识，通过该标识声网后台服务可以查询到当前通话的关键节点耗时和状态变迁的时间节点
      * @return callId，非呼叫到通话之外的消息为空
      */
     fun getCallId(): String

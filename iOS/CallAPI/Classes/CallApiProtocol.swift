@@ -21,16 +21,17 @@ import AgoraRtmKit
 
 //TODO: 如何不设置万能token
 @objc public class PrepareConfig: NSObject {
-    public var roomId: String = ""              //自己的RTC频道名，用于呼叫对端用户时让对端用户进入加入这个RTC频道
-    public var rtcToken: String = ""            //rtc token，需要使用万能token，token创建的时候channel name为空字符串
-    public var rtmToken: String = ""            //rtm token
-    public var localView: UIView!               //显示本地流的画布
-    public var remoteView: UIView!              //显示远端流的画布
-    public var autoAccept: Bool = true          //被叫收到呼叫后是否自动接受，true: CallApi内部会自动调用accept，false: 外部收到calling状态时需要手动accept/reject
-    public var autoJoinRTC: Bool = false        //是否在不呼叫的情况下提前加入自己的RTC频道，该设置可以加快呼叫的出图速度
+    public var roomId: String = ""                //自己的RTC频道名，用于呼叫对端用户时让对端用户进入加入这个RTC频道
+    public var rtcToken: String = ""              //rtc token，需要使用万能token，token创建的时候channel name为空字符串
+    public var rtmToken: String = ""              //rtm token
+    public var localView: UIView!                 //显示本地流的画布
+    public var remoteView: UIView!                //显示远端流的画布
+    public var autoAccept: Bool = true                //被叫收到呼叫后是否自动接受，true: CallApi内部会自动调用accept，false: 外部收到calling状态时需要手动accept/reject
+    public var autoJoinRTC: Bool = false              //是否在不呼叫的情况下提前加入自己的RTC频道，该设置可以加快呼叫的出图速度
+    public var callTimeoutMillisecond: UInt64 = 15000   //呼叫超时时间，单位豪秒，0表示内部不处理超时
 }
 
-@objc public enum CallReason: UInt {
+@objc public enum CallStateReason: UInt {
     case none = 0
     case joinRTCFailed = 1         //加入RTC失败
     case rtmSetupFailed = 2        //设置RTM失败
@@ -48,6 +49,7 @@ import AgoraRtmKit
     case callingTimeout = 14       //呼叫超时
     case cancelByCallerRecall = 15 //同样的主叫呼叫不同频道导致取消
     case rtmLost = 16              //rtm超时断连
+    case remoteCallBusy = 17       //远端用户忙
 }
 
 @objc public enum CallEvent: UInt {
@@ -80,6 +82,7 @@ import AgoraRtmKit
     case cancelByCallerRecall = 114     //同样的主叫呼叫不同频道导致取消
     case rtmLost = 115                  //rtm超时断连
     case rtcOccurError = 116            //rtc出现错误
+    case remoteCallBusy = 117           //远端用户忙
 }
 
 @objc public enum CallStateType: UInt {
@@ -101,11 +104,11 @@ import AgoraRtmKit
     /// 状态响应回调
     /// - Parameters:
     ///   - state: 状态类型
-    ///   - stateReason: 状态原因
+    ///   - stateReason: 状态变更的原因
     ///   - eventReason: 事件类型描述
     ///   - eventInfo: 扩展信息，不同事件类型参数不同，其中key为“publisher”为状态变更者id，空则表示是自己的状态变更
     func onCallStateChanged(with state: CallStateType,
-                            stateReason: CallReason,
+                            stateReason: CallStateReason,
                             eventReason: String,
                             eventInfo: [String: Any])
 

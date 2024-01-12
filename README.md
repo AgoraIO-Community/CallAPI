@@ -1,37 +1,40 @@
 # CallAPI
 
-*English | [中文](README_zh.md)*
+## 概述
 
-## Overview
+CallAPI是声网面向一对一秒开设计的场景化API解决方案，可以让开发者在直播场景下，获得极速秒开、丝滑切换体验。
 
-CallAPI is a scenario based API solution for one-on-one, one second open design of the Agora, It can provide developers with an extremely fast and smooth switching experience in live streaming scenarios.
+## Demo 体验     
 
-## Demo
+| iOS                                                                              | Android                                                                          |  
+|----------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_ios.png?x-oss-process=image/resize,w_200) | ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_android.png?x-oss-process=image/resize,w_200) |  
+|                                                                                  |                                                                                  |  
+---
 
-| iOS                                                          | Android                                                      |
-| ------------------------------------------------------------ | ------------------------------------------------------------ |
-| ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_ios.png?x-oss-process=image/resize,w_200) | ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_android.png?x-oss-process=image/resize,w_200) |
 
-## Quick Start
+## 快速集成
 
-| Platform     | Example                   |
+
+| 平台     | Example                   |
 |---------|------------------------|
 | Android | [CallAPI(Android)](Android) |
 | iOS     | [CallAPI(iOS)](iOS)   |
 
-
 ---
 
+## 集成遇到困难，该如何联系声网获取协助
 
-## Integration Challenges: How to Contact Agora for Assistance
-> Solution 1: You can obtain help or contact sales personnel through the [Agora Support](https://agora-ticket.agora.io/) 
+> 方案1：可以从智能客服获取帮助或联系销售人员 [Agora 支持](https://agora-ticket.agora.io/) 
 > 
-> Solution 2: You can send an email to [support@agora.io](mailto:support@agora.io) for inquiries
-> 
-> Solution 3: Join the Agora WeChat group and ask questions
+> 方案2：发送邮件给[support@agora.io](mailto:support@agora.io)咨询
+>
+> 方案3：加入微信群提问
 >
 > ![](https://download.agora.io/demo/release/SDHY_QA.jpg)
+
 ---
 
-## License
-The CallAPI project is licensed under the MIT license. See the [LICENSE](/LICENSE) 
+## 许可证
+
+CallAPI 使用 MIT 许可证，详情见 [LICENSE](/LICENSE) 

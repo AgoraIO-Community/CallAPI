@@ -404,22 +404,10 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
     }
     
     public func onCallStateChanged(with state: CallStateType,
-                                   stateReason: CallReason,
+                                   stateReason: CallStateReason,
                                    eventReason: String,
                                    eventInfo: [String : Any]) {
-        let publisher = UInt(eventInfo[kPublisher] as? String ?? "") ?? currentUid
-        
-        // 触发状态的用户是自己才处理
-        guard publisher == currentUid else {
-            switch state {
-            case .calling, .connecting, .connected:
-                setupCanvas(nil)
-            default:
-                setupCanvas(showView)
-            }
-            return
-        }
-        print("onCallStateChanged state: \(state.rawValue), stateReason: \(stateReason.rawValue), eventReason: \(eventReason), eventInfo: \(eventInfo) publisher: \(publisher) / \(currentUid)")
+        print("onCallStateChanged state: \(state.rawValue), stateReason: \(stateReason.rawValue), eventReason: \(eventReason), eventInfo: \(eventInfo)")
         
         self.callState = state
         
@@ -495,6 +483,8 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
                 AUIToast.show(text: "通话被拒绝")
             case .callingTimeout:
                 AUIToast.show(text: "无应答")
+            case .remoteCallBusy:
+                AUIToast.show(text: "用户正忙")
             default:
                 break
             }

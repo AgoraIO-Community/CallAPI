@@ -337,15 +337,10 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
     }
     
     public func onCallStateChanged(with state: CallStateType,
-                                   stateReason: CallReason,
+                                   stateReason: CallStateReason,
                                    eventReason: String,
                                    eventInfo: [String : Any]) {
-        let publisher = UInt(eventInfo[kPublisher] as? String ?? "") ?? currentUid
-        
-        guard publisher == currentUid else {
-            return
-        }
-        print("onCallStateChanged state: \(state.rawValue), stateReason: \(stateReason.rawValue), eventReason: \(eventReason), eventInfo: \(eventInfo) publisher: \(publisher) / \(currentUid)")
+        print("onCallStateChanged state: \(state.rawValue), stateReason: \(stateReason.rawValue), eventReason: \(eventReason), eventInfo: \(eventInfo)")
         
         self.callState = state
         
@@ -421,6 +416,8 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                 AUIToast.show(text: "无应答")
             case .localCancel, .remoteCancel:
                 AUIToast.show(text: "通话被取消")
+            case .remoteCallBusy:
+                AUIToast.show(text: "用户正忙")
             default:
                 break
             }

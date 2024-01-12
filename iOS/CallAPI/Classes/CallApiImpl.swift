@@ -12,20 +12,26 @@ import AgoraRtmKit
 
 let kReportCategory = "2_iOS_1.0.0"
 
-private let kCallTimeoutInterval = 15.0
-
 private let kCurrentMessageVersion = "1.0"
 private let kMessageAction = "message_action"
 private let kMessageVersion = "message_version"
 private let kMessageTs = "message_timestamp"
 
 private let kCallId = "callId"
+
 public let kRemoteUserId = "remoteUserId"
 public let kFromUserId = "fromUserId"
 //public let kFromUserExtension = "fromUserExtension"
 public let kFromRoomId = "fromRoomId"
 public let kCalleeState = "state"      //当前呼叫状态
 public let kPublisher = "publisher"    //状态触发的用户uid，目前可以抛出当前用户和主叫的状态，如果无publisher，默认是当前用户
+
+//⚠️不允许修改下列两项值，客户可能会根据该rejectReason/call busy 来做业务判断(例如用户忙)
+public let kRejectReason = "rejectReason"
+public let kRejectReasonCallBusy = "The user is currently busy"
+
+//是否内部拒绝，收到内部拒绝目前标记为对端call busy
+public let kRejectByInternal = "rejectByInternal"
 
 public let kCostTimeMap = "costTimeMap"    //呼叫时的耗时信息，会在connected时抛出分步耗时
 
@@ -83,7 +89,12 @@ public class CallApiImpl: NSObject {
             switch state {
             case .calling:
                 //开启定时器，如果超时无响应，调用no response
-                connectInfo.timer = Timer.scheduledTimer(withTimeInterval: kCallTimeoutInterval, repeats: false, block: {[weak self] timer in
+                let timeooutSecond = prepareConfig?.callTimeoutMillisecond ?? 0
+                if timeooutSecond == 0 {return}
+                let timeooutInterval = Double(timeooutSecond) / 1000
+                connectInfo.timer = Timer.scheduledTimer(withTimeInterval: timeooutInterval,
+                                                         repeats: false,
+                                                         block: {[weak self] timer in
                     self?.cancelCall(completion: { err in
                     })
                     self?._updateAndNotifyState(state: .prepared, stateReason: .callingTimeout)
@@ -184,6 +195,13 @@ extension CallApiImpl {
         message[kFromRoomId] = fromRoomId
         return message
     }
+    
+    private func _rejectMessageDic(reason: String?, rejectByInternal: Bool) -> [String: Any] {
+        var message: [String: Any] = _messageDic(action: .reject)
+        message[kRejectReason] = reason
+        message[kRejectByInternal] = rejectByInternal ? 1 : 0
+        return message
+    }
 }
 
 //MARK: private method
@@ -194,13 +212,13 @@ extension CallApiImpl {
         }
     }
     
-    private func checkConnectedSuccess(reason: CallReason) {
+    private func checkConnectedSuccess(reason: CallStateReason) {
         guard connectInfo.isRetrieveFirstFrame, state == .connecting else {return}
         //因为被叫提前加频道并订阅流和推流，导致双端收到视频首帧可能会比被叫点accept(变成connecting)比更早，所以需要检查是否变成了connecting，两者都满足才是conneced
         _changeToConnectedState(reason: reason)
     }
     
-    private func _changeToConnectedState(reason: CallReason) {
+    private func _changeToConnectedState(reason: CallStateReason) {
         let eventInfo: [String : Any] = [
             kFromRoomId: self.connectInfo.callingRoomId ?? "",
             kFromUserId: self.connectInfo.callingUserId ?? 0,
@@ -220,7 +238,7 @@ extension CallApiImpl {
     
     //外部状态通知
     private func _updateAndNotifyState(state: CallStateType,
-                                       stateReason: CallReason = .none,
+                                       stateReason: CallStateReason = .none,
                                        eventReason: String = "",
 //                                       elapsed: Int = 0,
                                        eventInfo: [String: Any] = [:]) {
@@ -658,10 +676,11 @@ extension CallApiImpl {
         }
     }
     
-    private func _reject(remoteUserId: UInt, reason: String?, completion: ((NSError?, [String: Any]) -> ())? = nil) {
-        let message: [String: Any] = _messageDic(action: .reject)
-//        message[kRemoteUserId] = remoteUserId
-//        message[kFromRoomId] = fromRoomId
+    private func _reject(remoteUserId: UInt, 
+                         reason: String?,
+                         rejectByInternal: Bool = false,
+                         completion: ((NSError?, [String: Any]) -> ())? = nil) {
+        let message: [String: Any] = _rejectMessageDic(reason: reason, rejectByInternal: rejectByInternal)
         messageManager?.sendMessage(userId: "\(remoteUserId)", message: message) { error in
             completion?(error, message)
         }
@@ -691,11 +710,11 @@ extension CallApiImpl {
             break
         case .idle, .failed:
             // not reachable
-//            _reject(remoteUserId: fromUserId, reason: "callee is currently on call")
+//            _reject(remoteUserId: fromUserId, reason: kRejectReasonCallBusy, rejectByInternal: true)
             return
         case .calling, .connecting, .connected:
             if connectInfo.callingUserId ?? 0 != fromUserId {
-                _reject(remoteUserId: fromUserId, reason: "callee is currently on call")
+                _reject(remoteUserId: fromUserId, reason: kRejectReasonCallBusy, rejectByInternal: true)
                 return
             }
             if state == .calling {
@@ -736,8 +755,14 @@ extension CallApiImpl {
     //收到拒绝消息
     fileprivate func _onReject(message: [String: Any]) {
         guard let fromUserId = message[kFromUserId] as? UInt, fromUserId == connectInfo.callingUserId else { return }
-        _updateAndNotifyState(state: .prepared, stateReason: .remoteRejected, eventInfo: message)
-        _notifyEvent(event: .remoteRejected)
+        var stateReason: CallStateReason =  .remoteRejected
+        var callEvent: CallEvent =  .remoteRejected
+        if let rejectByInternal = message[kRejectByInternal] as? Int, rejectByInternal == 1 {
+            stateReason = .remoteCallBusy
+            callEvent = .remoteCallBusy
+        }
+        _updateAndNotifyState(state: .prepared, stateReason: stateReason, eventInfo: message)
+        _notifyEvent(event: callEvent)
     }
     
     //收到接受消息

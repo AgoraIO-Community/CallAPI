@@ -1,43 +1,41 @@
 
-English | [中文](CHANGELOG.zh.md)
 
 ## [1.0.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.0.0)
 
-- Optimized API interfaces for improved usability.
-- Adapted to RTM 2.1.8 and utilized peer-to-peer messaging.
-- Enhanced logging reporting strategy for more accurate call quality diagnostics.
-- Improved strategy for filtering expired messages.
+- 优化API接口，增加易用性。
+- 适配RTM 2.1.8，使用点对点消息。
+- 优化日志上报策略，通话质量定位更准确。
+- 优化过期消息过滤策略。
 
 ## [0.3.1](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.3.1)
 
-- Fix timestamp retrieval exception.
+- 修复时间戳获取异常。
 
 ## [0.3.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.3.0)
 
-- Update RTM SDK to 2.1.7.
-- CallConfig supports external incoming AgoraRtmClientKit instances.
-- Implicit call to prepareForCall for initialize method in pure 1v1 mode.
-- Add RTM disconnection callback.
+- 更新RTM SDK至2.1.7。
+- CallConfig支持外部传入AgoraRtmClientKit实例。
+- 纯1v1模式下initialize方法隐式调用prepareForCall。
+- 增加rtm断连回调。
 
 ## [0.2.2](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.2.2)
 
-- Update the channelName for message sending and subscription from channel ID to user ID.
-- Remove RTM Presence and interface related properties and callbacks.
-- Update some interface names.
-- [Android]Callback synchronization to main thread.
-- [Android]Add RTC one-to-many event callback
-- Other bug fixes.
-  
+- 更新消息发送和订阅的channelName从频道id改为用户id。
+- 移除RTM Presence及接口相关属性和回调。
+- 更新部分接口名称。
+- [Android]回调同步到主线程。
+- 其他Bug修复。
+
 ## [0.2.1](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.2.1)
 
-- [Android]Update the Gradle download script for RTM.
+- [Android]更新RTM的gradle下载脚本。
 
 ## [0.2.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.2.0)
 
-- Add RTC callback interface.
-- Update RTM to standalone version.
-- Optimize event reporting.
-- Bug fix.
+- 增加RTC回调接口。
+- 更新RTM为独立版本。
+- 优化事件上报。
+- Bug修复。
 
 ## [0.1.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.1.0)
 

@@ -5,9 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.TextureView
 import android.view.View
-import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -139,19 +137,19 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         mCallState = state
         when(mCallState) {
             CallStateType.Calling ->{
-                mViewBinding.vLeft.isVisible = true
-                mViewBinding.vRight.isVisible = true
+                mViewBinding.vRight.alpha = 1f
                 mViewBinding.btnCall.isVisible = false
                 mViewBinding.btnHangUp.isVisible = false
             }
             CallStateType.Connected -> {
+                mViewBinding.vLeft.alpha = 1f
                 mViewBinding.btnHangUp.isVisible = true
             }
             CallStateType.Prepared,
             CallStateType.Idle,
             CallStateType.Failed -> {
-                mViewBinding.vLeft.isVisible = false
-                mViewBinding.vRight.isVisible = false
+                mViewBinding.vLeft.alpha = 0f
+                mViewBinding.vRight.alpha = 0f
                 mViewBinding.btnCall.isVisible = true
                 mViewBinding.btnHangUp.isVisible = false
             }
@@ -303,7 +301,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
 
     override fun onCallStateChanged(
         state: CallStateType,
-        stateReason: CallReason,
+        stateReason: CallStateReason,
         eventReason: String,
         eventInfo: Map<String, Any>
     ) {
@@ -369,14 +367,14 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
             }
             CallStateType.Prepared -> {
                 when (stateReason) {
-                    CallReason.LocalHangup, CallReason.RemoteHangup -> {
+                    CallStateReason.LocalHangup, CallStateReason.RemoteHangup -> {
                         Toasty.normal(this, "通话结束", Toast.LENGTH_SHORT).show()
                     }
-                    CallReason.LocalRejected,
-                    CallReason.RemoteRejected -> {
+                    CallStateReason.LocalRejected,
+                    CallStateReason.RemoteRejected -> {
                         Toasty.normal(this, "通话被拒绝", Toast.LENGTH_SHORT).show()
                     }
-                    CallReason.CallingTimeout -> {
+                    CallStateReason.CallingTimeout -> {
                         Toasty.normal(this, "无应答", Toast.LENGTH_SHORT).show()
                     }
                     else -> {}

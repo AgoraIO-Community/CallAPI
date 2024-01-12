@@ -1,143 +1,115 @@
 # CallAPI Example
 
-*English | [中文](README_zh.md)*
+本文档主要介绍如何快速跑通 CallAPI 示例工程
 
-This document mainly introduces how to quickly get through the CallAPI example project.
+## 1. 环境准备
+- <mark>最低兼容 Android 7.0</mark>（SDK API Level 24）
+- Android Studio 3.5 及以上版本。
+- Android 7.0 及以上的手机设备。
 
-## Requirements
-- Minimum compatibility with Android 7.0 (SDK API Level 24). 
-- Android Studio 3.5 and above versions. 
-- Android devices running on Android 7.0 and above.
+## 2. 运行示例
 
-## Getting Started
+- 克隆或者直接下载项目源码
+- 打开 Android Studio，并用它来打开项目的 [Android](../Android) 目录。IDE 会自动开始构建项目
 
-- Clone or download source code.
-- Open Android Studio and use it to open the [Android](../Android) directory of the project. This way, the IDE will automatically start building the project.
-- Wait for the build to complete.
-- Follow [The Account Document](https://docs.agora.io/en/video-calling/reference/manage-agora-account) to get the **App ID** and **App Certificate(if enable token)**.
-- **How to enable RTM**
-  > To try out this service, please contact sales@agora.io
+- 获取声网 App ID -------- [声网Agora - 文档中心 - 如何获取 App ID](https://docs.agora.io/cn/Agora%20Platform/get_appid_token?platform=All%20Platforms#%E8%8E%B7%E5%8F%96-app-id)
 
-- <a id="custom-report">Enable Agora Custom Data Reporting and Analytics Service</a>
-  > This service is currently in free beta testing. To try out this service, please contact sales@agora.io
+  > 点击创建应用。
+  > <br><img src="https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/create_app_1.jpg" width="500px">
+  > <br>选择你要创建的应用类型。
+  > <br><img src="https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/create_app_2.jpg" width="500px">
 
-- In the project root directory, locate the [gradle.properties](gradle.properties) file and fill in the Agora App ID and Certificate:
+- 获取 App 证书 ----- [声网Agora - 文档中心 - 获取 App 证书](https://docs.agora.io/cn/Agora%20Platform/get_appid_token?platform=All%20Platforms#%E8%8E%B7%E5%8F%96-app-%E8%AF%81%E4%B9%A6)
+
+  > 在声网控制台的项目管理页面，找到你的项目，点击配置。
+  > <br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/1641871111769.png" width="500px">
+  > <br>点击主要证书下面的复制图标，即可获取项目的 App 证书。
+  > <br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/1637637672988.png" width="500px">
+
+- 开启 RTM
+  > <br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config1.jpg" width="500px">
+  > <br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config2.jpg" width="500px">
+  > <br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config3.jpg" width="500px">
+
+- <a id="custom-report">开通声网自定义数据上报和分析服务</a>
+  > 该服务当前处于免费内测期，如需试用该服务，请联系 sales@agora.io
+
+- 在项目根目录找到 [gradle.properties](gradle.properties)，填入声网的 AppId 和 Certificate
 ```
 AG_APP_ID=
 AG_APP_CERTIFICATE=
 ```
-- In the top toolbar of Android Studio, click "File" -> select "Sync Project with Gradle Files", wait for Gradle sync to complete, then you can run and debug the project
+- 在 Android Studio 顶部工具栏中，单击“File”->选择“Sync Project With Gradle File”，等待 Gradle 同步完成，即可运行项目并进行调试
 
-## 3. Project Overview
-### 3.1 Summary
-> CallAPI is Agora's scenario-based API solution designed for one-to-one instant connection. It enables developers to achieve ultra-low latency and smooth switching in live streaming scenarios.
+## 3. 项目介绍
+### 3.1 概述
+> CallAPI 是声网面向一对一秒开设计的场景化 API 解决方案，可以让开发者在直播场景下，获得极速秒开、丝滑切换体验。
 
-### 3.2 Core Features
+### 3.2 角色介绍
+- 主叫
+  > 是发起呼叫并邀请对方进行通话的一方。主叫方主动发起呼叫请求，建立起视频通话连接，并发送邀请给被叫方。
+- 被叫
+  > 是接收呼叫请求并被邀请进行通话的一方。被叫方在收到主叫方的呼叫邀请后可以接受或拒绝呼叫，如果接受呼叫，则与主叫方建立起视频通话连接。
 
-- **Call**: The caller initiates a call.
-- **Cancel Call**: The caller can cancel the call before the call is successfully established.
-- **Accept Call**: The callee can accept the call request from the caller.
-- **Reject Call**: The callee can reject the call request from the caller.
-- **Hang Up**: Both the caller and callee can initiate a request to hang up the current call.
+### 3.3 核心功能：
+- **呼叫**：主叫发起呼叫。
+- **取消呼叫**：主叫发起呼叫后可以在通话成功前发起取消呼叫来中断当前的呼叫。
+- **接受呼叫**：被叫在接收到主叫的呼叫请求后可以接受当次呼叫。
+- **拒绝呼叫**：被叫在接收到主叫的呼叫请求后可以拒绝当次呼叫。
+- **挂断**：主叫/被叫在通话中时可以发起挂断请求来中断本次通话。
 
-### 3.3 Gameplay Explanation
-- 1v1 Scenario:
-  > In a social scenario with strangers, users can filter and find other users of interest based on photos and personal profiles. They can also randomly match with other users based on geographical location or tags. This allows two users to have a private one-on-one video call. By default, both users will have their cameras and microphones enabled, and they can send and receive audio and video streams bidirectionally.
-- Showroom to 1v1 Scenario:
-  > During a live broadcast, viewers can pay to initiate a one-on-one video call. Once the call is connected, the original live broadcast of the host will not be closed, but it will stop streaming. The host will switch to a one-on-one video call with the paid user. After the one-on-one call ends, the host will switch back to the original live broadcast and continue streaming.
+### 3.4 玩法说明
+- 1v1场景
+  > 通常在陌生人社交场景，用户可以根据照片和个人简介筛选到目标感兴趣其他用户，或者通过地理位置、标签随机匹配的方式，2位用户进行1v1私密视频通话的场景玩法。通话中，默认1v1双方用户均开启摄像头和麦克风，双向发送接收音视频流。
+- 秀场转1v1场景
+  > 主播在直播过程中，用户可以付费发起1v1视频通话。在通话接通后，主播的原直播间不关闭但不推流，主播转场到1v1与付费用户进行视频通话；当1v1视频通话结束后，主播转场回原直播间继续直播的场景玩法。
 
-### 3.4 Role Introduction
-- Caller:
-  > The caller is the one who initiates the call and invites the other party to join the call. The caller initiates the call request, establishes the video call connection, and sends an invitation to the callee.
-- Callee:
-  > The callee is the one who receives the call request and is invited to join the call. The callee can accept or reject the call request from the caller. If the callee accepts the call, a video call connection is established with the caller.
+## 4. 快速集成
 
-### 3.5 Optimizing Call Performance and Reliability
-#### 3.5.1 Accelerating Rendering Speed
-- 1.Use [Wildcard Tokens](https://doc.shengwang.cn/doc/rtc/ios/best-practice/wildcard-token)
-  - To improve call quality and stability, we recommend using wildcard tokens. This eliminates the need to generate different tokens for joining different channels, saving time and effort. By using a single fixed token, you can focus more on the content of the call instead of token management.
-- 2.Accelerating Caller's Rendering Speed
-  - 2.1 **`[Optional]`** When initializing, you can join your own RTC channel in advance.**`Keep in mind that this action may incur additional costs. If you are concerned about expenses, you can skip this step`**.
-  - 2.2 When initiating a call, you need to join your own RTC channel, send audio/video streams, and subscribe to the remote video stream. To avoid missing the first I-frame and potential slow rendering of the first frame, create a temporary canvas and use the `setupRemoteVideoEx` method to render the callee's video stream onto the canvas.
-  - 2.3 After receiving acceptance from the callee, start subscribing to the remote audio stream.
-  - 2.4 Once you receive the callee's first frame and their consent, you can consider the connection successful. At this point, add the previously created temporary canvas to the view to complete the video rendering.
-- 3.Accelerating Callee's Rendering Speed
-  - 3.1 **`[Optional][Default]`** When receiving a call, immediately join the caller's RTC channel, push audio/video streams, and subscribe to the video stream while creating a temporary canvas. Use the`setupRemoteVideoEx` method to render the caller's video stream onto the canvas. This ensures that the first I-frame is not missed and avoids potential slow rendering of the first frame.**`Note that this behavior is the default in CallAPI and incurs additional costs. If you are sensitive to the expenses, we recommend modifying internal parameters to delay triggering this behavior. This allows better cost control and adjustment based on your specific needs`**.
-  - 3.2 When accepting the call:
-    - 3.2.1 If you haven't executed **`[Step 3.1]`** when receiving the call, perform it at this point.
-    - 3.2.2 Start subscribing to the remote audio stream.
-  - 3.3 Once you receive the first frame from the caller, you can confirm the successful connection. Add the previously created temporary canvas to the visual view to complete the video rendering process.
+- 拷贝 [lib_callapi/src/main/java/io/agora/onetoone](lib_callapi/src/main/java/io/agora/onetoone) 到自己的工程中
 
-#### 3.5.2 Improving Message Delivery Rate
-- Implement message acknowledgments (if not already available in the signaling channel).
-- Add timeout and retry mechanism for message delivery (if not already available in the signaling channel).
-- Choose a signaling channel with high message delivery rate, such as Agora RTM.
-#### 3.5.3 Enhancing Security
-- To ensure the privacy and security of calls, you can pre-allocate multiple channel IDs and use different channels for each call to maintain the confidentiality of call content.
-- Adopt a multi-platform billing strategy to ensure accurate and secure billing for calls.
-
-#### 3.5.4 Sequence Diagram
-- 
-![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_solution_1v1.en.png)
-
-### 3.6 Metrics that affect call speed
-- Caller:
-  - Call-to-receiver time
-  - Call-to-receiver-acceptance time
-  - Call-to-receiver-joining-channel time
-  - Call-to-caller-joining-channel time
-  - Call-to-receiver-first-frame-arrival time
-- Receiver:
-  - Receiver-receiving-call-to-acceptance time
-  - Receiver-receiving-call-to-self-joining-channel time
-  - Receiver-receiving-call-to-caller-joining-channel time
-  - Receiver-receiving-call-to-receiving-first-frame time
-
-## 4. Quick Integration
-- Copy[lib_callapi/src/main/java/io/agora/onetoone](lib_callapi/src/main/java/io/agora/onetoone)to your own project.
-
-- Make sure you use the correct Agora SDK dependencies in your project, ensuring they do not conflict with CallApi:
+- 请确保项目中使用正确的声网 SDK 依赖，保证和 CallApi 的依赖不冲突:
   - 'io.agora:agora-rtm:2.1.8'
   - 'io.agora.rtc:agora-special-full:4.1.1.17'
 
-- In Android Studio, click "File" in the top toolbar, then select "Sync Project With Gradle File" to integrate the CallAPI code into your project.
-- Initialize the settings.
-  - Create an instance of CallAPI.
+- 在 Android Studio 顶部工具栏中，单击“File”->选择“Sync Project With Gradle File”，CallAPI 代码即可集成进项目里。
+- 初始化设置。
+  - 创建 CallAPI 实例。
     ```kotlin
       val api = CallApiImpl(this)
     ```
-  - Initialize CallApi.
+  - 初始化 CallApi。
     ```kotlin
-       // Initialize config
+        //初始化config
        val config = CallConfig(
            appId = BuildConfig.AG_APP_ID,
            userId = enterModel.currentUid.toInt(),
            rtcEngine = rtcEngine,
-           rtmClient = rtmClient, // If available, pass it, otherwise set to null
+           rtmClient = rtmClient, //如果有则传，否则为null
        )
        api.initialize(config)
     ```
-  - Prepare the call environment.
+  - 准备通话环境。
     ```kotlin   
       this.api.initialize(config) 
       val prepareConfig = PrepareConfig()
-      prepareConfig.rtcToken = ...   // Set rtc token (universal token)
-      prepareConfig.rtmToken = ...   // Set rtm token
+      prepareConfig.rtcToken = ...   //设置rtc token(万能token)
+      prepareConfig.rtmToken = ...   //设置rtm token
       prepareConfig.roomId = enterModel.currentUid
       prepareConfig.localView = mViewBinding.vRight
       prepareConfig.remoteView = mViewBinding.vLeft
-      prepareConfig.autoAccept = false  // If you want the call to be automatically accepted, set it to true
-      prepareConfig.autoJoinRTC = false  // If you want to immediately join your own RTC call channel, set it to true
+      prepareConfig.autoAccept = false  //如果期望收到呼叫自动接通，则需要设置为true
+      prepareConfig.autoJoinRTC = false  //如果期望立即加入自己的RTC呼叫频道，则需要设置为true
       api.prepareForCall(prepareConfig: prepareConfig) { err ->
-          // Once successful, you can start making calls
+          //成功即可以开始进行呼叫
       }
     ```
-- Set up callbacks.
-  - Set up listeners.
+- 设置回调。
+  - 设置监听。
     ```kotlin
       api.addListener(this)
     ```
-  - Implement the protocol corresponding to ICallApiListener.
+  - 实现 ICallApiListener 对应的协议。
     ```kotlin
       override fun onCallStateChanged(
             state: CallStateType,
@@ -150,14 +122,14 @@ AG_APP_CERTIFICATE=
         
       }
     ```
-- Make a call
-  - If you are the caller, call the remote user using the `call` method.
+- 呼叫
+  - 如果是主叫，调用 call 方法呼叫远端用户。
     ```kotlin
       callApi.call(remoteUserId) { err ->
       }
     ```
-  - At this point, both the caller and the callee will receive the onCallStateChanged callback with `state == CallStateType.Calling`, indicating that the call is in progress.
-    **`Note: When receiving the Calling state, make sure to close any ongoing audio/video streaming externally, otherwise the call will fail.`**
+  - 此时不管主叫还是被叫都会收到 onCallStateChanged 会返回 state == CallStateType.Calling，变更成呼叫状态。
+    **`注意: 收到calling时需要把外部开启的音视频推流关闭，否则呼叫会失败`**
       ```kotlin
         override fun onCallStateChanged(
             state: CallStateType,
@@ -170,49 +142,56 @@ AG_APP_CERTIFICATE=
                 return
             }
             if (state == CallStateType.Calling) {
-                // If the call is in progress
-                // UID of the calling user
+                //如果是呼叫中
+                //主叫用户的uid
                 val fromUserId = eventInfo[CallApiImpl.kFromUserId] as? Int ?: 0
-                // UID of the target user, which is the current user
+                //目标用户的uid，为当前用户
                 val toUserId = eventInfo[CallApiImpl.kRemoteUserId] as? Int ?: 0
             }
         }
       ```
-- If `autoAccept` is set to `true` in `PrepareConfig`, then there is no need to explicitly call the `accept` method. CallApi will automatically accept the call. If `autoAccept` is set to `false`, then the callee needs to manually accept or reject the call, and the caller can choose to cancel the call.
+- 如果在 PrepareConfig 中 autoAccept 设置为 true，则无需显式调用 accept 方法，CallApi 将会自动接受呼叫。若将 autoAccept 设置为 false，则被叫方需要手动同意或拒绝呼叫，而主叫方可以选择取消呼叫。
   ```kotlin
-    // Accept the call
-    api.accept(remoteUserId) { err ->
+    //同意
+    api.accept(roomId, remoteUserId) { err ->
     }
 
-    // Reject the call
+    // 拒绝
     api.reject(remoteUserId, "reject by user") { err ->
     }
 
-    // Cancel the call
+    //取消呼叫
     api.cancelCall { err ->
     }
   ```
-- If the callee accepts the call, the `onCallStateChanged` event will first switch to the `connecting` state, and after the remote video rendering is complete, the state will change to `connected`, indicating that the call was successful. This state change process reflects the establishment of the call and the rendering of the video.
-- If the callee rejects the call, `onCallStateChanged` will return `(state: .prepared), (stateReason: .localRejected)` (if the callee rejects the call) or `(stateReason: .remoteRejected)` (if the caller cancels the call).
-- If the callee does not respond (accept or reject), `onCallStateChanged` will return `(state: .prepared), (stateReason: .callingTimeout)`. This indicates that the call timed out and the connection was not established successfully.
-- To end the call, you can call the `hangup` function. At this point, `onCallStateChanged` will return `(state: .prepared), (stateReason: .localHangup)` (if the local user hangs up) or `(stateReason: .remoteHangup)` (if the remote user hangs up). This indicates that the call has been hung up and the connection has been disconnected.
+- 如果被叫方同意呼叫，通过 onCallStateChanged 事件会先切换为连接中状态（state: .connecting），然后在远端画面渲染完成后，状态将变为已连接（state: .connected），表示呼叫成功。这个状态变化过程反映了呼叫的建立和视频画面的渲染。
+- 如果被叫方拒绝呼叫，onCallStateChanged 会返回(state: .prepared)，(stateReason: .localRejected)(被叫)或(stateReason: .remoteRejected)(主叫)。
+- 如果被叫方未作出回应(同意或拒绝)，onCallStateChanged 会返回(state: .prepared)，(stateReason: .callingTimeout)。表示呼叫超时，未能成功建立连接。
+- 如需结束呼叫，可以调用挂断函数。此时 onCallStateChanged 将返回 (state: .prepared), (stateReason: .localHangup)(本地用户)或(stateReason: .remoteHangup)(远端用户)。这表示呼叫已经被挂断，连接已经断开。
   ```kotlin
     api.hangup(remoteUserId) { error ->
     }
   ```
-- To release the call buffer, call `deinitialize`. After releasing the buffer, you need to reinitialize it.
+- 释放通话缓存，释放后需要重新 initialize。
   ```kotlin
     api.deinitialize()
   ```
-## 5. Advanced Integration
-- Using externally initialized RTM.
+
+- 场景调用 CallAPI 的时序图
+  - 1v1场景
+    <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_pure1v1.zh.png" width="500px"><br><br>
+  - 秀场转1v1
+    <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_showto1v1.zh.png" width="500px"><br><br>
+
+## 5. 进阶集成
+- 使用外部初始化的 RTM。
   ```kotlin
-    //If the RTM has already been created externally, you can pass in the RTM instance
+    //如果外部已经使用了rtm，可以传入rtm实例
     val rtmClient: RtmClient? = _createRtmClient()
-    //If the rtmClient has been created externally, make sure it is in a logged-in state before proceeding with any subsequent settings
+    //如果外部创建了rtmClient，需要保证是已经登录的状态之后在进行后续设置
     rtmClient?.login(token, object: ResultCallback<Void?> {
         override fun onSuccess(p0: Void?) {
-            //Once logged in, CallAPI can be initialized
+            //登录成功即可进行CallApi的初始化
             val config = CallConfig()
             config.rtmClient = rtmClient 
             //...
@@ -223,21 +202,172 @@ AG_APP_CERTIFICATE=
         }
     })
   ```
-  **`Note: If rtmClient is passed in externally, the external party needs to maintain the login status`**
+  **`注意：如果通过外部传入 rtmClient，则需要外部维持登陆状态`**
 
-- Modify callee streaming strategy to save costs.
-  - Modify the corresponding code (OnCall -> Accept) in[CallApiImpl.kt](lib_callapi/src/main/java/io/agora/onetoone/CallApiImpl.kt)to start streaming and receiving streams after accepting the call, instead of streaming and receiving streams as soon as the call is received, to ensure that streaming starts after accepting the call.
+- 修改被叫推流策略以节省费用。
+  - 修改[CallApiImpl.kt](lib_callapi/src/main/java/io/agora/onetoone/CallApiImpl.kt)中对应代码(OnCall->Accept)，从收到呼叫即推流和收流改为接受后再推流和收流，以保证在接受呼叫之后才推流。
     ```kotlin
       //val calleeJoinRTCType = CalleeJoinRTCType.OnCall
       val calleeJoinRTCType = CalleeJoinRTCType.Accept
     ```
-- Troubleshoot call exceptions.
-  - During the two-way connection process (when state is calling/connecting/connected), you can use the getCallId method to obtain the call ID for both ends of the current call.
-  - Through the CallAPI internal log reporting, you can query the time consumed by each node during the current call through Agora's backend. Please make sure that the[Agora custom data reporting and analysis service ](#custom-report)has been enabled.
+- 外部有额外采集推送音视频流的操作
+  -  由于 CallApi 内部会在通话时开启、结束通话时关闭采集音视频，因此如果在结束通话后外部需要手动开启音视频采集，例如当 onCallStateChanged 返回`(state: prepared)`时，可以开启采集。
+     ```kotlin
+       rtcEngine.enableLocalAudio(true)
+       rtcEngine.enableLocalVideo(true)
+     ```
+- 通话异常定位。
+  - 在双端连接过程中(state为calling/connecting/connected时)可以通过 getCallId 方法获取当次通话双端的呼叫 id。
+  - 通过 CallAPI 内部的日志上报，可以在声网后台查询到当次通话的各个节点耗时，请确保已经[开通声网自定义数据上报和分析服务](#custom-report)。
 
-## 6. Scenario Invocation Sequence Diagram
-### 6.1 1v1 Scenario
-![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_pure1v1.en.png)
+## API说明
+### CallApiListenerProtocol
+- 状态响应回调，描述由于某个 stateReason 导致的 state 变化
+  ```kotlin
+     /**
+     * 状态响应回调
+     * @param state 状态类型
+     * @param stateReason 状态原因
+     * @param eventReason 事件类型描述
+     * @param eventInfo 扩展信息，不同事件类型参数不同，其中key为“publisher”为状态变更者id，空则表示是自己的状态变更
+     */
+    fun onCallStateChanged(state: CallStateType,
+                           stateReason: CallReason,
+                           eventReason: String,
+                           eventInfo: Map<String, Any>)
+  ```
 
-### 6.2 Live Broadcasting to 1v1 Scenario
-![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_showto1v1.en.png)
+- 详细事件变更回调
+  ```kotlin
+    /**
+     * 内部详细事件变更回调
+     * @param event: 事件
+     */
+    fun onCallEventChanged(event: CallEvent) {}
+  ```
+
+- token 即将要过期(需要外部获取新token调用renewToken更新)
+  ```kotlin
+    /** token快要过期了(需要外部获取新token调用renewToken更新)
+     */
+    fun tokenPrivilegeWillExpire() {}
+  ```
+
+- 打印日志
+  ```kotlin
+    /** 日志回调
+     *  @param message: 日志信息
+     *  @param logLevel: 日志优先级: 0: 普通日志，1: 警告日志, 2: 错误日志
+     */
+    fun callDebugInfo(message: String, logLevel: CallLogLevel) {}
+  ```
+
+
+### CallApiProtocol
+
+- 初始化配置，需要设置 AppId、用户 id、RTC/RTM 实例对象等
+  ```kotlin
+    fun initialize(config: CallConfig)
+  ```
+
+- 不需要再使用 CallApi，释放缓存
+  ```kotlin
+    fun deinitialize(completion: (() -> Unit))
+  ```
+
+- token 更新，当收到 tokenPrivilegeWillExpire 后可以获取新的 token 更新
+  ```kotlin
+    fun renewToken(rtcToken: String, rtmToken: String)
+  ```
+
+- 准备通话环境，需要调用成功才可以进行呼叫，如果需要更换通话的 RTC 频道号可以重复调用，确保调用时必须是非通话状态(非 calling、connecting、connected)才可调用成功
+  ```kotlin
+    fun prepareForCall(prepareConfig: PrepareConfig, completion: ((AGError?) -> Unit)?)
+  ```
+- 添加回调的 listener
+  ```kotlin
+    fun addListener(listener: ICallApiListener)
+  ```
+
+- 移除回调的 listener
+  ```kotlin
+    fun removeListener(listener: ICallApiListener)
+  ```
+
+- 发起通话，主叫调用，通过 prepareForCall 设置的 RTC 频道号和远端用户建立 RTC 通话连接
+  ```kotlin
+    fun call(remoteUserId: Int, completion: ((AGError?) -> Unit)?)
+  ```
+
+- 取消正在发起的通话，主叫调用
+  ```kotlin
+    fun cancelCall(completion: ((AGError?) -> Unit)?)
+  ```
+
+- 接受通话，被叫调用
+  ```kotlin
+    fun accept(remoteUserId: Int, completion: ((AGError?) -> Unit)?)
+  ```
+
+- 拒绝通话，被叫调用
+  ```kotlin
+    fun reject(remoteUserId: Int, reason: String?, completion: ((AGError?) -> Unit)?)
+  ```
+
+- 结束通话，主叫和被叫均可调用
+  ```kotlin
+    fun hangup(remoteUserId: Int, completion: ((AGError?) -> Unit)?)
+  ```
+
+- 获取当前通话的 callId，callId 为当次通话过程中唯一标识，通过该标识声网后台服务可以查询到当前通话的关键节点耗时和状态变迁的时间节点
+  ```kotlin
+    fun getCallId(): String
+  ```
+
+
+## 7 实现原理
+### 7.1 优化呼叫性能和可靠性
+#### 7.1.1 加快出图速度
+- 1.使用[万能 Token](https://doc.shengwang.cn/doc/rtc/ios/best-practice/wildcard-token)
+  - 为了提高通话质量和稳定性，我们采用万能 Token，可以节省因加入不同频道获取 Token 的时间，这意味着，在使用我们的服务时，您无需频繁获取 Token，而只需使用一个固定的 Token 即可。这样不仅可以提高您的使用效率，还可以让您更加专注于通话内容本身。
+  - **为了保障通话的私密性和安全性，推荐每次呼叫都采用不同的 RTC 频道号**。
+- 2.加快主叫出图速度
+  - 2.1 **`[可选]`** 初始化时，可以提前加入自己的 RTC 频道。**`请注意，这种行为可能会导致额外的费用。如果对费用比较在意，您可以选择忽略此步骤`**。
+  - 2.2 在向被叫发起呼叫时
+    - 2.2.1 加入自己的 RTC 频道。
+    - 2.2.2 往自己的 RTC 频道发送音视频流。
+    - 2.2.3 订阅远端的视频流，不订阅音频流。
+    - 2.2.4 同时，为了避免错过首个 I 帧解码导致可能的首帧渲染慢，您需要创建一个临时的画布，并使用 `setupRemoteVideoEx` 方法将被叫用户的视频流渲染到该画布中。
+  - 2.3 当收到收到被叫的接受消息后，开始订阅远端音频流。
+  - 2.4 当收到被叫方的首帧并且已经接收到被叫方的同意后，即可认为连接成功。此时，您可以将之前创建的临时画布添加到视图中，完成视频的渲染。
+- 3.加快被叫出图速度
+  - 3.1 **`[可选][推荐]`** 当收到主叫呼叫后
+    - 3.1.1 立即加入主叫的 RTC 频道。
+    - 3.1.2 往主叫 RTC 频道推送音视频流。
+    - 3.1.3 然后订阅远端的视频流，不订阅音频流。
+    - 3.1.4 同时，为了避免错过首个 I 帧解码导致可能的首帧渲染慢，您需要创建一个临时的画布，并使用 `setupRemoteVideoEx` 方法将主叫用户的视频流渲染到该画布中。
+      **`请注意，[步骤3.1]会导致额外费用。如果对费用比较敏感，您可以选择忽略此步骤`**。
+  - 3.2 当点击接受后
+    - 3.2.1 如果收到呼叫时没有执行 **`[步骤3.1]`** ，那么需要在此处执行 **`[步骤3.1]`** 。
+    - 3.2.2 开始订阅远端音频流。
+  - 3.3 当收到主叫方的首帧后，即可确认连接成功。此时，您可以将之前创建的临时画布添加到可视化视图中，从而完成视频渲染的过程。
+- 4.时序图
+  <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_solution_1v1.zh.png" width="500px"><br><br>
+
+#### 7.1.2 提升消息送达率
+- 增加消息回执(如果信令通道有则忽略)
+- 增加超时重试(如果信令通道有则忽略)
+- 选择送达率高的信令通道，例如声网RTM
+
+### 7.2 影响通话速度的指标
+- 主叫
+  - 呼叫-被叫收到呼叫的耗时
+  - 呼叫-收到被叫接受呼叫的耗时
+  - 呼叫-被叫加入频道的耗时
+  - 呼叫-主叫自己加入频道的耗时
+  - 呼叫-收到被叫首帧的耗时
+- 被叫
+  - 收到呼叫-接受呼叫的耗时
+  - 收到呼叫-被叫自己加入频道的耗时
+  - 收到呼叫-主叫加入频道的耗时
+  - 收到呼叫-收到主叫首帧的耗时
