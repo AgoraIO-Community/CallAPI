@@ -85,11 +85,8 @@ open class AUIToast: UIView {
             return
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            UIView.animate(withDuration: 0.15) {
-                self.currentToastView?.alpha = 0
-            } completion: { _ in
-                self.currentToastView?.removeFromSuperview()
-            }
+            self.currentToastView?.alpha = 0
+            self.currentToastView?.removeFromSuperview()
         }
     }
     
@@ -172,17 +169,11 @@ open class AUIToast: UIView {
     }
     
     private static func showAnimation(toastView: UIView, isRemove: Bool = true, duration: TimeInterval = 2.5) {
-        UIView.animate(withDuration: 0.15) {
-            toastView.backgroundColor = UIColor.black.withAlphaComponent(0.6)
-        } completion: { _ in
-            guard isRemove else { return }
-            DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
-                UIView.animate(withDuration: 0.15) {
-                    toastView.alpha = 0
-                } completion: { _ in
-                    toastView.removeFromSuperview()
-                }
-            }
+        toastView.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        guard isRemove else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+            toastView.alpha = 0
+            toastView.removeFromSuperview()
         }
     }
     

@@ -12,13 +12,21 @@ import AgoraRtcKit
 import AgoraRtmKit
 
 class Pure1v1RoomViewController: UIViewController {
-    var currentUid: UInt = 0             //当前用户UID
-    var tokenConfig: CallTokenConfig?
+    private var currentUid: UInt             //当前用户UID
+    private var prepareConfig: PrepareConfig
     var videoEncoderConfig: AgoraVideoEncoderConfiguration?
     
     private let api = CallApiImpl()
-    private let leftView: UIView = UIView()
-    private let rightView: UIView = UIView()
+    private lazy var leftView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .white
+        return view
+    }()
+    private let rightView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .white
+        return view
+    }()
     private lazy var rtcEngine = _createRtcEngine()
     private var rtmClient: AgoraRtmClientKit?
     
@@ -29,13 +37,16 @@ class Pure1v1RoomViewController: UIViewController {
         didSet {
             switch callState {
             case .calling:
-                self.leftView.isHidden = false
                 self.rightView.isHidden = false
                 hangupButton.isHidden = true
                 callButton.isHidden = true
             case .connected:
+                muteAudioButton.isSelected = false
+                muteAudioButton.isHidden = false
+                self.leftView.isHidden = false
                 hangupButton.isHidden = false
             case .prepared, .idle, .failed:
+                muteAudioButton.isHidden = true
                 self.leftView.isHidden = true
                 self.rightView.isHidden = true
                 self.callButton.isHidden = false
@@ -119,6 +130,14 @@ class Pure1v1RoomViewController: UIViewController {
         return btn
     }()
     
+    private lazy var muteAudioButton: UIButton = {
+        let btn = UIButton()
+        btn.addTarget(self, action: #selector(muteAudioAction), for: .touchUpInside)
+        btn.setImage(UIImage(named: "mic_unmute"), for: .normal)
+        btn.setImage(UIImage(named: "mic_mute"), for: .selected)
+        return btn
+    }()
+    
     private lazy var canvas: AgoraRtcVideoCanvas = {
         let canvas = AgoraRtcVideoCanvas()
         canvas.mirrorMode = .disabled
@@ -129,9 +148,10 @@ class Pure1v1RoomViewController: UIViewController {
         print("deinit-- Pure1v1RoomViewController")
     }
     
-    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
-        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
-        print("init-- Pure1v1RoomViewController")
+    required init(currentUid: UInt, prepareConfig: PrepareConfig) {
+        self.currentUid = currentUid
+        self.prepareConfig = prepareConfig
+        super.init(nibName: nil, bundle: nil)
     }
     
     required init?(coder: NSCoder) {
@@ -152,6 +172,7 @@ class Pure1v1RoomViewController: UIViewController {
         view.addSubview(closeButton)
         view.addSubview(callButton)
         view.addSubview(hangupButton)
+        view.addSubview(muteAudioButton)
         
         currentUserLabel.frame = CGRect(x: 10, y: 80, width: 200, height: 40)
         targetUserLabel.sizeToFit()
@@ -163,13 +184,13 @@ class Pure1v1RoomViewController: UIViewController {
         callButton.frame = CGRect(x: view.frame.width - 50, y: top, width: 40, height: 40)
         hangupButton.frame = callButton.frame
         
+        muteAudioButton.frame = CGRect(x: callButton.frame.origin.x - callButton.frame.size.width - 10,
+                                       y: top,
+                                       width: callButton.frame.width,
+                                       height: callButton.frame.height)
+        
         leftView.frame = CGRect(x: 0, y: 50, width: view.frame.width / 2, height: view.frame.height / 2)
         rightView.frame = CGRect(x: view.frame.width / 2, y: 50, width: view.frame.width / 2, height: view.frame.height / 2)
-        leftView.backgroundColor = .black
-        rightView.backgroundColor = .black
-        
-        leftView.isHidden = true
-        rightView.isHidden = true
         
         self.callState = .idle
         //外部创建rtmClient
@@ -181,17 +202,14 @@ class Pure1v1RoomViewController: UIViewController {
     private func initCallApi(completion: @escaping ((Bool)->())) {
         //外部创建需要自行管理login
         NSLog("login")
-        rtmClient?.login(tokenConfig?.rtmToken) {[weak self] resp, err in
+        rtmClient?.login(prepareConfig.rtmToken) {[weak self] resp, err in
             guard let self = self else {return}
             if let err = err {
                 NSLog("login error = \(err.localizedDescription)")
                 completion(false)
                 return
             }
-            self._initialize(rtmClient: self.rtmClient) { success in
-                NSLog("_initialize: \(success)")
-                completion(success)
-            }
+            self._initialize(rtmClient: self.rtmClient, completion: completion)
         }
     }
     
@@ -204,24 +222,18 @@ class Pure1v1RoomViewController: UIViewController {
 extension Pure1v1RoomViewController {
     private func _initialize(rtmClient: AgoraRtmClientKit?, completion: @escaping ((Bool)->())) {
         let config = CallConfig()
-        config.role = .caller   // 纯1v1只能设置成主叫
-        config.mode = .pure1v1
         config.appId = KeyCenter.AppId
         config.userId = currentUid
-        config.autoAccept = false
-        config.rtcEngine = _createRtcEngine()
+        config.rtcEngine = rtcEngine
         config.rtmClient = rtmClient
-        config.localView = rightView
-        config.remoteView = leftView
-        
-        self.api.initialize(config: config, token: tokenConfig!) { error in
-            if let _ = error {
-                completion(false)
-                return
-            }
-        }
-        
+        self.api.initialize(config: config)
+        prepareConfig.roomId = "\(currentUid)"
+        prepareConfig.localView = rightView
+        prepareConfig.remoteView = leftView
         api.addListener(listener: self)
+        api.prepareForCall(prepareConfig: prepareConfig) { err in
+            completion(err == nil)
+        }
     }
     
     @objc func closeAction() {
@@ -244,19 +256,23 @@ extension Pure1v1RoomViewController {
             AUIToast.show(text: "CallAPi初始化中")
             return
         }
-        api.call(roomId: "\(targetUserId)", remoteUserId: targetUserId) { error in
+        api.call(remoteUserId: targetUserId) { error in
         }
-
-        leftView.isHidden = false
-        rightView.isHidden = false
     }
     
     @objc func hangupAction() {
-        api.hangup(userId: connectedUserId ?? 0) { error in
+        api.hangup(remoteUserId: connectedUserId ?? 0) { error in
         }
+    }
+    
+    @objc func muteAudioAction() {
+        guard let roomId = connectedRoomId else { return }
+        muteAudioButton.isSelected = !muteAudioButton.isSelected
         
-        leftView.isHidden = true
-        rightView.isHidden = true
+        let connection = AgoraRtcConnection(channelId: roomId, localUid: Int(currentUid))
+        let mediaOptions = AgoraRtcChannelMediaOptions()
+        mediaOptions.publishMicrophoneTrack = muteAudioButton.isSelected == false ? true : false
+        rtcEngine.updateChannelEx(with: mediaOptions, connection: connection)
     }
     
     //创建RTM
@@ -297,41 +313,34 @@ extension Pure1v1RoomViewController: AgoraRtcEngineDelegate {
 
 extension Pure1v1RoomViewController:CallApiListenerProtocol {
     func tokenPrivilegeWillExpire() {
-        //更新自己的token
-        NetworkManager.shared.generateTokens(channelName: connectedRoomId ?? "",
+        //更新token
+        NetworkManager.shared.generateTokens(channelName: "",
                                              uid: "\(currentUid)",
                                              tokenGeneratorType: .token007,
                                              tokenTypes: [.rtc, .rtm]) {[weak self] tokens in
             guard let self = self else {return}
-            self.tokenConfig?.rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
-            self.tokenConfig?.rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
-            self.api.renewToken(with: self.tokenConfig!)
-        }
-        
-        //如果是被叫(即1v1的频道是对方的频道)，需要更新对方频道的token
-        if let connectedRoomId = connectedRoomId, connectedRoomId != "\(currentUid)" {
-            NetworkManager.shared.generateTokens(channelName: connectedRoomId,
-                                                 uid: "\(currentUid)",
-                                                 tokenGeneratorType: .token007,
-                                                 tokenTypes: [.rtc, .rtm]) {[weak self] tokens in
-                
-                let rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
-                self?.api.renewRemoteCallerChannelToken(roomId: connectedRoomId, token: rtcToken)
-            }
+            let rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
+            self.prepareConfig.rtcToken = rtcToken
+            let rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
+            self.prepareConfig.rtmToken = rtmToken
+            self.api.renewToken(with: rtcToken, rtmToken: rtmToken)
         }
     }
     
-    public func onCallStateChanged(with state: CallStateType,
-                                   stateReason: CallReason,
-                                   eventReason: String,
-                                   elapsed: Int,
-                                   eventInfo: [String : Any]) {
-        let publisher = UInt(eventInfo[kPublisher] as? String ?? "") ?? currentUid
-        
-        guard publisher == currentUid else {
-            return
+    private func getCostInfo(map: [String: Int]) -> String {
+        var costStr: String = ""
+        let array: [(String, Int)] = map.map { ($0.key, $0.value)}.sorted { $0.1 < $1.1}
+        array.forEach { (key, value) in
+            costStr.append("\(key): \(value) ms\n")
         }
-        print("onCallStateChanged state: \(state.rawValue), stateReason: \(stateReason.rawValue), eventReason: \(eventReason), elapsed: \(elapsed) ms, eventInfo: \(eventInfo) publisher: \(publisher) / \(currentUid)")
+        return costStr
+    }
+    
+    public func onCallStateChanged(with state: CallStateType,
+                                   stateReason: CallStateReason,
+                                   eventReason: String,
+                                   eventInfo: [String : Any]) {
+        print("onCallStateChanged state: \(state.rawValue), stateReason: \(stateReason.rawValue), eventReason: \(eventReason), eventInfo: \(eventInfo)")
         
         self.callState = state
         
@@ -349,51 +358,43 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
             // 触发状态的用户是自己才处理
             if currentUid == toUserId {
                 connectedUserId = fromUserId
-                AUIAlertView()
-                    .isShowCloseButton(isShow: true)
-                    .title(title: "用户 \(fromUserId) 邀请您1对1通话")
-                    .rightButton(title: "同意")
-                    .leftButton(title: "拒绝")
-                    .leftButtonTapClosure {[weak self] in
-                        guard let self = self else { return }
-                        self.api.reject(remoteUserId: fromUserId, reason: "reject by user") { err in
-                        }
-                    }
-                    .rightButtonTapClosure(onTap: {[weak self] text in
-                        guard let self = self else { return }
-                        NetworkManager.shared.generateTokens(channelName: fromRoomId,
-                                                             uid: "\(toUserId)",
-                                                             tokenGeneratorType: .token007,
-                                                             tokenTypes: [.rtc, .rtm]) {[weak self] tokens in
-                            guard let self = self else {return}
-                            guard tokens.count == 2 else {
-                                print("generateTokens fail")
-                                self.view.isUserInteractionEnabled = true
-                                return
-                            }
-                            let rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
-                            self.api.accept(roomId: fromRoomId, remoteUserId: fromUserId, rtcToken: rtcToken) { err in
+                if prepareConfig.autoAccept == false {
+                    AUIAlertView()
+                        .isShowCloseButton(isShow: true)
+                        .title(title: "用户 \(fromUserId) 邀请您1对1通话")
+                        .rightButton(title: "同意")
+                        .leftButton(title: "拒绝")
+                        .leftButtonTapClosure {[weak self] in
+                            guard let self = self else { return }
+                            self.api.reject(remoteUserId: fromUserId, reason: "reject by user") { err in
                             }
                         }
-                    })
-                    .show()
-                
+                        .rightButtonTapClosure(onTap: {[weak self] text in
+                            guard let self = self else { return }
+                            self.api.accept(remoteUserId: fromUserId) { err in
+                            }
+                        })
+                        .show()
+                }
             } else if currentUid == fromUserId {
                 connectedUserId = toUserId
-                AUIAlertView()
-                    .isShowCloseButton(isShow: true)
-                    .title(title: "呼叫用户 \(toUserId) 中")
-                    .rightButton(title: "取消")
-                    .rightButtonTapClosure(onTap: {[weak self] text in
-                        guard let self = self else { return }
-                        self.api.cancelCall { err in
-                        }
-                    })
-                    .show()
+                if prepareConfig.autoAccept == false {
+                    AUIAlertView()
+                        .isShowCloseButton(isShow: true)
+                        .title(title: "呼叫用户 \(toUserId) 中")
+                        .rightButton(title: "取消")
+                        .rightButtonTapClosure(onTap: {[weak self] text in
+                            guard let self = self else { return }
+                            self.api.cancelCall { err in
+                            }
+                        })
+                        .show()
+                }
             }
             break
         case .connected:
-            AUIToast.show(text: "通话开始\(eventInfo[kDebugInfo] as? String ?? "")", postion: .bottom)
+            let costMap = eventInfo[kCostTimeMap] as? [String: Int] ?? [:]
+            AUIToast.show(text: getCostInfo(map: costMap), postion: .bottom)
             AUIAlertManager.hiddenView()
             
             //setup configuration after join channel ex
@@ -415,23 +416,27 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                 AUIToast.show(text: "无应答")
             case .localCancel, .remoteCancel:
                 AUIToast.show(text: "通话被取消")
+            case .remoteCallBusy:
+                AUIToast.show(text: "用户正忙")
             default:
                 break
             }
             AUIAlertManager.hiddenView()
             connectedUserId = nil
+            connectedRoomId = nil
         case .failed:
             AUIToast.show(text: eventReason, postion: .bottom)
             AUIAlertManager.hiddenView()
             connectedUserId = nil
+            connectedRoomId = nil
             closeAction()
         default:
             break
         }
     }
     
-    @objc func onCallEventChanged(with event: CallEvent, elapsed: Int) {
-        print("onCallEventChanged: \(event.rawValue), elapsed: \(elapsed)")
+    @objc func onCallEventChanged(with event: CallEvent) {
+        print("onCallEventChanged: \(event.rawValue)")
         switch event {
         case .remoteLeave:
             hangupAction()
@@ -440,11 +445,14 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
         }
     }
     
-    @objc func callDebugInfo(message: String) {
-        NSLog("[CallApi]%@", message)
-    }
-    
-    @objc func callDebugWarning(message: String) {
-        NSLog("[CallApi][Warning]%@", message)
+    @objc func callDebugInfo(message: String, logLevel: CallLogLevel) {
+        switch logLevel {
+        case .normal:
+            print("[CallApi]\(message)")
+        case .warning:
+            print("[CallApi][Warning]\(message)")
+        default:
+            print("[CallApi][Error]\(message)")
+        }
     }
 }

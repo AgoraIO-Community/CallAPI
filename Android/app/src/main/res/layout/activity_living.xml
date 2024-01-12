@@ -38,7 +38,7 @@
         android:id="@+id/vLeft"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="@android:color/holo_orange_light"
+        android:background="@android:color/white"
         app:layout_constraintDimensionRatio="1.31:2"
         app:layout_constraintEnd_toEndOf="@id/vertical50"
         app:layout_constraintStart_toStartOf="parent"
@@ -48,7 +48,7 @@
         android:id="@+id/vRight"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="@android:color/holo_purple"
+        android:background="@android:color/white"
         app:layout_constraintDimensionRatio="1.31:2"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@id/vertical50"
@@ -114,44 +114,5 @@
         android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnReset"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginBottom="60dp"
-        android:text="重置耗时统计"
-        android:textAllCaps="false"
-        android:textColor="@color/white"
-        android:textSize="14sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnShowAvgTs"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginBottom="10dp"
-        android:text="显示平均耗时"
-        android:textAllCaps="false"
-        android:textColor="@color/white"
-        android:textSize="14sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/btnReset" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnAutoCall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginBottom="10dp"
-        android:text="自动呼叫：关"
-        android:textAllCaps="false"
-        android:textColor="@color/white"
-        android:textSize="14sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/btnShowAvgTs" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

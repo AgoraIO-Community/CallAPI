@@ -1,58 +1,40 @@
 # CallAPI
 
-*English | [中文](README_zh.md)*
+## 概述
 
-## Overview
+CallAPI是声网面向一对一秒开设计的场景化API解决方案，可以让开发者在直播场景下，获得极速秒开、丝滑切换体验。
 
-CallAPI is a scenario based API solution for one-on-one, one second open design of the Agora, It can provide developers with an extremely fast and smooth switching experience in live streaming scenarios.
+## Demo 体验     
 
-## Scenario Description
-
-### Pure 1v1
-
-#### Role Description
-Pure 1v1 scenarios do not require specifying roles, all roles can be called and called
-
-### Live to 1v1
-
-#### Role Description
-| Role       | Description                 |
-|------------|-----------------------------|
-| caller | Audiences in the live broadcast room can be called to enter the 1v1 room.  |
-| callee | The creator of the live room can only accept calls from the caller to enter the 1v1 room. |
+| iOS                                                                              | Android                                                                          |  
+|----------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_ios.png?x-oss-process=image/resize,w_200) | ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_android.png?x-oss-process=image/resize,w_200) |  
+|                                                                                  |                                                                                  |  
+---
 
 
-
-#### The core functions provided by the CallAPI：
-- **Call**: The caller initiates the call.
-- **Cancel Call**: After the caller initiates the call, they can initiate a cancellation call before the call is successful to interrupt the current call.
-- **Accept**: The called person can accept the current call after receiving the calling request from the caller.
-- **Reject**: The called can reject the current call after receiving the calling request from the caller.
-- **Hangup**: The caller/callee can initiate a hang up request to interrupt this call while in progress.
+## 快速集成
 
 
-
-## Demo
-
-| iOS                                                          | Android                                                      |
-| ------------------------------------------------------------ | ------------------------------------------------------------ |
-| ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_ios.png?x-oss-process=image/resize,w_200) | ![](https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/1v1_qrcode_android.png?x-oss-process=image/resize,w_200) |
-
-## Quick Start
-
-| Platform     | Example                   |
+| 平台     | Example                   |
 |---------|------------------------|
 | Android | [CallAPI(Android)](Android) |
 | iOS     | [CallAPI(iOS)](iOS)   |
 
+---
+
+## 集成遇到困难，该如何联系声网获取协助
+
+> 方案1：可以从智能客服获取帮助或联系销售人员 [Agora 支持](https://agora-ticket.agora.io/) 
+> 
+> 方案2：发送邮件给[support@agora.io](mailto:support@agora.io)咨询
+>
+> 方案3：加入微信群提问
+>
+> ![](https://download.agora.io/demo/release/SDHY_QA.jpg)
 
 ---
 
+## 许可证
 
-### How to Contact Agora for Support
-
-> 1.Send an email to support@agora.io for consultation when you encounter integration difficulties.
-> 2.Add issue
- 
-
----
+CallAPI 使用 MIT 许可证，详情见 [LICENSE](/LICENSE) 

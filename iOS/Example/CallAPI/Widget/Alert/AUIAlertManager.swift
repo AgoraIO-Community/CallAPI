@@ -92,13 +92,11 @@ class AUIAlertManager: NSObject {
         if !viewCache.isEmpty {
             viewCache.forEach({ $0.view?.alpha = 0 })
         }
-        UIView.animate(withDuration: 0.25, animations: {
-            containerView?.backgroundColor = UIColor(red: 0.0/255,
-                                                     green: 0.0/255,
-                                                     blue: 0.0/255,
-                                                     alpha: 0.5)
-            view.alpha = 1.0
-        })
+        containerView?.backgroundColor = UIColor(red: 0.0/255,
+                                                 green: 0.0/255,
+                                                 blue: 0.0/255,
+                                                 alpha: 0.5)
+        view.alpha = 1.0
     }
     
     private static func showBottomView(view: UIView){
@@ -108,19 +106,15 @@ class AUIAlertManager: NSObject {
         view.alpha = 1.0
         bottomAnchor?.constant = 0
         bottomAnchor?.isActive = true
-        UIView.animate(withDuration: 0.25, animations: {
-            containerView?.backgroundColor = UIColor(red: 0.0/255,
-                                                    green: 0.0/255,
-                                                    blue: 0.0/255,
-                                                    alpha: 0.5)
-            containerView?.superview?.layoutIfNeeded()
-        })
+        containerView?.backgroundColor = UIColor(red: 0.0/255,
+                                                 green: 0.0/255,
+                                                 blue: 0.0/255,
+                                                 alpha: 0.5)
+        containerView?.superview?.layoutIfNeeded()
     }
 
     static func updateViewHeight() {
-        UIView.animate(withDuration: 0.25, animations: {
-            containerView?.layoutIfNeeded()
-        })
+        containerView?.layoutIfNeeded()
     }
     
     static func hiddenView(all: Bool = true, completion: (() -> Void)? = nil){
@@ -133,27 +127,24 @@ class AUIAlertManager: NSObject {
             bottomAnchor?.constant = lastView.frame.height
             bottomAnchor?.isActive = true
         }
-        UIView.animate(withDuration: 0.25, animations: {
-            if all || viewCache.isEmpty {
-                containerView?.backgroundColor = UIColor(red: 255.0/255,
-                                                         green: 255.0/255,
-                                                         blue: 255.0/255,
-                                                         alpha: 0.0)
-                containerView?.layoutIfNeeded()
-            }
-            if currentPosition == .center {
-                viewCache.last?.view?.alpha = 0
-            }
-        }, completion: { (_) in
-            if all || viewCache.isEmpty {
-                viewCache.removeAll()
-                vc?.dismiss(animated: false, completion: completion)
-                vc = nil
-            } else {
-                viewCache.removeLast()
-                viewCache.last?.view?.alpha = 1
-            }
-        })
+        if all || viewCache.isEmpty {
+            containerView?.backgroundColor = UIColor(red: 255.0/255,
+                                                     green: 255.0/255,
+                                                     blue: 255.0/255,
+                                                     alpha: 0.0)
+            containerView?.layoutIfNeeded()
+        }
+        if currentPosition == .center {
+            viewCache.last?.view?.alpha = 0
+        }
+        if all || viewCache.isEmpty {
+            viewCache.removeAll()
+            vc?.dismiss(animated: false, completion: completion)
+            vc = nil
+        } else {
+            viewCache.removeLast()
+            viewCache.last?.view?.alpha = 1
+        }
     }
     
     @objc
@@ -171,18 +162,13 @@ class AUIAlertManager: NSObject {
         if originFrame.origin.y != y {
             originFrame = containerView!.frame
         }
-        UIView.animate(withDuration: 0.25) {
-            containerView?.frame.origin.y = y * 0.5
-        }
+        containerView?.frame.origin.y = y * 0.5
     }
     // 键盘隐藏
     @objc private static func keyboardWillHide(notification: Notification) {
-        UIView.animate(withDuration: 0.25) {
-            containerView?.frame = originFrame
-        } completion: { _ in
-            if currentPosition == .bottom {
-                hiddenView()
-            }
+        containerView?.frame = originFrame
+        if currentPosition == .bottom {
+            hiddenView()
         }
     }
 }
