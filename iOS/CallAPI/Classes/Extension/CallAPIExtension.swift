@@ -17,6 +17,7 @@ extension PrepareConfig {
         config.remoteView = remoteView
         config.autoAccept = autoAccept
         config.autoJoinRTC = autoJoinRTC
+        config.callTimeoutMillisecond = callTimeoutMillisecond
         return config
     }
 }
