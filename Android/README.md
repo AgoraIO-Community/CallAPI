@@ -220,7 +220,7 @@ AG_APP_CERTIFICATE=
   - 在双端连接过程中(state为calling/connecting/connected时)可以通过 getCallId 方法获取当次通话双端的呼叫 id。
   - 通过 CallAPI 内部的日志上报，可以在声网后台查询到当次通话的各个节点耗时，请确保已经[开通声网自定义数据上报和分析服务](#custom-report)。
 
-## API说明
+## 6. API说明
 ### CallApiListenerProtocol
 - 状态响应回调，描述由于某个 stateReason 导致的 state 变化
   ```kotlin
@@ -325,7 +325,7 @@ AG_APP_CERTIFICATE=
   ```
 
 
-## 7 实现原理
+## 7. 实现原理
 ### 7.1 优化呼叫性能和可靠性
 #### 7.1.1 加快出图速度
 - 1.使用[万能 Token](https://doc.shengwang.cn/doc/rtc/ios/best-practice/wildcard-token)
