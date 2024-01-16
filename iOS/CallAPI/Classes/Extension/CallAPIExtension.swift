@@ -18,6 +18,7 @@ extension PrepareConfig {
         config.autoAccept = autoAccept
         config.autoJoinRTC = autoJoinRTC
         config.callTimeoutMillisecond = callTimeoutMillisecond
+        config.userExtension = userExtension
         return config
     }
 }

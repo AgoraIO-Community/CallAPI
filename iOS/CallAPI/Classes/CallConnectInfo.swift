@@ -10,7 +10,7 @@ import Foundation
 
 /// 耗时统计类型
 public enum CallConnectCostType: String {
-    case remoteUserRecvCall = "remoteUserRecvCall"   //主叫呼叫成功，收到呼叫成功表示已经送达对端(被叫)
+    case remoteUserRecvCall = "remoteUserRecvCall"         //主叫呼叫成功，收到呼叫成功表示已经送达对端(被叫)
     case acceptCall = "acceptCall"                         //主叫收到被叫接受呼叫(onAccept)/被叫点击接受(accept)
     case localUserJoinChannel = "localUserJoinChannel"     //本地用户加入频道
     case remoteUserJoinChannel = "remoteUserJoinChannel"   //远端用户加入频道
