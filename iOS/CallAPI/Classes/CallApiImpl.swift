@@ -95,7 +95,7 @@ public class CallApiImpl: NSObject {
                 connectInfo.timer = Timer.scheduledTimer(withTimeInterval: timeooutInterval,
                                                          repeats: false,
                                                          block: {[weak self] timer in
-                    self?.cancelCall(completion: { err in
+                    self?._cancelCall(completion: { err in
                     })
                     self?._updateAndNotifyState(state: .prepared, stateReason: .callingTimeout)
                     self?._notifyEvent(event: .callingTimeout)
@@ -676,6 +676,21 @@ extension CallApiImpl {
         }
     }
     
+    //取消呼叫
+    private func _cancelCall(message: [String: Any]? = nil, completion: ((NSError?) -> ())?) {
+        guard let userId = connectInfo.callingUserId else {
+            completion?(NSError(domain: "cancelCall fail! callingUserId is empty", code: -1))
+            callWarningPrint("cancelCall fail! callingUserId is empty")
+            return
+        }
+        let message: [String: Any] = message ?? _messageDic(action: .cancelCall)
+        messageManager?.sendMessage(userId: "\(userId)", message: message) { err in
+            completion?(err)
+            guard let error = err else { return }
+            self._notifyEvent(event: .messageFailed, eventReason: "cancel call fail: \(error.code)")
+        }
+    }
+    
     private func _reject(remoteUserId: UInt, 
                          reason: String?,
                          rejectByInternal: Bool = false,
@@ -924,17 +939,8 @@ extension CallApiImpl: CallApiProtocol {
     //取消呼叫
     public func cancelCall(completion: ((NSError?) -> ())?) {
         _reportMethod(event: "\(#function)")
-        guard let userId = connectInfo.callingUserId else {
-            completion?(NSError(domain: "cancelCall fail! callingUserId is empty", code: -1))
-            callWarningPrint("cancelCall fail! callingUserId is empty")
-            return
-        }
         let message: [String: Any] = _messageDic(action: .cancelCall)
-        messageManager?.sendMessage(userId: "\(userId)", message: message) { err in
-            completion?(err)
-            guard let error = err else { return }
-            self._notifyEvent(event: .messageFailed, eventReason: "cancel call fail: \(error.code)")
-        }
+        _cancelCall(message: message, completion: completion)
         _updateAndNotifyState(state: .prepared, stateReason: .localCancel, eventInfo: message)
         _notifyEvent(event: .localCancel)
     }

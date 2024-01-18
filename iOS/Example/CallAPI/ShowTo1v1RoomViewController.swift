@@ -342,7 +342,10 @@ extension ShowTo1v1RoomViewController {
         }
         
         publishMedia(false)
-        api.call(remoteUserId: showUserId) { error in
+        api.call(remoteUserId: showUserId) {[weak self] error in
+            guard let _ = error, self?.callState == .calling else {return}
+            self?.api.cancelCall(completion: { err in
+            })
         }
     }
     
