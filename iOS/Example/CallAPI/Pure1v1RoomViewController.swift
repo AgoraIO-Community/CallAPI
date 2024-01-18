@@ -256,7 +256,10 @@ extension Pure1v1RoomViewController {
             AUIToast.show(text: "CallAPi初始化中")
             return
         }
-        api.call(remoteUserId: targetUserId) { error in
+        api.call(remoteUserId: targetUserId) {[weak self] error in
+            guard let _ = error, self?.callState == .calling else {return}
+            self?.api.cancelCall(completion: { err in
+            })
         }
     }
     

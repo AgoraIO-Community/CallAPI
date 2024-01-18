@@ -216,6 +216,16 @@ AG_APP_CERTIFICATE=
        rtcEngine.enableLocalAudio(true)
        rtcEngine.enableLocalVideo(true)
      ```
+- 设置消息信令自定义消息
+  - 通过在`PrepareConfig`的`userExtension`属性中设置参数，您可以在发送消息给对端时（例如呼叫/取消呼叫/同意/拒绝等）附加额外的用户扩展信息。对端可以通过回调消息接收到这个`userExtension`，以便在处理消息时获取相关的附加信息
+    ```kotlin
+      fun onCallStateChanged(state: CallStateType,
+                           stateReason: CallStateReason,
+                           eventReason: String,
+                           eventInfo: Map<String, Any>) {
+        val userExtension = eventInfo[kFromUserExtension]
+      }
+    ```
 - 通话异常定位。
   - 在双端连接过程中(state为calling/connecting/connected时)可以通过 getCallId 方法获取当次通话双端的呼叫 id。
   - 通过 CallAPI 内部的日志上报，可以在声网后台查询到当次通话的各个节点耗时，请确保已经[开通声网自定义数据上报和分析服务](#custom-report)。

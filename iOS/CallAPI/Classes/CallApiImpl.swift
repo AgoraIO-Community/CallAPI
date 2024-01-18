@@ -21,7 +21,7 @@ private let kCallId = "callId"
 
 public let kRemoteUserId = "remoteUserId"
 public let kFromUserId = "fromUserId"
-//public let kFromUserExtension = "fromUserExtension"
+public let kFromUserExtension = "fromUserExtension"
 public let kFromRoomId = "fromRoomId"
 public let kCalleeState = "state"      //当前呼叫状态
 public let kPublisher = "publisher"    //状态触发的用户uid，目前可以抛出当前用户和主叫的状态，如果无publisher，默认是当前用户
@@ -95,7 +95,7 @@ public class CallApiImpl: NSObject {
                 connectInfo.timer = Timer.scheduledTimer(withTimeInterval: timeooutInterval,
                                                          repeats: false,
                                                          block: {[weak self] timer in
-                    self?.cancelCall(completion: { err in
+                    self?._cancelCall(completion: { err in
                     })
                     self?._updateAndNotifyState(state: .prepared, stateReason: .callingTimeout)
                     self?._notifyEvent(event: .callingTimeout)
@@ -183,9 +183,9 @@ extension CallApiImpl {
         dic[kMessageTs] = _getTimeInMs()
         dic[kFromUserId] = config?.userId ?? 0
         dic[kCallId] = connectInfo.callId
-//        if let userExtension = config?.userExtension {
-//            dic[kFromUserExtension] = userExtension
-//        }
+        if let userExtension = prepareConfig?.userExtension {
+            dic[kFromUserExtension] = userExtension
+        }
         return dic
     }
     
@@ -652,7 +652,7 @@ extension CallApiImpl {
                                           label: String,
                                           value: Int) {
         guard let config = config, isChannelJoined, let rtcConnection = rtcConnection else { return }
-        let ret = config.rtcEngine.sendCustomReportMessageEx(msgId, category: category, event: event, label: label, value: value, connection: rtcConnection)
+        let _ = config.rtcEngine.sendCustomReportMessageEx(msgId, category: category, event: event, label: label, value: value, connection: rtcConnection)
         #if DEBUG
 //        callPrint("sendCustomReportMessage[\(ret)] msgId:\(msgId) event:\(event) label:\(label) value: \(value)")
         #endif
@@ -676,21 +676,43 @@ extension CallApiImpl {
         }
     }
     
-    private func _reject(remoteUserId: UInt, 
-                         reason: String?,
-                         rejectByInternal: Bool = false,
-                         completion: ((NSError?, [String: Any]) -> ())? = nil) {
-        let message: [String: Any] = _rejectMessageDic(reason: reason, rejectByInternal: rejectByInternal)
-        messageManager?.sendMessage(userId: "\(remoteUserId)", message: message) { error in
-            completion?(error, message)
+    //取消呼叫
+    private func _cancelCall(message: [String: Any]? = nil, completion: ((NSError?) -> ())?) {
+        guard let userId = connectInfo.callingUserId else {
+            completion?(NSError(domain: "cancelCall fail! callingUserId is empty", code: -1))
+            callWarningPrint("cancelCall fail! callingUserId is empty")
+            return
+        }
+        let message: [String: Any] = message ?? _messageDic(action: .cancelCall)
+        messageManager?.sendMessage(userId: "\(userId)", message: message) { err in
+            completion?(err)
+            guard let error = err else { return }
+            self._notifyEvent(event: .messageFailed, eventReason: "cancel call fail: \(error.code)")
         }
     }
     
-    private func _hangup(remoteUserId: String, completion: ((NSError?, [String: Any]) -> ())? = nil) {
-        let message: [String: Any] = _messageDic(action: .hangup)
-        messageManager?.sendMessage(userId: remoteUserId, message: message) { err in
-            completion?(err, message)
-        }
+    private func _reject(remoteUserId: UInt, 
+                         reason: String?,
+                         rejectByInternal: Bool = false,
+                         completion: ((NSError?) -> ())? = nil) {
+        let message = _rejectMessageDic(reason: reason, rejectByInternal: rejectByInternal)
+        _reject(remoteUserId: remoteUserId, message: message, completion: completion)
+    }
+    
+    private func _reject(remoteUserId: UInt,
+                         message: [String: Any],
+                         completion: ((NSError?) -> ())? = nil) {
+        messageManager?.sendMessage(userId: "\(remoteUserId)",
+                                    message: message,
+                                    completion: completion)
+    }
+    
+    private func _hangup(remoteUserId: UInt,
+                         message: [String: Any]? = nil,
+                         completion: ((NSError?) -> ())? = nil) {
+        messageManager?.sendMessage(userId: "\(remoteUserId)",
+                                    message: message ?? _messageDic(action: .hangup),
+                                    completion: completion)
     }
 }
 
@@ -700,7 +722,6 @@ extension CallApiImpl {
     private func _onCall(message: [String: Any]) {
         let fromRoomId = message[kFromRoomId] as? String ?? ""
         let fromUserId = message[kFromUserId] as? UInt ?? 0
-//        let userExtension = message[kFromUserExtension] as? [String: Any] ?? [:]
         let callId = message[kCallId] as? String ?? ""
         
         var enableNotify: Bool = true
@@ -726,8 +747,7 @@ extension CallApiImpl {
         
         connectInfo.set(userId: fromUserId, roomId: fromRoomId, callId: callId)
         if enableNotify {
-            let eventInfo = [kFromRoomId: fromRoomId, kFromUserId: fromUserId, kRemoteUserId: config?.userId ?? 0/*, kFromUserExtension: userExtension*/] as [String : Any]
-            _updateAndNotifyState(state: .calling, stateReason: .none, eventInfo: eventInfo)
+            _updateAndNotifyState(state: .calling, stateReason: .none, eventInfo: message)
             _notifyEvent(event: .onCalling)
         }
         
@@ -773,7 +793,7 @@ extension CallApiImpl {
 //        let elapsed = _getTimeInMs() - (connectInfo.callTs ?? 0)
         //TODO: 如果已经connected
         if state == .calling {
-            _updateAndNotifyState(state: .connecting, stateReason: .remoteAccepted)
+            _updateAndNotifyState(state: .connecting, stateReason: .remoteAccepted, eventInfo: message)
         }
         _notifyEvent(event: .remoteAccepted)
     }
@@ -787,7 +807,7 @@ extension CallApiImpl {
             callWarningPrint("onHangup fail: callId missmatch")
             return
         }
-        _updateAndNotifyState(state: .prepared, stateReason: .remoteHangup)
+        _updateAndNotifyState(state: .prepared, stateReason: .remoteHangup, eventInfo: message)
         _notifyEvent(event: .remoteHangup)
     }
 }
@@ -819,7 +839,7 @@ extension CallApiImpl: CallApiProtocol {
             }
         case .connecting, .connected:
             let callingUserId = connectInfo.callingUserId ?? 0
-            _hangup(remoteUserId: "\(callingUserId)") {[weak self] err, message in
+            _hangup(remoteUserId: callingUserId) {[weak self] err in
                 self?._deinitialize()
                 completion()
             }
@@ -919,18 +939,9 @@ extension CallApiImpl: CallApiProtocol {
     //取消呼叫
     public func cancelCall(completion: ((NSError?) -> ())?) {
         _reportMethod(event: "\(#function)")
-        guard let userId = connectInfo.callingUserId else {
-            completion?(NSError(domain: "cancelCall fail! callingUserId is empty", code: -1))
-            callWarningPrint("cancelCall fail! callingUserId is empty")
-            return
-        }
         let message: [String: Any] = _messageDic(action: .cancelCall)
-        messageManager?.sendMessage(userId: "\(userId)", message: message) { err in
-            completion?(err)
-            guard let error = err else { return }
-            self._notifyEvent(event: .messageFailed, eventReason: "cancel call fail: \(error.code)")
-        }
-        _updateAndNotifyState(state: .prepared, stateReason: .localCancel)
+        _cancelCall(message: message, completion: completion)
+        _updateAndNotifyState(state: .prepared, stateReason: .localCancel, eventInfo: message)
         _notifyEvent(event: .localCancel)
     }
     
@@ -971,24 +982,26 @@ extension CallApiImpl: CallApiProtocol {
     //拒绝
     public func reject(remoteUserId: UInt, reason: String?, completion: ((NSError?) -> ())?) {
         _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)&reason=\(reason ?? "")")
-        _reject(remoteUserId: remoteUserId, reason: reason) { err, _ in
+        let message = _rejectMessageDic(reason: reason, rejectByInternal: false)
+        _reject(remoteUserId: remoteUserId, message: message) { err in
             completion?(err)
             guard let error = err else { return }
             self._notifyEvent(event: .messageFailed, eventReason: "reject fail: \(error.code)")
         }
-        _updateAndNotifyState(state: .prepared, stateReason: .localRejected)
+        _updateAndNotifyState(state: .prepared, stateReason: .localRejected, eventInfo: message)
         _notifyEvent(event: .localRejected)
     }
     
     //挂断
     public func hangup(remoteUserId: UInt, completion: ((NSError?) -> ())?) {
         _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)")
-        _hangup(remoteUserId: "\(remoteUserId)") { err, _ in
+        let message = _messageDic(action: .hangup)
+        _hangup(remoteUserId: remoteUserId, message: message) { err in
             completion?(err)
             guard let error = err else { return }
             self._notifyEvent(event: .messageFailed, eventReason: "hangup fail: \(error.code)")
         }
-        _updateAndNotifyState(state: .prepared, stateReason: .localHangup)
+        _updateAndNotifyState(state: .prepared, stateReason: .localHangup, eventInfo: message)
         _notifyEvent(event: .localHangup)
     }
     

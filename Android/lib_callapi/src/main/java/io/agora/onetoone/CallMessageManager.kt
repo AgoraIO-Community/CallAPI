@@ -234,7 +234,7 @@ class CallMessageManager(
      * @param message: 发送的消息字典
      * @param completion: <#completion description#>
      */
-    fun sendMessage(userId: String, fromUserId: String, message: Map<String, Any>, completion: ((AGError?)-> Unit)?) {
+    fun sendMessage(userId: String, message: Map<String, Any>, completion: ((AGError?)-> Unit)?) {
         if (userId.isEmpty() || userId == "0") {
             val errorStr = "sendMessage fail, invalid userId[$userId]"
             callMessagePrint(errorStr)
@@ -245,8 +245,8 @@ class CallMessageManager(
         messageId %= Int.MAX_VALUE
         val map = message.toMutableMap()
         map[kMessageId] = messageId
-        map[kReceiptsRoomIdKey] = fromUserId
-        require(fromUserId.isNotEmpty()) { "kReceiptsRoomIdKey is empty" }
+//        map[kReceiptsRoomIdKey] = fromUserId
+//        require(fromUserId.isNotEmpty()) { "kReceiptsRoomIdKey is empty" }
         _sendMessage(userId, map, completion)
     }
 
