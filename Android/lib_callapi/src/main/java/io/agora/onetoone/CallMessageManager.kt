@@ -125,9 +125,9 @@ class CallMessageManager(
                 callMessagePrint("_sendMessage[$msgId] publish cost ${startTime.getCostMilliseconds()} ms")
                 runOnUiThread { completion?.invoke(null) }
             }
-            override fun onFailure(errorInfo: ErrorInfo?) {
-                val msg = errorInfo?.errorReason ?: "error"
-                val code = errorInfo?.errorCode?.ordinal ?: -1
+            override fun onFailure(errorInfo: ErrorInfo) {
+                val msg = errorInfo.errorReason
+                val code = RtmConstants.RtmErrorCode.getValue(errorInfo.errorCode)
                 callMessagePrint("_sendMessage[$msgId]: fail: $msg cost: ${startTime.getCostMilliseconds()} ms", 1)
                 runOnUiThread { completion?.invoke(AGError(msg, code)) }
             }
