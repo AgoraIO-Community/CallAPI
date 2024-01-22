@@ -290,7 +290,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
     }
 
     private fun hangupAction() {
-        api.hangup(connectedUserId ?: 0) {
+        api.hangup(connectedUserId ?: 0, "hangup by user") {
         }
     }
 

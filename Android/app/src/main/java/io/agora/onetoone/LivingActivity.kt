@@ -375,7 +375,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
 
     private fun hangupAction() {
         val connectedUserId = connectedUserId ?: return
-        api.hangup(connectedUserId) {
+        api.hangup(connectedUserId, "hangup by user") {
         }
     }
 

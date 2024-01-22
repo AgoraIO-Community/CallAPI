@@ -183,7 +183,7 @@
 - 如需结束呼叫，可以调用挂断函数
   - 此时onCallStateChanged 将返回 `(state: .prepared, stateReason: .localHangup)`(本地用户)或`(state: .prepared, stateReason: .remoteHangup)`(远端用户)。这表示呼叫已经被挂断，连接已经断开。
     ```swift
-      api.hangup(remoteUserId: showUserId) { error in
+      api.hangup(remoteUserId: showUserId, reason: "hangup by user") { error in
       }
     ```
 - 释放通话缓存

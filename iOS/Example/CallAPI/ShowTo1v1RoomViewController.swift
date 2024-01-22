@@ -353,7 +353,7 @@ extension ShowTo1v1RoomViewController {
         guard let connectedUserId = connectedUserId else {
             return
         }
-        api.hangup(remoteUserId: connectedUserId) { error in
+        api.hangup(remoteUserId: connectedUserId, reason: "hangup by user") { error in
         }
     }
     

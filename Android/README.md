@@ -169,7 +169,7 @@ AG_APP_CERTIFICATE=
 - 如果被叫方未作出回应(同意或拒绝)，onCallStateChanged 会返回(state: .prepared)，(stateReason: .callingTimeout)。表示呼叫超时，未能成功建立连接。
 - 如需结束呼叫，可以调用挂断函数。此时 onCallStateChanged 将返回 (state: .prepared), (stateReason: .localHangup)(本地用户)或(stateReason: .remoteHangup)(远端用户)。这表示呼叫已经被挂断，连接已经断开。
   ```kotlin
-    api.hangup(remoteUserId) { error ->
+    api.hangup(remoteUserId, reason = "hangup by user") { error ->
     }
   ```
 - 释放通话缓存，释放后需要重新 initialize。
@@ -326,7 +326,7 @@ AG_APP_CERTIFICATE=
 
 - 结束通话，主叫和被叫均可调用
   ```kotlin
-    fun hangup(remoteUserId: Int, completion: ((AGError?) -> Unit)?)
+    fun hangup(remoteUserId: Int, reason: String?, completion: ((AGError?) -> Unit)?)
   ```
 
 - 获取当前通话的 callId，callId 为当次通话过程中唯一标识，通过该标识声网后台服务可以查询到当前通话的关键节点耗时和状态变迁的时间节点

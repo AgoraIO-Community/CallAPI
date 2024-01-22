@@ -264,7 +264,7 @@ extension Pure1v1RoomViewController {
     }
     
     @objc func hangupAction() {
-        api.hangup(remoteUserId: connectedUserId ?? 0) { error in
+        api.hangup(remoteUserId: connectedUserId ?? 0, reason: "hangup by user") { error in
         }
     }
     
