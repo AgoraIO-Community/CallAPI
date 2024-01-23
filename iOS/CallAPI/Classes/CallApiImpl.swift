@@ -822,10 +822,7 @@ extension CallApiImpl {
     //收到挂断消息
     fileprivate func _onHangup(message: [String: Any]) {
         guard _isCallingUser(message: message) else { return }
-        guard let callId = message[kCallId] as? String, callId == connectInfo.callId else {
-            callWarningPrint("onHangup fail: callId missmatch")
-            return
-        }
+
         _updateAndNotifyState(state: .prepared, stateReason: .remoteHangup, eventInfo: message)
         _notifyEvent(event: .remoteHangup)
     }
