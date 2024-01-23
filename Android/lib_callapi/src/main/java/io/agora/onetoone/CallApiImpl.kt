@@ -759,11 +759,7 @@ class CallApiImpl constructor(
 
     private fun _onHangup(message: Map<String, Any>) {
         if (!_isCallingUser(message)) return
-        val callId = message[kCallId] as? String
-        if (callId == null || callId != connectInfo.callId) {
-            callWarningPrint("onHangup fail: callId missmatch")
-            return
-        }
+        
         _updateAndNotifyState(CallStateType.Prepared, CallStateReason.RemoteHangup, eventInfo = message)
         _notifyEvent(CallEvent.RemoteHangup)
     }
