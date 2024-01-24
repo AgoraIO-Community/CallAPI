@@ -361,7 +361,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
             // 触发状态的用户是自己才处理
             if currentUid == toUserId {
                 connectedUserId = fromUserId
-                if prepareConfig.autoAccept == false {
+//                if prepareConfig.autoAccept == false {
                     AUIAlertView()
                         .isShowCloseButton(isShow: true)
                         .title(title: "用户 \(fromUserId) 邀请您1对1通话")
@@ -378,10 +378,10 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                             }
                         })
                         .show()
-                }
+//                }
             } else if currentUid == fromUserId {
                 connectedUserId = toUserId
-                if prepareConfig.autoAccept == false {
+//                if prepareConfig.autoAccept == false {
                     AUIAlertView()
                         .isShowCloseButton(isShow: true)
                         .title(title: "呼叫用户 \(toUserId) 中")
@@ -392,7 +392,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                             }
                         })
                         .show()
-                }
+//                }
             }
             break
         case .connected:

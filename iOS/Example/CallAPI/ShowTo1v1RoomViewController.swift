@@ -428,29 +428,12 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
             // 触发状态的用户是自己才处理
             if currentUid == toUserId {
                 connectedUserId = fromUserId
-                
-                if prepareConfig.autoAccept == false {
-                    AUIAlertView()
-                        .isShowCloseButton(isShow: true)
-                        .title(title: "用户 \(fromUserId) 邀请您1对1通话")
-                        .rightButton(title: "同意")
-                        .leftButton(title: "拒绝")
-                        .leftButtonTapClosure {[weak self] in
-                            guard let self = self else { return }
-                            self.api.reject(remoteUserId: fromUserId, reason: "reject by user") { err in
-                            }
-                        }
-                        .rightButtonTapClosure(onTap: {[weak self] text in
-                            guard let self = self else { return }
-                            self.api.accept(remoteUserId: fromUserId) { err in
-                            }
-                        })
-                        .show()
+                self.api.accept(remoteUserId: fromUserId) { err in
                 }
             } else if currentUid == fromUserId {
                 connectedUserId = toUserId
                 
-                if prepareConfig.autoAccept == false {
+//                if prepareConfig.autoAccept == false {
                     AUIAlertView()
                         .isShowCloseButton(isShow: true)
                         .title(title: "呼叫用户 \(toUserId) 中")
@@ -461,7 +444,7 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
                             }
                         })
                         .show()
-                }
+//                }
             }
             break
         case .connected:

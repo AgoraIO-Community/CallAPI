@@ -261,6 +261,7 @@ class ViewController: UIViewController {
         let label = UILabel()
         label.text = "收到呼叫自动接受"
         label.textColor = .black
+        label.isHidden = true
         return label
     }()
     
@@ -268,6 +269,7 @@ class ViewController: UIViewController {
         let uiSwitch = UISwitch()
         uiSwitch.isOn = isAutoAccept
         uiSwitch.addTarget(self, action: #selector(onAutoAcceptAction), for: .touchUpInside)
+        uiSwitch.isHidden = true
         return uiSwitch
     }()
     
@@ -439,7 +441,7 @@ class ViewController: UIViewController {
         view.isUserInteractionEnabled = false
         
         let prepareConfig = PrepareConfig()
-        prepareConfig.autoAccept = autoAcceptSwitch.isOn
+//        prepareConfig.autoAccept = autoAcceptSwitch.isOn
         prepareConfig.autoJoinRTC = autoJoinRTCSwitch.isOn
         NetworkManager.shared.generateTokens(channelName: "",
                                              uid: "\(currentUserId)",
@@ -472,7 +474,7 @@ class ViewController: UIViewController {
         view.isUserInteractionEnabled = false
         
         let prepareConfig = PrepareConfig()
-        prepareConfig.autoAccept = autoAcceptSwitch.isOn
+//        prepareConfig.autoAccept = autoAcceptSwitch.isOn
         prepareConfig.autoJoinRTC = autoJoinRTCSwitch.isOn
         NetworkManager.shared.generateTokens(channelName: "",
                                              uid: "\(currentUserId)",

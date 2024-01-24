@@ -6,6 +6,7 @@
 - 适配RTM 2.1.8，使用点对点消息。
 - 优化日志上报策略，通话质量定位更准确。
 - 优化过期消息过滤策略。
+- 移除autoAccept配置项。
 
 ## [0.3.1](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.3.1)
 

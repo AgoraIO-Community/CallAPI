@@ -128,7 +128,6 @@
       prepareConfig.roomId = "\(currentUid)"
       prepareConfig.localView = rightView
       prepareConfig.remoteView = leftView
-      prepareConfig.autoAccept = false  // 如果期望收到呼叫自动接通，则需要设置为true
       prepareConfig.autoJoinRTC = false  // 如果期望立即加入自己的RTC呼叫频道，则需要设置为true
       api.prepareForCall(prepareConfig: prepareConfig) { err in
           // 成功即可以开始进行呼叫
@@ -159,21 +158,6 @@
             }
         }
       ```
-- 自动接受选项
-  - 如果在 PrepareConfig 中 autoAccept 设置为 true，则无需显式调用 accept 方法，CallApi 将会自动接受呼叫。若将 autoAccept 设置为 false，则被叫方需要手动同意或拒绝呼叫，而主叫方可以选择取消呼叫。
-    ```swift
-      // 同意
-      api.accept(remoteUserId: fromUserId) { err in
-      }
-
-      // 拒绝
-      api.reject(remoteUserId: fromUserId, reason: "reject by user") { err in
-      }
-
-      // 取消呼叫
-      api.cancelCall { err in
-      }
-    ```
 - 如果被叫方同意呼叫
   - 通过 onCallStateChanged 会返回`连接中状态(state: .connecting)`，然后在远端画面渲染完成后，状态将变为`已连接(state: .connected)`，表示呼叫成功。这个状态变化过程反映了呼叫的建立和视频画面的渲染。
 - 如果被叫方拒绝呼叫
