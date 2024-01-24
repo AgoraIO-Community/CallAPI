@@ -96,7 +96,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         prepareConfig.rtcToken = enterModel.rtcToken
         prepareConfig.rtmToken = enterModel.rtmToken
         prepareConfig.autoJoinRTC = enterModel.autoJoinRTC
-        prepareConfig.autoAccept = enterModel.autoAccept
+        //prepareConfig.autoAccept = enterModel.autoAccept
 
         rtcEngine = _createRtcEngine()
         setupView()
@@ -322,33 +322,29 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
                 // 触发状态的用户是自己才处理
                 if (enterModel.currentUid.toIntOrNull() == toUserId) {
                     connectedUserId = fromUserId
-                    if (!prepareConfig.autoAccept) {
-                        callDialog = AlertDialog.Builder(this)
-                            .setTitle("提示")
-                            .setMessage("用户 $fromUserId 邀请您1对1通话")
-                            .setPositiveButton("同意") { p0, p1 ->
-                                api.accept(fromUserId) { err ->
-                                }
-                            }.setNegativeButton("拒绝") { p0, p1 ->
-                                api.reject(fromUserId, "reject by user") { err ->
-                                }
-                            }.create()
-                        callDialog?.setCancelable(false)
-                        callDialog?.show()
-                    }
+                    callDialog = AlertDialog.Builder(this)
+                        .setTitle("提示")
+                        .setMessage("用户 $fromUserId 邀请您1对1通话")
+                        .setPositiveButton("同意") { p0, p1 ->
+                            api.accept(fromUserId) { err ->
+                            }
+                        }.setNegativeButton("拒绝") { p0, p1 ->
+                            api.reject(fromUserId, "reject by user") { err ->
+                            }
+                        }.create()
+                    callDialog?.setCancelable(false)
+                    callDialog?.show()
                 } else if (enterModel.currentUid.toIntOrNull() == fromUserId) {
                     connectedUserId = toUserId
-                    if (!prepareConfig.autoAccept) {
-                        callDialog = AlertDialog.Builder(this)
-                            .setTitle("提示")
-                            .setMessage("呼叫用户 $toUserId 中")
-                            .setNegativeButton("取消") { p0, p1 ->
-                                api.cancelCall { err ->
-                                }
-                            }.create()
-                        callDialog?.setCancelable(false)
-                        callDialog?.show()
-                    }
+                    callDialog = AlertDialog.Builder(this)
+                        .setTitle("提示")
+                        .setMessage("呼叫用户 $toUserId 中")
+                        .setNegativeButton("取消") { p0, p1 ->
+                            api.cancelCall { err ->
+                            }
+                        }.create()
+                    callDialog?.setCancelable(false)
+                    callDialog?.show()
                 }
             }
             CallStateType.Connected -> {

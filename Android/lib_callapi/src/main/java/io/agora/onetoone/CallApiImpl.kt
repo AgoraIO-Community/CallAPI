@@ -1,15 +1,12 @@
 package io.agora.onetoone
 
 import android.content.Context
-import android.graphics.Color
-import android.os.Debug
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.TextureView
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import androidx.core.view.isVisible
 import io.agora.callapi.BuildConfig
 import io.agora.onetoone.extension.*
 import io.agora.rtc2.*
@@ -401,7 +398,10 @@ class CallApiImpl constructor(
 
         engine.setDefaultAudioRoutetoSpeakerphone(true)
         engine.setupLocalVideo(videoCanvas)
-        engine.startPreview()
+        val ret = engine.startPreview()
+        if (ret != 0) {
+            _notifyEvent(CallEvent.StartCaptureFail, "code = $ret")
+        }
     }
 
     private fun _notifyRTCState(err: AGError?) {
@@ -688,7 +688,7 @@ class CallApiImpl constructor(
         val callId = message[kCallId] as String
 
         var enableNotify = true
-        var autoAccept = prepareConfig?.autoAccept ?: false
+        var autoAccept = false //prepareConfig?.autoAccept ?: false
         when (state) {
             CallStateType.Idle, CallStateType.Failed -> {
                 // not reachable
@@ -906,6 +906,17 @@ class CallApiImpl constructor(
             _notifyEvent(CallEvent.StateMismatch, errReason)
             return
         }
+
+        // accept内默认启动一次采集+推流
+        rtcConnection?.let {
+            config?.rtcEngine?.startPreview()
+            val mediaOptions = ChannelMediaOptions()
+            mediaOptions.clientRoleType = Constants.CLIENT_ROLE_BROADCASTER
+            mediaOptions.publishCameraTrack = true
+            mediaOptions.publishMicrophoneTrack = true
+            config?.rtcEngine?.updateChannelMediaOptionsEx(mediaOptions, it)
+        }
+
         connectInfo.set(userId = remoteUserId, roomId = roomId, isLocalAccepted = true)
 
         //先查询presence里是不是正在呼叫的被叫是自己，如果是则不再发送消息
