@@ -241,6 +241,21 @@ AG_APP_CERTIFICATE=
     fun onCallEventChanged(event: CallEvent) {}
   ```
 
+- 错误事件回调
+  ```kotlin
+    /**
+     * 内部详细事件变更回调
+     * @param errorEvent: 错误事件
+     * @param errorType: 错误类型
+     * @param errorCode: 错误码
+     * @param message: 错误信息
+     */
+    fun onCallError(errorEvent: CallErrorEvent,
+                    errorType: CallErrorCodeType,
+                    errorCode: Int,
+                    message: String?) {}
+  ```
+
 - token 即将要过期(需要外部获取新token调用renewToken更新)
   ```kotlin
     /** token快要过期了(需要外部获取新token调用renewToken更新)

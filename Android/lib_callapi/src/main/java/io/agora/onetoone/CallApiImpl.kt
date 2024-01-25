@@ -74,6 +74,7 @@ class CallApiImpl constructor(
     private val TAG = "CallApiImpl_LOG"
     private val delegates = mutableListOf<ICallApiListener>()
     private val rtcProxy = CallProxy()
+    private val localFrameProxy: CallLocalFirstFrameProxy by lazy { CallLocalFirstFrameProxy(this) }
     private var config: CallConfig? = null
     private var prepareConfig: PrepareConfig? = null
     private var messageManager: CallMessageManager? = null
@@ -236,6 +237,35 @@ class CallApiImpl constructor(
         }
     }
 
+    private fun _notifySendMessageErrorEvent(error: AGError, reason: String?) {
+        _notifyErrorEvent(
+            CallErrorEvent.SendMessageFail,
+            errorType = CallErrorCodeType.Rtm,
+            errorCode = error.code,
+            message = "${reason ?: ""}${error.msg}"
+        )
+    }
+
+    private fun _notifyRtcOccurErrorEvent(errorCode: Int, message: String? = null) {
+        _notifyErrorEvent(
+            CallErrorEvent.RtcOccurError,
+            errorType =  CallErrorCodeType.Rtc,
+            errorCode =  errorCode,
+            message =  message
+        )
+    }
+
+    private fun _notifyErrorEvent(
+        errorEvent: CallErrorEvent,
+        errorType: CallErrorCodeType,
+        errorCode: Int,
+        message: String?) {
+        callPrint("call change[${connectInfo.callId} errorEvent: ${errorEvent.value}, errorType: ${errorType.value}, errorCode: ${errorCode}, message: ${message ?: ""}")
+        delegates.forEach { listener ->
+            listener.onCallError(errorEvent, errorType, errorCode, message)
+        }
+    }
+
     private fun _notifyEvent(event: CallEvent, eventReason: String? = null) {
         callPrint("call change[${connectInfo.callId}] event: ${event.value} reason: '$eventReason'")
         config?.let { config ->
@@ -306,7 +336,11 @@ class CallApiImpl constructor(
         if (prepareConfig.autoJoinRTC) {
             _joinRTCWithMediaOptions(prepareConfig.roomId, Constants.CLIENT_ROLE_AUDIENCE, CallAutoSubscribeType.Video) { err ->
                 callWarningPrint("prepareForCall[$tag] joinRTC completion: ${err?.msg ?: "success"}")
-                _notifyEvent(if (err == null) CallEvent.JoinRTCSuccessed else CallEvent.JoinRTCFailed)
+                if (err != null) {
+                    _notifyRtcOccurErrorEvent(err.code, err.msg)
+                } else {
+                    _notifyEvent(CallEvent.JoinRTCSuccessed)
+                }
             }
         } else {
             _leaveRTC()
@@ -320,7 +354,11 @@ class CallApiImpl constructor(
             messageManager.initialize(prepareConfig) { err ->
                 isPreparing = false
                 callWarningPrint("prepareForCall[$tag] rtmInitialize completion: ${err?.msg ?: "success"})")
-                _notifyEvent(if (err == null) CallEvent.RtmSetupSuccessed else CallEvent.RtmSetupFailed)
+                if (err != null) {
+                    _notifyErrorEvent(CallErrorEvent.RtmSetupFail, CallErrorCodeType.Rtm, err.code, err.msg)
+                } else {
+                    _notifyEvent(CallEvent.RtmSetupSuccessed)
+                }
                 completion?.invoke(err)
             }
         } else {
@@ -391,6 +429,8 @@ class CallApiImpl constructor(
             callWarningPrint("_setupLocalVideo fail: engine is empty")
             return
         }
+        config?.rtcEngine?.addHandler(localFrameProxy)
+
         val videoCanvas = VideoCanvas(view)
         videoCanvas.uid = uid
         videoCanvas.renderMode = VideoCanvas.RENDER_MODE_HIDDEN
@@ -400,16 +440,7 @@ class CallApiImpl constructor(
         engine.setupLocalVideo(videoCanvas)
         val ret = engine.startPreview()
         if (ret != 0) {
-            _notifyEvent(CallEvent.StartCaptureFail, "code = $ret")
-        }
-    }
-
-    private fun _notifyRTCState(err: AGError?) {
-        if (err != null) {
-            _updateAndNotifyState(CallStateType.Failed, CallStateReason.JoinRTCFailed, err.msg)
-            _notifyEvent(CallEvent.JoinRTCFailed)
-        } else {
-            _notifyEvent(CallEvent.JoinRTCSuccessed)
+            _notifyErrorEvent(CallErrorEvent.StartCaptureFail, CallErrorCodeType.Rtc, ret, null)
         }
     }
 
@@ -478,7 +509,11 @@ class CallApiImpl constructor(
 
     private fun _joinRTCAsBroadcaster(roomId: String) {
         _joinRTCWithMediaOptions(roomId, Constants.CLIENT_ROLE_BROADCASTER, CallAutoSubscribeType.Video) { error ->
-            _notifyRTCState(error)
+            if (error != null) {
+                _notifyRtcOccurErrorEvent(error.code, error.msg)
+            } else {
+                _notifyEvent(CallEvent.JoinRTCSuccessed)
+            }
         }
         setupCanvas()
     }
@@ -507,7 +542,7 @@ class CallApiImpl constructor(
             _notifyEvent(CallEvent.RecvRemoteFirstFrame)
         }
         if (ret != Constants.ERR_OK) {
-            _notifyEvent(CallEvent.RtcOccurError, "join rtc fail: $ret")
+            _notifyRtcOccurErrorEvent(ret)
         }
     }
 
@@ -668,7 +703,7 @@ class CallApiImpl constructor(
         messageManager?.sendMessage(userId.toString(), msg) { err ->
             completion?.invoke(err)
             if (err != null) {
-                _notifyEvent(CallEvent.MessageFailed, "cancel call fail: ${err.code}")
+                _notifySendMessageErrorEvent(err, "cancel call fail: ")
             }
         }
     }
@@ -820,6 +855,22 @@ class CallApiImpl constructor(
         callPrint("rtc[$roomId] renewToken ret = ${ret ?: -1}")
     }
 
+    override fun onFirstLocalVideoFramePublished(source: Constants.VideoSourceType?, elapsed: Int) {
+        super.onFirstLocalVideoFramePublished(source, elapsed)
+        _notifyEvent(event = CallEvent.PublishFirstLocalVideoFrame, eventReason = "elapsed: ${elapsed}ms")
+    }
+
+    override fun onFirstLocalVideoFrame(
+        source: Constants.VideoSourceType?,
+        width: Int,
+        height: Int,
+        elapsed: Int
+    ) {
+        super.onFirstLocalVideoFrame(source, width, height, elapsed)
+        _notifyEvent(event = CallEvent.CaptureFirstLocalVideoFrame, eventReason = "elapsed: ${elapsed}ms")
+        config?.rtcEngine?.removeHandler(localFrameProxy)
+    }
+
     override fun prepareForCall(prepareConfig: PrepareConfig, completion: ((AGError?) -> Unit)?) {
         _reportMethod("prepareForCall", "roomId=${prepareConfig.roomId}&autoJoinRTC=${prepareConfig.autoJoinRTC}")
         _prepareForCall(prepareConfig) { err ->
@@ -869,7 +920,7 @@ class CallApiImpl constructor(
             completion?.invoke(err)
             if (err != null) {
                 //_updateAndNotifyState(CallStateType.Prepared, CallReason.MessageFailed, err.msg)
-                _notifyEvent(CallEvent.MessageFailed, "call fail: ${err.code}")
+                _notifySendMessageErrorEvent(err, "call fail: ")
                 //return@sendMessage
             } else {
                 _notifyEvent(CallEvent.RemoteUserRecvCall)
@@ -896,7 +947,6 @@ class CallApiImpl constructor(
         if (fromUserId == null || roomId == null) {
             val errReason = "accept fail! current userId or roomId is empty"
             completion?.invoke(AGError(errReason, -1))
-            _notifyEvent(CallEvent.MessageFailed, errReason)
             return
         }
         //查询是否是calling状态，如果是prapared，表示可能被主叫取消了
@@ -924,7 +974,7 @@ class CallApiImpl constructor(
         messageManager?.sendMessage(remoteUserId.toString(), message) { err ->
             completion?.invoke(err)
             if (err != null) {
-                _notifyEvent(CallEvent.MessageFailed, "accept fail: ${err.code}")
+                _notifySendMessageErrorEvent(err, "accept fail: ")
             }
         }
         _updateAndNotifyState(CallStateType.Connecting, CallStateReason.LocalAccepted, eventInfo = message)
@@ -942,7 +992,7 @@ class CallApiImpl constructor(
         _reject(remoteUserId, message) { error ->
             completion?.invoke(error)
             if (error != null) {
-                _notifyEvent(CallEvent.MessageFailed, "reject fail: ${error.code}")
+                _notifySendMessageErrorEvent(error, "reject fail: ")
             }
         }
         _updateAndNotifyState(CallStateType.Prepared, CallStateReason.LocalRejected, eventInfo = message)
@@ -956,7 +1006,7 @@ class CallApiImpl constructor(
         _hangup(remoteUserId, message = message) { error ->
             completion?.invoke(error)
             if (error != null) {
-                _notifyEvent(CallEvent.MessageFailed, "hangup fail: ${error.code}")
+                _notifySendMessageErrorEvent(error, "hangup fail: ")
             }
         }
         _updateAndNotifyState(CallStateType.Prepared, CallStateReason.LocalHangup, eventInfo = message)
@@ -998,10 +1048,6 @@ class CallApiImpl constructor(
     }
     override fun debugInfo(message: String, logLevel: Int) {
         callPrint(message)
-    }
-    override fun onMissReceipts(message: Map<String, Any>) {
-        callWarningPrint("onMissReceipts: $message")
-        _notifyEvent(CallEvent.MissingReceipts)
     }
     override fun onPresenceEvent(event: PresenceEvent?) {}
     override fun onTopicEvent(event: TopicEvent?) {}
@@ -1048,7 +1094,7 @@ class CallApiImpl constructor(
 //        callWarningPrint("didOccurError: $err")
 //        joinRtcCompletion?.invoke(AGError("join RTC fail", err))
 //        joinRtcCompletion = null
-        _notifyEvent(CallEvent.RtcOccurError, "onError: $err")
+        _notifyRtcOccurErrorEvent(err)
     }
 
     override fun onRemoteVideoStateChanged(uid: Int, state: Int, reason: Int, elapsed: Int) {
