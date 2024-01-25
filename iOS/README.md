@@ -257,6 +257,21 @@
     @objc optional func onCallEventChanged(with event: CallEvent)
   ```
 
+
+- 错误事件回调
+  ```swift
+    /// 发生错误的回调
+    /// - Parameters:
+    ///   - errorEvent: 错误事件
+    ///   - errorType: 错误码类型
+    ///   - errorCode: 错误码
+    ///   - message: 错误信息
+    @objc optional func onCallError(with errorEvent: CallErrorEvent,
+                                    errorType: CallErrorCodeType,
+                                    errorCode: Int, 
+                                    message: String?)
+  ```
+
 - token即将要过期(需要外部获取新token调用renewToken更新)
   ```swift
     /// token即将要过期(需要外部获取新token调用renewToken更新)
@@ -325,7 +340,7 @@
 
 - 结束通话，主叫和被叫均可调用
   ```swift
-    func hangup(remoteUserId: UInt, completion: ((NSError?)->())?)
+    func hangup(remoteUserId: UInt, reason: String?, completion: ((NSError?)->())?)
   ```
 
 - 获取当前通话的callId，callId为当次通话过程中唯一标识，通过该标识声网后台服务可以查询到当前通话的关键节点耗时和状态变迁的时间节点

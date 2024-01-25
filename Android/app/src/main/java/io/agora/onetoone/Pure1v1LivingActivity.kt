@@ -399,6 +399,15 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         }
     }
 
+    override fun onCallError(
+        errorEvent: CallErrorEvent,
+        errorType: CallErrorCodeType,
+        errorCode: Int,
+        message: String?
+    ) {
+        Log.d(TAG, "onCallError: $errorEvent")
+    }
+
     override fun tokenPrivilegeWillExpire() {
         var rtcTokenTemp = ""
         var rtmTokenTemp = ""

@@ -45,8 +45,6 @@ private class CallQueueInfo {
 }
 
 interface CallMessageListener: RtmEventListener {
-    /** 回执没有收到*/
-    fun onMissReceipts(message: Map<String, Any>)
     fun onConnectionFail()
     fun debugInfo(message: String, logLevel: Int)
 }

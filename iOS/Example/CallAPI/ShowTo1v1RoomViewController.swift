@@ -497,6 +497,13 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
         }
     }
     
+    @objc func onCallError(with errorEvent: CallErrorEvent,
+                           errorType: CallErrorCodeType,
+                           errorCode: Int,
+                           message: String?) {
+        print("onCallErrorOccur errorEvent:\(errorEvent.rawValue), errorType: \(errorType.rawValue), errorCode: \(errorCode), message: \(message ?? "")")
+    }
+    
     @objc func callDebugInfo(message: String, logLevel: CallLogLevel) {
         switch logLevel {
         case .normal:
