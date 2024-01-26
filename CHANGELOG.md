@@ -7,6 +7,8 @@
 - 优化日志上报策略，通话质量定位更准确。
 - 优化过期消息过滤策略。
 - 移除autoAccept配置项。
+- 新增异常错误回调
+- 新增匹配玩法的后端服务模块
 
 ## [0.3.1](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.3.1)
 
