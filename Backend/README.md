@@ -9,10 +9,10 @@
 
 ## 接口说明
 * 主要提供以下 4 个接口, 参考接口定义文件 src/main/java/io/agora/scenarioapi/ICallApi.java
-  * initialize - 初始化
-  * deinitialize - 销毁/重置
-  * call - 用户呼叫
-  * renewToken - 刷新 Token
+    * initialize - 初始化
+    * deinitialize - 销毁/重置
+    * call - 用户呼叫
+    * renewToken - 刷新 Token
 
 ## 示例文件
 * 可参考以下示例
