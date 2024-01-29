@@ -4,13 +4,13 @@ import android.os.Handler
 import android.os.Looper
 import com.google.gson.Gson
 import io.agora.onetoone.AGError
-import io.agora.onetoone.CallMessageListener
+import io.agora.onetoone.ICallMessageListener
 import io.agora.onetoone.ICallMessageManager
 import io.agora.onetoone.extension.getCostMilliseconds
 import io.agora.rtm.*
 
-interface CallRtmMessageListener: CallMessageListener, RtmEventListener {
-    // TODO 这里可以定义新的接口
+interface CallRtmMessageListener: ICallMessageListener, RtmEventListener {
+    // TODO 这里可以定义新的回调
 }
 
 fun createRtmMessageManager(client: RtmClient?, appId: String, userId: Int, rtmToken: String) = CallRtmMessageImpl(client, appId, userId, rtmToken)
@@ -42,7 +42,7 @@ class CallRtmMessageImpl(
     private var messageId: Int = 0
 
     // 回调
-    private val listeners = mutableListOf<CallMessageListener>()
+    private val listeners = mutableListOf<ICallMessageListener>()
 
     init {
         val rtm = client
@@ -78,15 +78,16 @@ class CallRtmMessageImpl(
         sendMessage(userId, map, completion)
     }
 
-    override fun addListener(listener: CallMessageListener) {
+    override fun addListener(listener: ICallMessageListener) {
         listeners.add(listener)
     }
 
-    override fun removeListener(listener: CallMessageListener) {
+    override fun removeListener(listener: ICallMessageListener) {
         listeners.add(listener)
     }
 
     override fun release() {
+        listeners.clear()
         deInitialize()
     }
 

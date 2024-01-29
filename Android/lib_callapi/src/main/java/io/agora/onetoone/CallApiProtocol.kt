@@ -10,7 +10,7 @@ open class CallConfig(
     var userId: Int = 0,
     //rtc engine实例
     var rtcEngine: RtcEngineEx? = null,
-    //[可选]rtm client实例，如果设置则需要负责rtmClient的login和logout，需要使用appId和userId创建
+    //ICallMessageManager实例
     var callMessageManager: ICallMessageManager
 ){}
 
@@ -135,15 +135,15 @@ enum class CallLogLevel(val value: Int) {
     Error(2),
 }
 
-interface CallMessageListener {
+interface ICallMessageListener {
     fun messageReceive(message: String)
     fun debugInfo(message: String, logLevel: Int)
 }
 
 interface ICallMessageManager {
     fun onSendMessage(userId: String, message: Map<String, Any>, completion: ((AGError?)-> Unit)?)
-    fun addListener(listener: CallMessageListener)
-    fun removeListener(listener: CallMessageListener)
+    fun addListener(listener: ICallMessageListener)
+    fun removeListener(listener: ICallMessageListener)
     fun release()
 }
 

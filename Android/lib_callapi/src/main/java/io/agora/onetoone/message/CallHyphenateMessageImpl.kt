@@ -13,7 +13,7 @@ import com.hyphenate.chat.EMOptions
 import com.hyphenate.chat.EMTextMessageBody
 import com.hyphenate.exceptions.HyphenateException
 import io.agora.onetoone.AGError
-import io.agora.onetoone.CallMessageListener
+import io.agora.onetoone.ICallMessageListener
 import io.agora.onetoone.ICallMessageManager
 import io.agora.rtm.PublishOptions
 import io.agora.rtm.RtmConstants
@@ -74,7 +74,7 @@ class CallHyphenateMessageImpl(
     private var messageId: Int = 0
 
     // 回调
-    private val listeners = mutableListOf<CallMessageListener>()
+    private val listeners = mutableListOf<ICallMessageListener>()
 
     override fun onSendMessage(
         userId: String,
@@ -130,15 +130,16 @@ class CallHyphenateMessageImpl(
         EMClient.getInstance().chatManager().sendMessage(msg)
     }
 
-    override fun addListener(listener: CallMessageListener) {
+    override fun addListener(listener: ICallMessageListener) {
         listeners.add(listener)
     }
 
-    override fun removeListener(listener: CallMessageListener) {
+    override fun removeListener(listener: ICallMessageListener) {
         listeners.remove(listener)
     }
 
     override fun release() {
+        listeners.clear()
         EMClient.getInstance().logout(false)
     }
 
