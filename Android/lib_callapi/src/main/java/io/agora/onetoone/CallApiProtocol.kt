@@ -1,8 +1,8 @@
 package io.agora.onetoone
 
 import android.view.ViewGroup
+import io.agora.onetoone.message.ICallMessageManager
 import io.agora.rtc2.RtcEngineEx
-import io.agora.rtm.RtmClient
 
 open class CallConfig(
     //声网App Id
@@ -12,7 +12,7 @@ open class CallConfig(
     //rtc engine实例
     var rtcEngine: RtcEngineEx? = null,
     //[可选]rtm client实例，如果设置则需要负责rtmClient的login和logout，需要使用appId和userId创建
-    var rtmClient: RtmClient? = null,
+    var callMessageManager: ICallMessageManager
 ){}
 
 open class PrepareConfig(
@@ -200,7 +200,7 @@ interface ICallApi {
     /**
      * 更新自己的rtc/rtm的token
      */
-    fun renewToken(rtcToken: String, rtmToken: String)
+    fun renewToken(rtcToken: String)
 
     /**
      * 准备通话环境，需要调用成功才可以进行呼叫，如需要更换通话的RTC 频道号可以重复调用，确保调用时必须是非通话状态(非calling、connecting、connected)才可调用成功
