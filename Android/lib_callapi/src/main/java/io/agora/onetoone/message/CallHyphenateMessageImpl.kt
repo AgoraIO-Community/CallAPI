@@ -5,7 +5,6 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.google.gson.Gson
-import com.google.gson.JsonObject
 import com.hyphenate.EMCallBack
 import com.hyphenate.EMMessageListener
 import com.hyphenate.chat.EMClient
@@ -14,6 +13,8 @@ import com.hyphenate.chat.EMOptions
 import com.hyphenate.chat.EMTextMessageBody
 import com.hyphenate.exceptions.HyphenateException
 import io.agora.onetoone.AGError
+import io.agora.onetoone.CallMessageListener
+import io.agora.onetoone.ICallMessageManager
 import io.agora.rtm.PublishOptions
 import io.agora.rtm.RtmConstants
 

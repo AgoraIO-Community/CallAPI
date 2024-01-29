@@ -1,7 +1,6 @@
 package io.agora.onetoone
 
 import android.view.ViewGroup
-import io.agora.onetoone.message.ICallMessageManager
 import io.agora.rtc2.RtcEngineEx
 
 open class CallConfig(
@@ -134,6 +133,18 @@ enum class CallLogLevel(val value: Int) {
     Normal(0),
     Warning(1),
     Error(2),
+}
+
+interface CallMessageListener {
+    fun messageReceive(message: String)
+    fun debugInfo(message: String, logLevel: Int)
+}
+
+interface ICallMessageManager {
+    fun onSendMessage(userId: String, message: Map<String, Any>, completion: ((AGError?)-> Unit)?)
+    fun addListener(listener: CallMessageListener)
+    fun removeListener(listener: CallMessageListener)
+    fun release()
 }
 
 interface ICallApiListener {
