@@ -61,7 +61,7 @@ enum CalleeJoinRTCPolicy: Int {
 let calleeJoinRTCPolicy: CalleeJoinRTCPolicy = .calling
 
 public class CallApiImpl: NSObject {
-    private let delegates:NSHashTable<AnyObject> = NSHashTable<AnyObject>.weakObjects()
+    private let delegates:NSHashTable<CallApiListenerProtocol> = NSHashTable<CallApiListenerProtocol>.weakObjects()
     private let rtcProxy: CallAgoraExProxy = CallAgoraExProxy()
     private lazy var localFrameProxy: CallLocalFirstFrameProxy = CallLocalFirstFrameProxy(delegate: self)
     private var config: CallConfig?
@@ -216,9 +216,44 @@ extension CallApiImpl {
 
 //MARK: private method
 extension CallApiImpl {
+    private func getNtpTimeInMs() -> UInt64 {
+        var localNtpTime: UInt64 = config?.rtcEngine.getNtpWallTimeInMs() ?? 0
+
+        if localNtpTime != 0 {
+            localNtpTime = localNtpTime + 2208988800 * 1000
+        }
+
+        return localNtpTime
+    }
+    
+    private func _notifyCallConnected() {
+        guard let config = config else { return }
+        let ntpTime = getNtpTimeInMs()
+        connectInfo.callConnectedTs = ntpTime
+        let callUserId = connectInfo.callingRoomId == prepareConfig?.roomId ? config.userId : connectInfo.callingUserId ?? 0
+        for element in delegates.allObjects {
+            element.onCallConnected?(roomId: connectInfo.callingRoomId ?? "",
+                                     callUserId: callUserId,
+                                     currentUserId: config.userId,
+                                     timestamp: ntpTime)
+        }
+    }
+    
+    private func _notifyCallDisconnected(hangupUserId: UInt) {
+        guard let config = config else { return }
+        let ntpTime = getNtpTimeInMs()
+        for element in delegates.allObjects {
+            element.onCallDisconnected?(roomId: connectInfo.callingRoomId ?? "",
+                                        hangupUserId: hangupUserId,
+                                        currentUserId: config.userId,
+                                        timestamp: ntpTime,
+                                        duration: ntpTime - connectInfo.callConnectedTs)
+        }
+    }
+    
     private func _notifyTokenPrivilegeWillExpire() {
         for element in delegates.allObjects {
-            (element as? CallApiListenerProtocol)?.tokenPrivilegeWillExpire?()
+            element.tokenPrivilegeWillExpire?()
         }
     }
     
@@ -259,13 +294,30 @@ extension CallApiImpl {
 //                                       elapsed: Int = 0,
                                        eventInfo: [String: Any] = [:]) {
         callPrint("call change[\(connectInfo.callId)] state: \(state.rawValue), stateReason: \(stateReason.rawValue), eventReason: '\(eventReason)'")
+        let oldState = self.state
+        //check connected/disconnected
+        if state == .connected, oldState == .connecting {
+            _notifyCallConnected()
+        } else if state == .prepared, oldState == .connected {
+            switch stateReason {
+                //正常只会触发.remoteCancel, .remoteHangup，剩余的做兜底
+            case .remoteCancel, .remoteHangup, .remoteRejected, .remoteCallBusy:
+                _notifyCallDisconnected(hangupUserId: connectInfo.callingUserId ?? 0)
+            default:
+                //.localHangup 或 bad case
+                _notifyCallDisconnected(hangupUserId: config?.userId ?? 0)
+                break
+            }
+        }
+        
         self.state = state
         for element in delegates.allObjects {
-            (element as? CallApiListenerProtocol)?.onCallStateChanged(with: state,
-                                                                      stateReason: stateReason,
-                                                                      eventReason: eventReason,
-                                                                      eventInfo: eventInfo)
+            element.onCallStateChanged(with: state,
+                                       stateReason: stateReason,
+                                       eventReason: eventReason,
+                                       eventInfo: eventInfo)
         }
+        
     }
     
     private func _notifySendMessageErrorEvent(error: NSError, reason: String?) {
@@ -288,10 +340,10 @@ extension CallApiImpl {
                                    message: String?) {
         callPrint("call change[\(connectInfo.callId)] errorEvent: '\(errorEvent.rawValue)', errorType: '\(errorType.rawValue)', errorCode: '\(errorCode)', message: '\(message ?? "")'")
         for element in delegates.allObjects {
-            (element as? CallApiListenerProtocol)?.onCallError?(with: errorEvent,
-                                                                errorType: errorType,
-                                                                errorCode: errorCode,
-                                                                message: message)
+            element.onCallError?(with: errorEvent,
+                                 errorType: errorType,
+                                 errorCode: errorCode,
+                                 message: message)
         }
     }
     
@@ -334,9 +386,7 @@ extension CallApiImpl {
     
     private func _notifyOptionalFunc(closure: ((CallApiListenerProtocol)->())) {
         for element in delegates.allObjects {
-            if let target = element as? CallApiListenerProtocol {
-                closure(target)
-            }
+            closure(element)
         }
     }
     

@@ -465,4 +465,19 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
             print("[CallApi][Error]\(message)")
         }
     }
+    
+    @objc func onCallConnected(roomId: String,
+                               callUserId: UInt,
+                               currentUserId: UInt,
+                               timestamp: UInt64) {
+        print("onCallConnected roomId: \(roomId) callUserId: \(callUserId) currentUserId: \(currentUserId) timestamp: \(timestamp)")
+    }
+    
+    @objc func onCallDisconnected(roomId: String,
+                                  hangupUserId: UInt,
+                                  currentUserId: UInt,
+                                  timestamp: UInt64,
+                                  duration: UInt64) {
+        print("onCallDisconnected roomId: \(roomId) hangupUserId: \(hangupUserId) currentUserId: \(currentUserId) timestamp: \(timestamp) duration: \(duration)ms")
+    }
 }
