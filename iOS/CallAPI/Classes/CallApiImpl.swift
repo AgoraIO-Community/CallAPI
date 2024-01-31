@@ -217,10 +217,10 @@ extension CallApiImpl {
 //MARK: private method
 extension CallApiImpl {
     private func getNtpTimeInMs() -> UInt64 {
-        var localNtpTime: UInt64 = config?.rtcEngine.getNtpWallTimeInMs() ?? 0
+        var localNtpTime = config?.rtcEngine.getNtpWallTimeInMs() ?? 0
 
-        if localNtpTime != 0 {
-            localNtpTime = localNtpTime + 2208988800 * 1000
+        if localNtpTime == 0 {
+            localNtpTime = UInt64(_getTimeInMs())
         }
 
         return localNtpTime
