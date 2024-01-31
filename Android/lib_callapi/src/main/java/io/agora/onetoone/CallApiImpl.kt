@@ -196,6 +196,44 @@ class CallApiImpl constructor(
         return message
     }
 
+    private fun getNtpTimeInMs(): Long {
+        val currentNtpTime = config?.rtcEngine?.ntpWallTimeInMs ?: 0L
+        return if (currentNtpTime != 0L) {
+            currentNtpTime + 2208988800L * 1000
+        } else {
+            0
+        }
+    }
+
+    private fun _notifyCallConnected() {
+        val config = config ?: return
+        val ntpTime = getNtpTimeInMs()
+        connectInfo.callConnectedTs = ntpTime
+        val callUserId = (if (connectInfo.callingRoomId == prepareConfig?.roomId) config.userId else connectInfo.callingUserId) ?: 0
+        delegates.forEach { listener ->
+            listener.onCallConnected(
+                roomId = connectInfo.callingRoomId ?: "",
+                callUserId = callUserId,
+                currentUserId = config.userId,
+                timestamp = ntpTime
+            )
+        }
+    }
+
+    private fun _notifyCallDisconnected(hangupUserId: Int) {
+        val config = config ?: return
+        val ntpTime = getNtpTimeInMs()
+        delegates.forEach { listener ->
+            listener.onCallDisconnected(
+                roomId = connectInfo.callingRoomId ?: "",
+                hangupUserId = hangupUserId,
+                currentUserId = config.userId,
+                timestamp = ntpTime,
+                duration = ntpTime - connectInfo.callConnectedTs
+            )
+        }
+    }
+
     private fun _notifyTokenPrivilegeWillExpire() {
         delegates.forEach { listener ->
             listener.tokenPrivilegeWillExpire()
@@ -231,6 +269,24 @@ class CallApiImpl constructor(
                                       eventReason: String = "",
                                       eventInfo: Map<String, Any> = emptyMap()) {
         callPrint("call change[${connectInfo.callId}] state: $state, stateReason: '$stateReason', eventReason: $eventReason")
+
+        val oldState = this.state
+        //check connected/disconnected
+        if (state == CallStateType.Connected && oldState == CallStateType.Connecting) {
+            _notifyCallConnected()
+        } else if (state == CallStateType.Prepared && oldState == CallStateType.Connected) {
+            when (stateReason) {
+                //正常只会触发.remoteCancel, .remoteHangup，剩余的做兜底
+                CallStateReason.RemoteCancel, CallStateReason.RemoteHangup, CallStateReason.RemoteRejected, CallStateReason.RemoteCallBusy -> {
+                    _notifyCallDisconnected(connectInfo.callingUserId ?: 0)
+                }
+                else -> {
+                    //.localHangup 或 bad case
+                    _notifyCallDisconnected(config?.userId ?: 0)
+                }
+            }
+        }
+
         this.state = state
         delegates.forEach {
             it.onCallStateChanged(state, stateReason, eventReason, eventInfo)

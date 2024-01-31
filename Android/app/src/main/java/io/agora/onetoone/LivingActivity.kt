@@ -492,6 +492,27 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         Log.d(TAG, "onCallError: $errorEvent")
     }
 
+    override fun onCallConnected(
+        roomId: String,
+        callUserId: Int,
+        currentUserId: Int,
+        timestamp: Long
+    ) {
+        super.onCallConnected(roomId, callUserId, currentUserId, timestamp)
+        Log.d(TAG, "onCallConnected, roomId: $roomId, callUserId: $callUserId, currentUserId: $currentUserId, timestamp: $timestamp")
+    }
+
+    override fun onCallDisconnected(
+        roomId: String,
+        hangupUserId: Int,
+        currentUserId: Int,
+        timestamp: Long,
+        duration: Long
+    ) {
+        super.onCallDisconnected(roomId, hangupUserId, currentUserId, timestamp, duration)
+        Log.d(TAG, "onCallDisconnected, roomId: $roomId, hangupUserId: $hangupUserId, currentUserId: $currentUserId, timestamp: $timestamp, duration:$duration")
+    }
+
     override fun tokenPrivilegeWillExpire() {
         var rtcTokenTemp = ""
         var rtmTokenTemp = ""
