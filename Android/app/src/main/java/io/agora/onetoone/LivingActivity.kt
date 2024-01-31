@@ -501,7 +501,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         super.onCallConnected(roomId, callUserId, currentUserId, timestamp)
         Log.d(TAG, "onCallConnected, roomId: $roomId, callUserId: $callUserId, currentUserId: $currentUserId, timestamp: $timestamp")
         runOnUiThread {
-            mViewBinding.tvText.text = "通话开始, \nRTC 频道号: $roomId, \n主叫用户id: $callUserId, \n当前用户id: $currentUserId, \n结束时间戳: $timestamp"
+            mViewBinding.tvText.text = "通话开始, \nRTC 频道号: $roomId, \n主叫用户id: $callUserId, \n当前用户id: $currentUserId, \n开始时间戳: $timestamp"
         }
     }
 
