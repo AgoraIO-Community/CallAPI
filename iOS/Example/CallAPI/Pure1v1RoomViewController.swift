@@ -28,6 +28,7 @@ class Pure1v1RoomViewController: UIViewController {
         return view
     }()
     private lazy var rtcEngine = _createRtcEngine()
+    private var rtmToken: String
     private var rtmClient: AgoraRtmClientKit?
     
     private var connectedUserId: UInt?
@@ -148,9 +149,10 @@ class Pure1v1RoomViewController: UIViewController {
         print("deinit-- Pure1v1RoomViewController")
     }
     
-    required init(currentUid: UInt, prepareConfig: PrepareConfig) {
+    required init(currentUid: UInt, prepareConfig: PrepareConfig, rtmToken: String) {
         self.currentUid = currentUid
         self.prepareConfig = prepareConfig
+        self.rtmToken = rtmToken
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -202,7 +204,7 @@ class Pure1v1RoomViewController: UIViewController {
     private func initCallApi(completion: @escaping ((Bool)->())) {
         //外部创建需要自行管理login
         NSLog("login")
-        rtmClient?.login(prepareConfig.rtmToken) {[weak self] resp, err in
+        rtmClient?.login(rtmToken) {[weak self] resp, err in
             guard let self = self else {return}
             if let err = err {
                 NSLog("login error = \(err.localizedDescription)")
@@ -225,7 +227,11 @@ extension Pure1v1RoomViewController {
         config.appId = KeyCenter.AppId
         config.userId = currentUid
         config.rtcEngine = rtcEngine
-        config.rtmClient = rtmClient
+        config.callMessageManager = CallRtmMessageManager(appId: config.appId,
+                                                          userId: "\(config.userId)",
+                                                          rtmToken: rtmToken,
+                                                          rtmClient: rtmClient)
+        self.rtmClient = rtmClient
         self.api.initialize(config: config)
         prepareConfig.roomId = "\(currentUid)"
         prepareConfig.localView = rightView
@@ -325,7 +331,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
             let rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
             self.prepareConfig.rtcToken = rtcToken
             let rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
-            self.prepareConfig.rtmToken = rtmToken
+            self.rtmToken = rtmToken
             self.api.renewToken(with: rtcToken, rtmToken: rtmToken)
         }
     }

@@ -454,7 +454,7 @@ class ViewController: UIViewController {
                 return
             }
             prepareConfig.rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
-            prepareConfig.rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
+//            prepareConfig.rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
             
             let targetUserId = role == .caller ? "\(callUserId)" : "\(currentUserId)"
             
@@ -463,6 +463,7 @@ class ViewController: UIViewController {
                                                  showRoomToken: prepareConfig.rtcToken,
                                                  currentUid: currentUserId,
                                                  role: role,
+                                                 rtmToken: tokens[AgoraTokenType.rtm.rawValue]!,
                                                  prepareConfig: prepareConfig)
             vc.modalPresentationStyle = .fullScreen
             vc.videoEncoderConfig = videoEncoderConfig
@@ -487,9 +488,11 @@ class ViewController: UIViewController {
                 return
             }
             prepareConfig.rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
-            prepareConfig.rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
+//            prepareConfig.rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
             
-            let vc = Pure1v1RoomViewController(currentUid: currentUserId, prepareConfig: prepareConfig)
+            let vc = Pure1v1RoomViewController(currentUid: currentUserId,
+                                               prepareConfig: prepareConfig,
+                                               rtmToken: tokens[AgoraTokenType.rtm.rawValue]!)
             vc.modalPresentationStyle = .fullScreen
             vc.videoEncoderConfig = videoEncoderConfig
             self.view.isUserInteractionEnabled = true

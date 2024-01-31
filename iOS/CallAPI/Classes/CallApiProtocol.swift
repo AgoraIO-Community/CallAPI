@@ -14,14 +14,14 @@ import AgoraRtmKit
     public var appId: String = ""               //声网App Id
     public var userId: UInt = 0                 //用户id
     public var rtcEngine: AgoraRtcEngineKit!    //rtc engine实例
-    public var rtmClient: AgoraRtmClientKit?    //[可选]rtm client实例，如果设置则需要负责rtmClient的login和logout，需要使用appId和userId创建
+    public var callMessageManager: ICallMessageManager!    //[可选]rtm client实例，如果设置则需要负责rtmClient的login和logout，需要使用appId和userId创建
 }
 
 //TODO: 如何不设置万能token
 @objc public class PrepareConfig: NSObject {
     public var roomId: String = ""                      //自己的RTC频道名，用于呼叫对端用户时让对端用户进入加入这个RTC频道
     public var rtcToken: String = ""                    //rtc token，需要使用万能token，token创建的时候channel name为空字符串
-    public var rtmToken: String = ""                    //rtm token
+//    public var rtmToken: String = ""                    //rtm token
     public var localView: UIView!                       //显示本地流的画布
     public var remoteView: UIView!                      //显示远端流的画布
     public var autoJoinRTC: Bool = false                //是否在不呼叫的情况下提前加入自己的RTC频道，该设置可以加快呼叫的出图速度
@@ -121,6 +121,20 @@ import AgoraRtmKit
     case normal = 0
     case warning = 1
     case error = 2
+}
+
+
+@objc public protocol ICallMessageListener: NSObjectProtocol {
+    func onMessageReceive(message: String)
+    func debugInfo(message: String, logLevel: Int)
+}
+
+@objc public protocol ICallMessageManager: NSObjectProtocol {
+    func initialize(completion:@escaping ((NSError?)-> ()))
+    func deinitialize()
+    func sendMessage(userId: String, message: [String: Any], completion: ((NSError?)-> Void)?)
+    func addListener(listener: ICallMessageListener)
+    func removeListener(listener: ICallMessageListener)
 }
 
 @objc public protocol CallApiListenerProtocol: NSObjectProtocol {

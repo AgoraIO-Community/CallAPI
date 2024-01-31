@@ -28,6 +28,7 @@ class ShowTo1v1RoomViewController: UIViewController {
     private var connectedUserId: UInt?
     private var connectedRoomId: String?
     
+    private var rtmToken: String
     private var rtmClient: AgoraRtmClientKit?
     
     private lazy var debugPath: String = {
@@ -147,12 +148,19 @@ class ShowTo1v1RoomViewController: UIViewController {
         return canvas
     }()
     
-    required init(showRoomId: String, showUserId: UInt, showRoomToken: String, currentUid: UInt, role: CallRole, prepareConfig: PrepareConfig) {
+    required init(showRoomId: String, 
+                  showUserId: UInt,
+                  showRoomToken: String,
+                  currentUid: UInt,
+                  role: CallRole, 
+                  rtmToken: String,
+                  prepareConfig: PrepareConfig) {
         self.showRoomId = showRoomId
         self.showUserId = showUserId
         self.showRoomToken = showRoomToken
         self.currentUid = currentUid
         self.role = role
+        self.rtmToken = rtmToken
         self.prepareConfig = prepareConfig
         super.init(nibName: nil, bundle: nil)
     }
@@ -199,7 +207,7 @@ class ShowTo1v1RoomViewController: UIViewController {
         //外部创建rtmClient
         rtmClient = _createRtmClient()
         //外部创建需要自行管理login
-        rtmClient?.login(prepareConfig.rtmToken) {[weak self] resp, err in
+        rtmClient?.login(rtmToken) {[weak self] resp, err in
             guard let self = self else {return}
             if let err = err {
                 print("login error = \(err.localizedDescription)")
@@ -309,7 +317,11 @@ extension ShowTo1v1RoomViewController {
         config.appId = KeyCenter.AppId
         config.userId = currentUid
         config.rtcEngine = rtcEngine
-        config.rtmClient = rtmClient
+        config.callMessageManager = CallRtmMessageManager(appId: config.appId,
+                                                          userId: "\(config.userId)",
+                                                          rtmToken: rtmToken,
+                                                          rtmClient: rtmClient)
+        self.rtmClient = rtmClient
         self.api.initialize(config: config)
         
         prepareConfig.roomId = "\(currentUid)"
@@ -389,7 +401,7 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
             let rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
             self.prepareConfig.rtcToken = rtcToken
             let rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
-            self.prepareConfig.rtmToken = rtmToken
+            self.rtmToken = rtmToken
             self.api.renewToken(with: rtcToken, rtmToken: rtmToken)
             
             self.showRoomToken = rtcToken
