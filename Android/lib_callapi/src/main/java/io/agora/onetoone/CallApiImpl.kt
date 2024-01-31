@@ -199,8 +199,9 @@ class CallApiImpl constructor(
     private fun getNtpTimeInMs(): Long {
         val currentNtpTime = config?.rtcEngine?.ntpWallTimeInMs ?: 0L
         return if (currentNtpTime != 0L) {
-            currentNtpTime + 2208988800L * 1000
+            currentNtpTime
         } else {
+            Log.e(TAG, "getNtpTimeInMs ntpWallTimeInMs is zero!!!!!!!!!!")
             System.currentTimeMillis()
         }
     }
