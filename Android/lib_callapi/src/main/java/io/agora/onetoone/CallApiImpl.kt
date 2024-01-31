@@ -201,7 +201,7 @@ class CallApiImpl constructor(
         return if (currentNtpTime != 0L) {
             currentNtpTime + 2208988800L * 1000
         } else {
-            0
+            System.currentTimeMillis()
         }
     }
 
