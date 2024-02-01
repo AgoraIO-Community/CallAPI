@@ -10,102 +10,105 @@ import AgoraRtmKit
 
 let kMessageId: String = "messageId"     //发送的消息id
 
+private func createRtmClient(appId: String,
+                              userId: String) -> AgoraRtmClientKit {
+    let rtmConfig = AgoraRtmClientConfig(appId: appId, userId: userId)
+    var rtmClient: AgoraRtmClientKit? = nil
+    do {
+        rtmClient = try AgoraRtmClientKit(rtmConfig, delegate: nil)
+    } catch {
+//        callMessagePrint("create rtm client fail: \(error.localizedDescription)", 2)
+    }
+    return rtmClient!
+}
+
 @objcMembers
 public class CallRtmMessageManager: NSObject {
     private let delegates:NSHashTable<ICallMessageListener> = NSHashTable<ICallMessageListener>.weakObjects()
     private var appId: String
     private var userId: String
     private var rtmToken: String?
-    private var rtmClient: AgoraRtmClientKit!
+    private var rtmClient: AgoraRtmClientKit
 
     /// RTM是否已经登录
     private var isLoginedRtm: Bool = false
     
     /// 是否外部传入的rtm，如果是则不需要手动logout
     private var isExternalRtmClient: Bool = false
-    
-    private var prepareConfig: PrepareConfig?
-    
+        
     // 消息id
     private var messageId: Int = 0
     
+    deinit {
+        clean()
+    }
     
     public required init(appId: String, userId: String, rtmToken: String, rtmClient: AgoraRtmClientKit? = nil) {
         self.appId = appId
         self.userId = userId
         self.rtmToken = rtmToken
-        super.init()
         if let rtmClient = rtmClient {
             //如果外部传入rtmclient，默认登陆成功
             self.isLoginedRtm = true
             self.isExternalRtmClient = true
             self.rtmClient = rtmClient
         } else {
-            self.rtmClient = _createRtmClient(delegate: nil)
+            self.rtmClient = createRtmClient(appId: appId, userId: userId)
         }
+        super.init()
+        self.rtmClient.addDelegate(self)
+        
         // disable retry message
         let _ = self.rtmClient.setParameters("{\"rtm.msg.tx_timeout\": 3000}")
         callMessagePrint("init-- CallMessageManager ")
     }
     
-    func _deinitialize() {
-        rtmClient.removeDelegate(self)
+    public func getRtmClient() -> AgoraRtmClientKit {
+        return self.rtmClient
+    }
+    
+    public func login(completion: @escaping ((NSError?) -> ())) {
+        callMessagePrint("initialize")
+        if rtmToken?.isEmpty ?? true, isExternalRtmClient == false {
+            let reason = "RTM Token is Empty"
+            completion(NSError(domain: reason, code: -1))
+            return
+        }
+        
+        if !isLoginedRtm {
+            loginRtm(rtmClient: rtmClient, token: rtmToken ?? "") {/*[weak self]*/ err in
+                if let err = err, err.errorCode != .ok {
+                    completion(NSError(domain: err.reason, code: err.errorCode.rawValue))
+                    return
+                }
+
+                completion(nil)
+            }
+        } else {
+            completion(nil)
+        }
+    }
+    
+    public func logout() {
         if isExternalRtmClient == false {
             rtmClient.logout()
             rtmClient.destroy()
         }
     }
     
-    /// 根据配置初始化RTM
-    /// - Parameters:
-    ///   - prepareConfig: <#prepareConfig description#>
-    ///   - tokenConfig: <#tokenConfig description#>
-    ///   - completion: <#completion description#>
-    func _initialize(rtmToken: String, completion: ((NSError?) -> ())?) {
-        callMessagePrint("initialize")
-        rtmClient.addDelegate(self)
-        self.rtmToken = rtmToken
-        if rtmToken.isEmpty, isExternalRtmClient == false {
-            let reason = "RTM Token is Empty"
-            completion?(NSError(domain: reason, code: -1))
-            return
-        }
-        
-        guard let rtmClient = self.rtmClient else {
-            let reason = "rtmClient is nil, please invoke 'initialize' to setup config"
-            completion?(NSError(domain: reason, code: -1))
-            return
-        }
-        
-        if !isLoginedRtm {
-            loginRtm(rtmClient: rtmClient, token: rtmToken) {/*[weak self]*/ err in
-                if let err = err, err.errorCode != .ok {
-                    completion?(NSError(domain: err.reason, code: err.errorCode.rawValue))
-                    return
-                }
-
-                completion?(nil)
-            }
-        } else {
-            completion?(nil)
-        }
-    }
-    
     /// 更新RTM token
     /// - Parameter tokenConfig: CallTokenConfig
     public func renewToken(rtmToken: String) {
+        self.rtmToken = rtmToken
         guard isLoginedRtm else {
-            if let prepareConfig = prepareConfig {
-                //没有登陆成功，但是需要自动登陆，可能是初始token问题，这里重新initialize
-                callMessagePrint("renewToken need to reinit")
-                self.rtmClient.logout()
-                _initialize(rtmToken: rtmToken) { err in
-                }
+            //没有登陆成功，但是需要自动登陆，可能是初始token问题，这里重新initialize
+            callMessagePrint("renewToken need to reinit")
+            self.rtmClient.logout()
+            login() { err in
             }
             return
         }
-        self.rtmToken = rtmToken
-        rtmClient?.renewToken(rtmToken, completion: {[weak self] resp, err in
+        rtmClient.renewToken(rtmToken, completion: {[weak self] resp, err in
             self?.callMessagePrint("rtm renewToken: \(err?.errorCode.rawValue ?? 0)")
         })
     }
@@ -135,24 +138,6 @@ extension CallRtmMessageManager {
             self.callMessagePrint("_sendMessage[\(msgId)] publish cost \(date.getCostMilliseconds()) ms")
             completion?(nil)
         }
-    }
-    
-    private func _createRtmClient(delegate: AgoraRtmClientDelegate?) -> AgoraRtmClientKit {
-        let rtmConfig = AgoraRtmClientConfig(appId: appId, userId: userId)
-        if rtmConfig.userId.count == 0 {
-            callMessagePrint("userId is empty", 2)
-        }
-        if rtmConfig.appId.count == 0 {
-            callMessagePrint("appId is empty", 2)
-        }
-
-        var rtmClient: AgoraRtmClientKit? = nil
-        do {
-            rtmClient = try AgoraRtmClientKit(rtmConfig, delegate: nil)
-        } catch {
-            callMessagePrint("create rtm client fail: \(error.localizedDescription)", 2)
-        }
-        return rtmClient!
     }
     
     private func loginRtm(rtmClient: AgoraRtmClientKit, token: String, completion: @escaping (AgoraRtmErrorInfo?)->()) {
@@ -200,7 +185,7 @@ extension CallRtmMessageManager: AgoraRtmClientDelegate {
     //收到RTM消息
     public func rtmKit(_ rtmKit: AgoraRtmClientKit, didReceiveMessageEvent event: AgoraRtmMessageEvent) {
         guard let data = event.message.rawData,
-                let message = String(data: data, encoding: .utf8) else {
+              let message = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
                callMessagePrint("on event message parse fail", 1)
                return
         }
@@ -211,14 +196,6 @@ extension CallRtmMessageManager: AgoraRtmClientDelegate {
 }
 
 extension CallRtmMessageManager: ICallMessageManager {
-    public func initialize(completion: @escaping ((NSError?) -> ())) {
-        _initialize(rtmToken: rtmToken ?? "", completion: completion)
-    }
-    
-    public func deinitialize() {
-        _deinitialize()
-    }
-    
     public func sendMessage(userId: String, message: [String : Any], completion: ((NSError?) -> Void)?) {
         guard userId.count > 0, userId != "0" else {
         let errorStr = "sendMessage fail, invalid userId[\(userId)]"
@@ -231,8 +208,6 @@ extension CallRtmMessageManager: ICallMessageManager {
         messageId %= Int.max
         var message = message
         message[kMessageId] = messageId
-//        message[kReceiptsRoomIdKey] = fromUserId
-//        assert(fromUserId.count > 0, "kReceiptsRoomIdKey is empty")
         _sendMessage(userId: userId, message: message, completion: completion)
     }
     
@@ -247,6 +222,7 @@ extension CallRtmMessageManager: ICallMessageManager {
     
     public func clean() {
         delegates.removeAllObjects()
-        deinitialize()
+        rtmClient.removeDelegate(self)
+        logout()
     }
 }

@@ -275,7 +275,7 @@ extension CallApiImpl {
     
     private func _notifySendMessageErrorEvent(error: NSError, reason: String?) {
         _notifyErrorEvent(with: .sendMessageFail,
-                          errorType: .rtm,
+                          errorType: .message,
                           errorCode: error.code,
                           message: "\(reason ?? "")\(error.localizedDescription)")
     }
@@ -394,27 +394,27 @@ extension CallApiImpl {
         }
         
         //login rtm if need
-        if enableLoginRtm {
-            isPreparing = true
-            let messageManager = config.callMessageManager
-            
-            messageManager?.initialize {[weak self] err in
-                guard let self = self else { return }
-                self.isPreparing = false
-                self.callWarningPrint("prepareForCall[\(tag)] rtmInitialize completion: \(err?.localizedDescription ?? "success")")
-                if let err = err {
-                    self._notifyErrorEvent(with: .rtmSetupFail,
-                                           errorType: .rtm,
-                                           errorCode: err.code,
-                                           message: err.localizedDescription)
-                } else {
-                    self._notifyEvent(event: .rtmSetupSuccessed)
-                }
-                completion?(err)
-            }
-        } else {
+//        if enableLoginRtm {
+//            isPreparing = true
+//            let messageManager = config.callMessageManager
+//            
+//            messageManager?.initialize {[weak self] err in
+//                guard let self = self else { return }
+//                self.isPreparing = false
+//                self.callWarningPrint("prepareForCall[\(tag)] rtmInitialize completion: \(err?.localizedDescription ?? "success")")
+//                if let err = err {
+//                    self._notifyErrorEvent(with: .rtmSetupFail,
+//                                           errorType: .rtm,
+//                                           errorCode: err.code,
+//                                           message: err.localizedDescription)
+//                } else {
+//                    self._notifyEvent(event: .rtmSetupSuccessed)
+//                }
+//                completion?(err)
+//            }
+//        } else {
             completion?(nil)
-        }
+//        }
     }
     
     private func _deinitialize() {
@@ -1078,19 +1078,17 @@ extension CallApiImpl: ICallMessageListener {
         callPrint(message, CallLogLevel(rawValue: logLevel) ?? .normal)
     }
     
-    public func onMessageReceive(message: String) {
+    public func onMessageReceive(message: [String: Any]) {
         callPrint("on event message: \(message)")
-        guard let data = message.data(using: .utf8),
-              let dic = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let messageAction = CallAction(rawValue: dic[kMessageAction] as? UInt ?? 0),
-              let messageVersion = dic[kMessageVersion] as? String else {
+        guard let messageAction = CallAction(rawValue: message[kMessageAction] as? UInt ?? 0),
+              let messageVersion = message[kMessageVersion] as? String else {
             callWarningPrint("fail to parse message")
             return
         }
         
         //TODO: compatible other message version
         guard kCurrentMessageVersion == messageVersion else { return }
-        _processRespEvent(reason: messageAction, message: dic)
+        _processRespEvent(reason: messageAction, message: message)
     }
     
 //    public func rtmKit(_ rtmKit: AgoraRtmClientKit, tokenPrivilegeWillExpire channel: String?) {

@@ -98,13 +98,12 @@ import AgoraRtmKit
     case publishFirstLocalVideoFrame = 120        //推送首帧视频帧成功
 }
 
-
 /// 呼叫错误事件
 @objc public enum CallErrorEvent: UInt {
     case normalError = 0              //通用错误
     case rtcOccurError = 100          //rtc出现错误
     case startCaptureFail = 110       //rtc开启采集失败
-    case rtmSetupFail = 200           //rtm初始化失败
+//    case rtmSetupFail = 200           //rtm初始化失败[已废弃，改为messageManager自己手动初始化]
     case sendMessageFail = 210        //消息发送失败
 }
 
@@ -112,9 +111,8 @@ import AgoraRtmKit
 @objc public enum CallErrorCodeType: UInt {
     case normal = 0   //业务类型的错误，暂无
     case rtc          //rtc的错误，使用AgoraErrorCode
-    case rtm          //rtm的错误，使用AgoraRtmErrorCode
+    case message      //消息的错误，使用如果使用CallRtmMessageManager则是AgoraRtmErrorCode，自定义信道则是对应信道的error code
 }
-
 
 /// 日志等级
 @objc public enum CallLogLevel: Int {
@@ -125,16 +123,17 @@ import AgoraRtmKit
 
 
 @objc public protocol ICallMessageListener: NSObjectProtocol {
-    func onMessageReceive(message: String)
+    func onMessageReceive(message: [String: Any])
     func debugInfo(message: String, logLevel: Int)
 }
 
 @objc public protocol ICallMessageManager: NSObjectProtocol {
-    func initialize(completion:@escaping ((NSError?)-> ()))
-    func deinitialize()
-    func sendMessage(userId: String, message: [String: Any], completion: ((NSError?)-> Void)?)
+    func sendMessage(userId: String, 
+                     message: [String: Any],
+                     completion: ((NSError?)-> Void)?)
     func addListener(listener: ICallMessageListener)
     func removeListener(listener: ICallMessageListener)
+//    func clean()
 }
 
 @objc public protocol CallApiListenerProtocol: NSObjectProtocol {
