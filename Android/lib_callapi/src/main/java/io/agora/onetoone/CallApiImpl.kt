@@ -9,7 +9,6 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import io.agora.callapi.BuildConfig
 import io.agora.onetoone.extension.*
-import io.agora.onetoone.message.CallMessageListener
 import io.agora.rtc2.*
 import io.agora.rtc2.video.VideoCanvas
 import org.json.JSONObject
@@ -43,7 +42,7 @@ enum class CalleeJoinRTCPolicy(val value: Int) {
 
 class CallApiImpl constructor(
     context: Context
-): ICallApi, CallMessageListener, IRtcEngineEventHandler() {
+): ICallApi, ICallMessageListener, IRtcEngineEventHandler() {
 
     companion object {
         val calleeJoinRTCPolicy = CalleeJoinRTCPolicy.Calling
@@ -127,7 +126,6 @@ class CallApiImpl constructor(
                 }
                 CallStateType.Idle, CallStateType.Failed -> {
                     _leaveRTC()
-                    config?.callMessageManager?.release()
                     connectInfo.clean()
                     config = null
                     isPreparing = false
@@ -240,7 +238,7 @@ class CallApiImpl constructor(
     private fun _notifySendMessageErrorEvent(error: AGError, reason: String?) {
         _notifyErrorEvent(
             CallErrorEvent.SendMessageFail,
-            errorType = CallErrorCodeType.Rtm,
+            errorType = CallErrorCodeType.Message,
             errorCode = error.code,
             message = "${reason ?: ""}${error.msg}"
         )
@@ -704,7 +702,7 @@ class CallApiImpl constructor(
             return
         }
         val msg = message ?: _messageDic(CallAction.CancelCall)
-        config?.callMessageManager?.onSendMessage(userId.toString(), msg) { err ->
+        config?.callMessageManager?.sendMessage(userId.toString(), msg) { err ->
             completion?.invoke(err)
             if (err != null) {
                 _notifySendMessageErrorEvent(err, "cancel call fail: ")
@@ -713,11 +711,11 @@ class CallApiImpl constructor(
     }
 
     private fun _reject(remoteUserId: Int, message: Map<String, Any>, completion: ((AGError?) -> Unit)? = null) {
-        config?.callMessageManager?.onSendMessage(remoteUserId.toString(), message, completion)
+        config?.callMessageManager?.sendMessage(remoteUserId.toString(), message, completion)
     }
 
     private fun _hangup(remoteUserId: Int, message: Map<String, Any>? = null, completion: ((AGError?) -> Unit)? = null) {
-        config?.callMessageManager?.onSendMessage(remoteUserId.toString(), message ?: _messageDic(CallAction.Hangup), completion)
+        config?.callMessageManager?.sendMessage(remoteUserId.toString(), message ?: _messageDic(CallAction.Hangup), completion)
     }
 
     //收到呼叫消息
@@ -918,7 +916,7 @@ class CallApiImpl constructor(
         _reportMethod("call", "remoteUserId=$remoteUserId")
 
         val message = _callMessageDic(remoteUserId, fromRoomId)
-        config?.callMessageManager?.onSendMessage(remoteUserId.toString(), message) { err ->
+        config?.callMessageManager?.sendMessage(remoteUserId.toString(), message) { err ->
             completion?.invoke(err)
             if (err != null) {
                 //_updateAndNotifyState(CallStateType.Prepared, CallReason.MessageFailed, err.msg)
@@ -973,7 +971,7 @@ class CallApiImpl constructor(
 
         //先查询presence里是不是正在呼叫的被叫是自己，如果是则不再发送消息
         val message = _messageDic(CallAction.Accept)
-        config?.callMessageManager?.onSendMessage(remoteUserId.toString(), message) { err ->
+        config?.callMessageManager?.sendMessage(remoteUserId.toString(), message) { err ->
             completion?.invoke(err)
             if (err != null) {
                 _notifySendMessageErrorEvent(err, "accept fail: ")
@@ -1032,12 +1030,11 @@ class CallApiImpl constructor(
 //        _notifyEvent(CallEvent.RtmLost)
 //    }
 
-    override fun messageReceive(message: String) {
-        val map = jsonStringToMap(message)
-        val messageAction = map[kMessageAction] as? Int ?: 0
-        val msgTs = map[kMessageTs] as? Long
-        val userId = map[kFromUserId] as? Int
-        val messageVersion = map[kMessageVersion] as? String
+    override fun onMessageReceive(message: Map<String, Any>) {
+        val messageAction = message[kMessageAction] as? Int ?: 0
+        val msgTs = message[kMessageTs] as? Long
+        val userId = message[kFromUserId] as? Int
+        val messageVersion = message[kMessageVersion] as? String
         if (messageVersion == null || msgTs == null || userId == null) {
             callWarningPrint("fail to parse message: $message")
             return
@@ -1045,7 +1042,7 @@ class CallApiImpl constructor(
         //TODO: compatible other message version
         if (kCurrentMessageVersion != messageVersion)  { return }
         callPrint("on event message: $message")
-        _processRespEvent(CallAction.fromValue(messageAction), map)
+        _processRespEvent(CallAction.fromValue(messageAction), message)
     }
 
     override fun debugInfo(message: String, logLevel: Int) {
@@ -1106,17 +1103,6 @@ class CallApiImpl constructor(
                 firstFrameCompletion?.invoke()
             }
         }
-    }
-
-    private fun jsonStringToMap(jsonString: String): Map<String, Any> {
-        val json = JSONObject(jsonString)
-        val map = mutableMapOf<String, Any>()
-        val keys = json.keys()
-        while (keys.hasNext()) {
-            val key = keys.next()
-            map[key] = json.get(key)
-        }
-        return map
     }
 
     private fun callPrint(message: String, logLevel: CallLogLevel = CallLogLevel.Normal) {

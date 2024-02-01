@@ -113,8 +113,8 @@ enum class CallErrorEvent(val value: Int) {
     NormalError(0),         // 通用错误
     RtcOccurError(100),     // rtc出现错误
     StartCaptureFail(110),  // rtc开启采集失败
-    RtmSetupFail(200),      // rtm初始化失败
-    SendMessageFail(210)    // 消息发送失败
+    // RtmSetupFail(200),      // rtm初始化失败[已废弃，改为messageManager自己手动初始化]
+    SendMessageFail(210)    // 消息的错误，使用如果使用CallRtmMessageManager则是AgoraRtmErrorCode，自定义信道则是对应信道的error code
 }
 
 /*
@@ -123,7 +123,7 @@ enum class CallErrorEvent(val value: Int) {
 enum class CallErrorCodeType(val value: Int) {
     Normal(0),   // 业务类型的错误，暂无
     Rtc(1),      // rtc的错误，使用AgoraErrorCode
-    Rtm(2)       // rtm的错误，使用AgoraRtmErrorCode
+    Message(2)       // rtm的错误，使用AgoraRtmErrorCode
 }
 
 /*
@@ -135,16 +135,21 @@ enum class CallLogLevel(val value: Int) {
     Error(2),
 }
 
+/*
+ * 信息通道回调
+ */
 interface ICallMessageListener {
-    fun messageReceive(message: String)
+    fun onMessageReceive(message: Map<String, Any>)
     fun debugInfo(message: String, logLevel: Int)
 }
 
+/*
+ * CallApi 使用的信息通道接口, 可以使用自己实现的信息通道
+ */
 interface ICallMessageManager {
-    fun onSendMessage(userId: String, message: Map<String, Any>, completion: ((AGError?)-> Unit)?)
+    fun sendMessage(userId: String, message: Map<String, Any>, completion: ((AGError?)-> Unit)?)
     fun addListener(listener: ICallMessageListener)
     fun removeListener(listener: ICallMessageListener)
-    fun release()
 }
 
 interface ICallApiListener {

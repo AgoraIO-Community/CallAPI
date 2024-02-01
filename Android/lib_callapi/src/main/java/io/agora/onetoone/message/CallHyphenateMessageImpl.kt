@@ -17,6 +17,7 @@ import io.agora.onetoone.ICallMessageListener
 import io.agora.onetoone.ICallMessageManager
 import io.agora.rtm.PublishOptions
 import io.agora.rtm.RtmConstants
+import org.json.JSONObject
 
 fun createHyphenateMessageManager(context: Context, appKey: String, userId: Int) = CallHyphenateMessageImpl(context, appKey, userId)
 
@@ -76,7 +77,7 @@ class CallHyphenateMessageImpl(
     // 回调
     private val listeners = mutableListOf<ICallMessageListener>()
 
-    override fun onSendMessage(
+    override fun sendMessage(
         userId: String,
         message: Map<String, Any>,
         completion: ((AGError?) -> Unit)?
@@ -90,10 +91,10 @@ class CallHyphenateMessageImpl(
         messageId %= Int.MAX_VALUE
         val map = message.toMutableMap()
         map[kMessageId] = messageId
-        sendMessage(userId, map, completion)
+        innerSendMessage(userId, map, completion)
     }
 
-    private fun sendMessage(
+    private fun innerSendMessage(
         userId: String,
         message: Map<String, Any>,
         completion: ((AGError?) -> Unit)?
@@ -138,7 +139,7 @@ class CallHyphenateMessageImpl(
         listeners.remove(listener)
     }
 
-    override fun release() {
+    fun clean() {
         listeners.clear()
         EMClient.getInstance().logout(false)
     }
@@ -149,10 +150,21 @@ class CallHyphenateMessageImpl(
             runOnUiThread {
                 val body = it.body as EMTextMessageBody
                 listeners.forEach {
-                    it.messageReceive(body.message)
+                    it.onMessageReceive(jsonStringToMap(body.message))
                 }
             }
         }
+    }
+
+    private fun jsonStringToMap(jsonString: String): Map<String, Any> {
+        val json = JSONObject(jsonString)
+        val map = mutableMapOf<String, Any>()
+        val keys = json.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            map[key] = json.get(key)
+        }
+        return map
     }
 
     private fun runOnUiThread(runnable: Runnable) {
