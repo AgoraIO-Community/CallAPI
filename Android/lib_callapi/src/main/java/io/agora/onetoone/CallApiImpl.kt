@@ -74,7 +74,7 @@ class CallApiImpl constructor(
     private val TAG = "CallApiImpl_LOG"
     private val delegates = mutableListOf<ICallApiListener>()
     private val rtcProxy = CallProxy()
-    private val localFrameProxy: CallLocalFirstFrameProxy by lazy { CallLocalFirstFrameProxy(this) }
+    private val localFrameProxy = CallLocalFirstFrameProxy(this)
     private var config: CallConfig? = null
     private var prepareConfig: PrepareConfig? = null
     private var messageManager: CallMessageManager? = null
