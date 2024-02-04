@@ -131,7 +131,7 @@ AG_APP_CERTIFICATE=
       }
     ```
   - 此时不管主叫还是被叫都会收到 onCallStateChanged 会返回 state == CallStateType.Calling，变更成呼叫状态。
-  > **`注意: 由于声网RTC只支持同时推送一路视频流，因此收到"calling"状态时需要把外部开启的音视频推流关闭，否则呼叫会出现异常`**
+    > **`注意: 由于声网RTC只支持同时推送一路视频流，因此收到"calling"状态时需要把外部开启的音视频推流关闭，否则呼叫会出现异常`**
       ```kotlin
         override fun onCallStateChanged(
             state: CallStateType,
