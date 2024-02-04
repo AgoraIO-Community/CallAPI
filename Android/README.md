@@ -89,9 +89,26 @@ AG_APP_CERTIFICATE=
        )
        api.initialize(config)
     ```
+  - 设置回调。
+    - 设置监听。
+      ```kotlin
+        api.addListener(this)
+      ```
+    - 实现 ICallApiListener 对应的协议。
+      ```kotlin
+        override fun onCallStateChanged(
+              state: CallStateType,
+              stateReason: CallReason,
+              eventReason: String,
+              eventInfo: Map<String, Any>
+        ) {}
+
+        override fun onCallEventChanged(event: CallEvent, eventReason: String?) {
+          
+        }
+      ```    
   - 准备通话环境。
     ```kotlin   
-      this.api.initialize(config) 
       val prepareConfig = PrepareConfig()
       prepareConfig.rtcToken = ...   //设置rtc token(万能token)
       prepareConfig.rtmToken = ...   //设置rtm token
@@ -103,24 +120,10 @@ AG_APP_CERTIFICATE=
           //成功即可以开始进行呼叫
       }
     ```
-- 设置回调。
-  - 设置监听。
-    ```kotlin
-      api.addListener(this)
-    ```
-  - 实现 ICallApiListener 对应的协议。
-    ```kotlin
-      override fun onCallStateChanged(
-            state: CallStateType,
-            stateReason: CallReason,
-            eventReason: String,
-            eventInfo: Map<String, Any>
-      ) {}
+    > **注意1：rtcToken必须使用`万能token`，否则接听呼叫会看不到远端音视频**
+    
 
-      override fun onCallEventChanged(event: CallEvent) {
-        
-      }
-    ```
+    > **注意2：每次发起呼叫前推荐都调用prepareForCall更新roomId，保证通话的安全性**    
 - 呼叫
   - 如果是主叫，调用 call 方法呼叫远端用户。
     ```kotlin
@@ -128,7 +131,7 @@ AG_APP_CERTIFICATE=
       }
     ```
   - 此时不管主叫还是被叫都会收到 onCallStateChanged 会返回 state == CallStateType.Calling，变更成呼叫状态。
-    **`注意: 收到calling时需要把外部开启的音视频推流关闭，否则呼叫会失败`**
+  > **`注意: 由于声网RTC只支持同时推送一路视频流，因此收到"calling"状态时需要把外部开启的音视频推流关闭，否则呼叫会出现异常`**
       ```kotlin
         override fun onCallStateChanged(
             state: CallStateType,
@@ -237,8 +240,9 @@ AG_APP_CERTIFICATE=
     /**
      * 内部详细事件变更回调
      * @param event: 事件
+     * @param eventReason: 事件原因，默认nil，根据不同event表示不同的含义
      */
-    fun onCallEventChanged(event: CallEvent) {}
+    fun onCallEventChanged(event: CallEvent, eventReason: String?) {}
   ```
 
 - 错误事件回调
@@ -256,16 +260,49 @@ AG_APP_CERTIFICATE=
                     message: String?) {}
   ```
 
-- token 即将要过期(需要外部获取新token调用renewToken更新)
+- token 即将要过期
   ```kotlin
-    /** token快要过期了(需要外部获取新token调用renewToken更新)
+    /** 
+     * token快要过期了(需要外部获取新token调用renewToken更新)
      */
     fun tokenPrivilegeWillExpire() {}
   ```
 
+- 通话开始的回调
+  ```kotlin
+    /**
+     * 通话开始的回调
+     * @param roomId: 通话的频道id
+     * @param callerUserId: 发起呼叫的用户id
+     * @param currentUserId: 自己的id
+     * @param timestamp: 通话开始的时间戳，和19700101的差值，单位ms
+     */
+    fun onCallConnected(roomId: String,
+                    callUserId: Int,
+                    currentUserId: Int,
+                    timestamp: Long) {}
+  ```
+- 通话结束的回调
+  ```kotlin
+    /**
+     * 通话结束的回调
+     * @param roomId: 通话的频道id
+     * @param hangupUserId: 挂断的用户id
+     * @param currentUserId: 自己的id
+     * @param timestamp: 通话开始的时间戳，和19700101的差值，单位ms
+     * @param duration: 通话时长，单位ms
+     */
+    fun onCallDisconnected(roomId: String,
+                        hangupUserId: Int,
+                        currentUserId: Int,
+                        timestamp: Long,
+                        duration: Long) {}
+  ```  
+
 - 打印日志
   ```kotlin
-    /** 日志回调
+    /** 
+     * 日志回调
      *  @param message: 日志信息
      *  @param logLevel: 日志优先级: 0: 普通日志，1: 警告日志, 2: 错误日志
      */
@@ -340,6 +377,7 @@ AG_APP_CERTIFICATE=
 #### 7.1.1 加快出图速度
 - 1.使用[万能 Token](https://doc.shengwang.cn/doc/rtc/ios/best-practice/wildcard-token)
   - 为了提高通话质量和稳定性，我们采用万能 Token，可以节省因加入不同频道获取 Token 的时间，这意味着，在使用我们的服务时，您无需频繁获取 Token，而只需使用一个固定的 Token 即可。这样不仅可以提高您的使用效率，还可以让您更加专注于通话内容本身。
+  - > 注意：为了保障通话的私密性和安全性，推荐每次呼叫都采用**不同的RTC频道号**。
   - **为了保障通话的私密性和安全性，推荐每次呼叫都采用不同的 RTC 频道号**。
 - 2.加快主叫出图速度
   - 2.1 **`[可选]`** 初始化时，可以提前加入自己的 RTC 频道。**`请注意，这种行为可能会导致额外的费用。如果对费用比较在意，您可以选择忽略此步骤`**。
