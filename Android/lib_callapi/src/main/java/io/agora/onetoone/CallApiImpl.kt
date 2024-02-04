@@ -266,17 +266,20 @@ class CallApiImpl constructor(
         }
     }
 
-    private fun _notifyEvent(event: CallEvent, eventReason: String? = null) {
-        callPrint("call change[${connectInfo.callId}] event: ${event.value} reason: '$eventReason'")
+    private fun _notifyEvent(event: CallEvent, reasonCode: String? = null, reasonString: String? = null) {
+        callPrint("call change[${connectInfo.callId}] event: ${event.value} reason: '$reasonCode' reasonString: '$reasonString'")
         config?.let { config ->
             var reason = ""
-            if (eventReason != null) {
-                reason = "&reason=$eventReason"
+            if (reasonCode != null) {
+                reason += "&reason=$reasonCode"
+            }
+            if (reasonString != null) {
+                reason += "&reasonString=$reasonString"
             }
             _reportEvent("event=${event.value}&userId=${config.userId}&state=${state.name}$reason", 0)
         } ?: callWarningPrint("_notifyEvent config == null")
         delegates.forEach { listener ->
-            listener.onCallEventChanged(event)
+            listener.onCallEventChanged(event, reasonCode)
         }
         when (event) {
             CallEvent.RemoteUserRecvCall -> _reportCostEvent(CallConnectCostType.RemoteUserRecvCall)
@@ -857,7 +860,7 @@ class CallApiImpl constructor(
 
     override fun onFirstLocalVideoFramePublished(source: Constants.VideoSourceType?, elapsed: Int) {
         super.onFirstLocalVideoFramePublished(source, elapsed)
-        _notifyEvent(event = CallEvent.PublishFirstLocalVideoFrame, eventReason = "elapsed: ${elapsed}ms")
+        _notifyEvent(event = CallEvent.PublishFirstLocalVideoFrame, reasonString = "elapsed: ${elapsed}ms")
     }
 
     override fun onFirstLocalVideoFrame(
@@ -867,7 +870,7 @@ class CallApiImpl constructor(
         elapsed: Int
     ) {
         super.onFirstLocalVideoFrame(source, width, height, elapsed)
-        _notifyEvent(event = CallEvent.CaptureFirstLocalVideoFrame, eventReason = "elapsed: ${elapsed}ms")
+        _notifyEvent(event = CallEvent.CaptureFirstLocalVideoFrame, reasonString = "elapsed: ${elapsed}ms")
         config?.rtcEngine?.removeHandler(localFrameProxy)
     }
 
@@ -953,7 +956,7 @@ class CallApiImpl constructor(
         if (state == CallStateType.Calling) else {
             val errReason = "accept fail! current state is $state not calling"
             completion?.invoke(AGError(errReason, -1))
-            _notifyEvent(CallEvent.StateMismatch, errReason)
+            _notifyEvent(CallEvent.StateMismatch, reasonString = errReason)
             return
         }
 
@@ -1063,9 +1066,9 @@ class CallApiImpl constructor(
         _notifyEvent(CallEvent.RemoteJoin)
     }
     override fun onUserOffline(uid: Int, reason: Int) {
-        callPrint("didOfflineOfUid: $uid")
+        callPrint("didOfflineOfUid: $uid， reason: $reason")
         if (connectInfo.callingUserId != uid) { return }
-        _notifyEvent(CallEvent.RemoteLeave)
+        _notifyEvent(CallEvent.RemoteLeave, reasonCode = "$reason")
     }
     override fun onLeaveChannel(stats: RtcStats?) {
         callPrint("didLeaveChannel: $stats")
