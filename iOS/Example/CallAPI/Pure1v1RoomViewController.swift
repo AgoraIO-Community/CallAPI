@@ -438,8 +438,8 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
         }
     }
     
-    @objc func onCallEventChanged(with event: CallEvent) {
-        print("onCallEventChanged: \(event.rawValue)")
+    @objc func onCallEventChanged(with event: CallEvent, eventReason: String?) {
+        print("onCallEventChanged event: \(event.rawValue), eventReason: \(eventReason ?? "")")
         switch event {
         case .remoteLeave:
             hangupAction()

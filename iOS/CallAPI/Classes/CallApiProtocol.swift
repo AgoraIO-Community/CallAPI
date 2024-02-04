@@ -83,7 +83,7 @@ import AgoraRtmKit
     case localHangup = 105                        //本地用户挂断
     case remoteHangup = 106                       //远端用户挂断
     case remoteJoin = 107                         //远端用户加入RTC频道
-    case remoteLeave = 108                        //远端用户离开RTC频道
+    case remoteLeave = 108                        //远端用户离开RTC频道(eventReason请参考AgoraUserOfflineReason)
     case localCancel = 109                        //本地用户取消呼叫
     case remoteCancel = 110                       //远端用户取消呼叫
     case localJoin = 111                          //本地用户加入RTC频道
@@ -138,7 +138,8 @@ import AgoraRtmKit
     /// 内部详细事件变更回调
     /// - Parameters:
     ///   - event: 事件
-    @objc optional func onCallEventChanged(with event: CallEvent)
+    ///   - eventReason: 事件原因，默认nil，根据不同event表示不同的含义
+    @objc optional func onCallEventChanged(with event: CallEvent, eventReason: String?)
     
     /// 发生错误的回调
     /// - Parameters:

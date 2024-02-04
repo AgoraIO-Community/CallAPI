@@ -295,12 +295,17 @@ extension CallApiImpl {
         }
     }
     
-    private func _notifyEvent(event: CallEvent, eventReason: String? = nil) {
-        callPrint("call change[\(connectInfo.callId)] event: \(event.rawValue) reason: '\(eventReason ?? "")'")
+    private func _notifyEvent(event: CallEvent, 
+                              reasonCode: String? = nil,
+                              reasonString: String? = nil) {
+        callPrint("call change[\(connectInfo.callId)] event: \(event.rawValue) reasonCode: '\(reasonCode ?? "")' reasonString: '\(reasonString ?? "")'")
         if let config = config {
             var reason = ""
-            if let eventReason = eventReason {
-                reason = "&reason=\(eventReason)"
+            if let reasonCode = reasonCode {
+                reason += "&reasonCode=\(reasonCode)"
+            }
+            if let reasonString = reasonString {
+                reason += "&reasonString=\(reasonString)"
             }
             _reportEvent(key: "event=\(event.rawValue)&userId=\(config.userId)&state=\(state.rawValue)\(reason)", value: 0)
         } else {
@@ -308,7 +313,7 @@ extension CallApiImpl {
         }
         
         _notifyOptionalFunc { listener in
-            listener.onCallEventChanged?(with: event)
+            listener.onCallEventChanged?(with: event, eventReason: reasonCode)
         }
         
         switch event {
@@ -1012,7 +1017,7 @@ extension CallApiImpl: CallApiProtocol {
         guard state == .calling else {
             let errReason = "accept fail! current state[\(state.rawValue)] is not calling"
             completion?(NSError(domain: errReason, code: -1))
-            _notifyEvent(event: .stateMismatch, eventReason: errReason)
+            _notifyEvent(event: .stateMismatch, reasonString: errReason)
             return
         }
         
@@ -1125,7 +1130,7 @@ extension CallApiImpl: AgoraRtcEngineDelegate {
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didOfflineOfUid uid: UInt, reason: AgoraUserOfflineReason) {
         callPrint("didOfflineOfUid: \(uid)")
         guard connectInfo.callingUserId == uid else { return }
-        _notifyEvent(event: .remoteLeave)
+        _notifyEvent(event: .remoteLeave, reasonCode: "\(reason.rawValue)")
     }
     
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didLeaveChannelWith stats: AgoraChannelStats) {
@@ -1176,11 +1181,11 @@ extension CallApiImpl: AgoraRtcEngineDelegate {
     public func rtcEngine(_ engine: AgoraRtcEngineKit,
                           firstLocalVideoFramePublishedWithElapsed elapsed: Int,
                           sourceType: AgoraVideoSourceType) {
-        _notifyEvent(event: .publishFirstLocalVideoFrame, eventReason: "elapsed: \(elapsed)ms")
+        _notifyEvent(event: .publishFirstLocalVideoFrame, reasonString: "elapsed: \(elapsed)ms")
     }
     
     public func rtcEngine(_ engine: AgoraRtcEngineKit, firstLocalVideoFrameWith size: CGSize, elapsed: Int, sourceType: AgoraVideoSourceType) {
-        _notifyEvent(event: .captureFirstLocalVideoFrame, eventReason: "elapsed: \(elapsed)ms")
+        _notifyEvent(event: .captureFirstLocalVideoFrame, reasonString: "elapsed: \(elapsed)ms")
         config?.rtcEngine.removeDelegate(self.localFrameProxy)
     }
 }
