@@ -111,14 +111,15 @@
       public func onCallStateChanged(with state: CallStateType,
                                      stateReason: CallReason,
                                      eventReason: String,
-                                     elapsed: Int,
                                      eventInfo: [String : Any]) {
           ...
       }
 
-      @objc func onCallEventChanged(with event: CallEvent, elapsed: Int) {
+      @objc func onCallEventChanged(with event: CallEvent, eventReason: String?) {
           ...
       }
+
+      ...
     ```
 - 准备通话环境。
     ```swift   
@@ -133,6 +134,10 @@
           // 成功即可以开始进行呼叫
       }
     ```
+    > **注意1：rtcToken必须使用`万能token`，否则接听呼叫会看不到远端音视频**
+    
+
+    > **注意2：每次发起呼叫前推荐都调用prepareForCall更新roomId，保证通话的安全性**
 - 呼叫
   - 如果是主叫，调用call方法呼叫远端用户。
     ```swift
@@ -140,12 +145,11 @@
       }
     ```
   - 发起呼叫后，主叫和被叫都会收到onCallStateChanged会返回`(state: .calling)`，变更成呼叫状态。
-    **`注意: 由于声网RTC只支持同时推送一路视频流，因此收到"calling"状态时需要把外部开启的音视频推流关闭，否则呼叫会出现异常`**
+    > **`注意: 由于声网RTC只支持同时推送一路视频流，因此收到"calling"状态时需要把外部开启的音视频推流关闭，否则呼叫会出现异常`**
       ```swift
         public func onCallStateChanged(with state: CallStateType,
                                        stateReason: CallReason,
                                        eventReason: String,
-                                       elapsed: Int,
                                        eventInfo: [String : Any]) {
             if state == .calling {
                 // 如果是呼叫中
@@ -254,7 +258,8 @@
     /// 内部详细事件变更回调
     /// - Parameters:
     ///   - event: 事件
-    @objc optional func onCallEventChanged(with event: CallEvent)
+    ///   - eventReason: 事件原因，默认nil，根据不同event表示不同的含义
+    @objc optional func onCallEventChanged(with event: CallEvent, eventReason: String?)
   ```
 
 
@@ -272,12 +277,41 @@
                                     message: String?)
   ```
 
-- token即将要过期(需要外部获取新token调用renewToken更新)
+- token即将要过期回调
   ```swift
     /// token即将要过期(需要外部获取新token调用renewToken更新)
     @objc optional func tokenPrivilegeWillExpire()
   ```
+  **收到该回调后，从业务服务器获取新的Rtc/Rtm token，然后通过调用renewToken进行更新**
 
+- 通话开始的回调
+  ```swift
+    /// 通话开始的回调
+    /// - Parameters:
+    ///   - roomId: 通话的频道id
+    ///   - callerUserId: 发起呼叫的用户id
+    ///   - currentUserId: 自己的id
+    ///   - timestamp: 通话开始的时间戳，和19700101的差值，单位ms
+    @objc optional func onCallConnected(roomId: String,
+                                        callUserId: UInt,
+                                        currentUserId: UInt,
+                                        timestamp: UInt64)
+  ```
+- 通话结束的回调
+  ```swift
+    /// 通话结束的回调
+    /// - Parameters:
+    ///   - roomId: 通话的频道id
+    ///   - hangupUserId: 挂断的用户id
+    ///   - currentUserId: 自己的用户id
+    ///   - timestamp: 通话结束的时间戳，和19700101的差值，单位ms
+    ///   - duration: 通话时长，单位ms
+    @objc optional func onCallDisconnected(roomId: String,
+                                           hangupUserId: UInt,
+                                           currentUserId: UInt,
+                                           timestamp: UInt64,
+                                           duration: UInt64)
+  ```
 - 打印日志
   ```swift
     /// 打印日志
@@ -354,7 +388,7 @@
 #### 7.1.1 加快出图速度
   - 1.使用[万能Token](https://doc.shengwang.cn/doc/rtc/ios/best-practice/wildcard-token)
     - 为了提高通话质量和稳定性，我们采用万能 Token，可以节省因加入不同频道获取 Token 的时间，这意味着，在使用我们的服务时，您无需频繁获取 Token，而只需使用一个固定的 Token 即可。这样不仅可以提高您的使用效率，还可以让您更加专注于通话内容本身。
-    - **为了保障通话的私密性和安全性，推荐每次呼叫都采用不同的RTC频道号**。
+    - > 注意：为了保障通话的私密性和安全性，推荐每次呼叫都采用**不同的RTC频道号**。
   - 2.加快主叫出图速度
     - 2.1 **`[可选]`** 初始化时，可以提前加入自己的 RTC 频道。**`请注意，这种行为可能会导致额外的费用。如果对费用比较在意，您可以选择忽略此步骤`**。
     - 2.2 在向被叫发起呼叫时
