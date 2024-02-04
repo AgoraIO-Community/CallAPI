@@ -390,8 +390,8 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         }
     }
 
-    override fun onCallEventChanged(event: CallEvent) {
-        Log.d(TAG, "onCallEventChanged: $event")
+    override fun onCallEventChanged(event: CallEvent, eventReason: String?) {
+        Log.d(TAG, "onCallEventChanged: $event, eventReason: $eventReason")
         when(event) {
             CallEvent.RemoteLeave -> {
                 hangupAction()
@@ -406,6 +406,33 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         message: String?
     ) {
         Log.d(TAG, "onCallError: $errorEvent")
+    }
+
+    override fun onCallConnected(
+        roomId: String,
+        callUserId: Int,
+        currentUserId: Int,
+        timestamp: Long
+    ) {
+        super.onCallConnected(roomId, callUserId, currentUserId, timestamp)
+        Log.d(TAG, "onCallConnected, roomId: $roomId, callUserId: $callUserId, currentUserId: $currentUserId, timestamp: $timestamp")
+        runOnUiThread {
+            mViewBinding.tvText.text = "通话开始, \nRTC 频道号: $roomId, \n主叫用户id: $callUserId, \n当前用户id: $currentUserId, \n开始时间戳: $timestamp ms"
+        }
+    }
+
+    override fun onCallDisconnected(
+        roomId: String,
+        hangupUserId: Int,
+        currentUserId: Int,
+        timestamp: Long,
+        duration: Long
+    ) {
+        super.onCallDisconnected(roomId, hangupUserId, currentUserId, timestamp, duration)
+        Log.d(TAG, "onCallDisconnected, roomId: $roomId, hangupUserId: $hangupUserId, currentUserId: $currentUserId, timestamp: $timestamp, duration:$duration")
+        runOnUiThread {
+            mViewBinding.tvText.text = "通话结束, \nRTC 频道号: $roomId, \n挂断用户id: $hangupUserId, \n当前用户id: $currentUserId, \n结束时间戳: $timestamp ms， \n通话时长: $duration ms"
+        }
     }
 
     override fun tokenPrivilegeWillExpire() {

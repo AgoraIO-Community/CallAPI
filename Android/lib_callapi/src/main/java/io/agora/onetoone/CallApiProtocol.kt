@@ -92,7 +92,7 @@ enum class CallEvent(val value: Int) {
     LocalHangup(105),               // 本地用户挂断
     RemoteHangup(106),              // 远端用户挂断
     RemoteJoin(107),                // 远端用户加入RTC频道
-    RemoteLeave(108),               // 远端用户离开RTC频道
+    RemoteLeave(108),               // 远端用户离开RTC频道, RTC频道(eventReason请参考AgoraUserOfflineReason)
     LocalCancel(109),               // 本地用户取消呼叫
     RemoteCancel(110),              // 远端用户取消呼叫
     LocalJoin(111),                 // 本地用户加入RTC频道
@@ -152,8 +152,9 @@ interface ICallApiListener {
     /**
      * 内部详细事件变更回调
      * @param event: 事件
+     * @param eventReason: 事件原因，默认null，根据不同event表示不同的含义
      */
-    fun onCallEventChanged(event: CallEvent) {}
+    fun onCallEventChanged(event: CallEvent, eventReason: String?) {}
 
     /**
      * 内部详细事件变更回调
@@ -166,6 +167,32 @@ interface ICallApiListener {
                          errorType: CallErrorCodeType,
                          errorCode: Int,
                          message: String?) {}
+
+    /**
+     * 通话开始的回调
+     * @param roomId: 通话的频道id
+     * @param callerUserId: 发起呼叫的用户id
+     * @param currentUserId: 自己的id
+     * @param timestamp: 通话开始的时间戳，和19700101的差值，单位ms
+     */
+    fun onCallConnected(roomId: String,
+                    callUserId: Int,
+                    currentUserId: Int,
+                    timestamp: Long) {}
+
+    /**
+     * 通话结束的回调
+     * @param roomId: 通话的频道id
+     * @param hangupUserId: 挂断的用户id
+     * @param currentUserId: 自己的id
+     * @param timestamp: 通话开始的时间戳，和19700101的差值，单位ms
+     * @param duration: 通话时长，单位ms
+     */
+    fun onCallDisconnected(roomId: String,
+                        hangupUserId: Int,
+                        currentUserId: Int,
+                        timestamp: Long,
+                        duration: Long) {}
 
     /**
      * token快要过期了(需要外部获取新token调用renewToken更新)

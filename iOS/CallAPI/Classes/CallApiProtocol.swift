@@ -83,7 +83,7 @@ import AgoraRtmKit
     case localHangup = 105                        //本地用户挂断
     case remoteHangup = 106                       //远端用户挂断
     case remoteJoin = 107                         //远端用户加入RTC频道
-    case remoteLeave = 108                        //远端用户离开RTC频道
+    case remoteLeave = 108                        //远端用户离开RTC频道(eventReason请参考AgoraUserOfflineReason)
     case localCancel = 109                        //本地用户取消呼叫
     case remoteCancel = 110                       //远端用户取消呼叫
     case localJoin = 111                          //本地用户加入RTC频道
@@ -138,7 +138,8 @@ import AgoraRtmKit
     /// 内部详细事件变更回调
     /// - Parameters:
     ///   - event: 事件
-    @objc optional func onCallEventChanged(with event: CallEvent)
+    ///   - eventReason: 事件原因，默认nil，根据不同event表示不同的含义
+    @objc optional func onCallEventChanged(with event: CallEvent, eventReason: String?)
     
     /// 发生错误的回调
     /// - Parameters:
@@ -150,6 +151,30 @@ import AgoraRtmKit
                                     errorType: CallErrorCodeType,
                                     errorCode: Int,
                                     message: String?)
+    
+    /// 通话开始的回调
+    /// - Parameters:
+    ///   - roomId: 通话的频道id
+    ///   - callerUserId: 发起呼叫的用户id
+    ///   - currentUserId: 自己的id
+    ///   - timestamp: 通话开始的时间戳，和19700101的差值，单位ms
+    @objc optional func onCallConnected(roomId: String,
+                                        callUserId: UInt,
+                                        currentUserId: UInt,
+                                        timestamp: UInt64)
+    
+    /// 通话结束的回调
+    /// - Parameters:
+    ///   - roomId: 通话的频道id
+    ///   - hangupUserId: 挂断的用户id
+    ///   - currentUserId: 自己的用户id
+    ///   - timestamp: 通话结束的时间戳，和19700101的差值，单位ms
+    ///   - duration: 通话时长，单位ms
+    @objc optional func onCallDisconnected(roomId: String,
+                                           hangupUserId: UInt,
+                                           currentUserId: UInt,
+                                           timestamp: UInt64,
+                                           duration: UInt64)
     
     /// token即将要过期(需要外部获取新token调用renewToken更新)
     @objc optional func tokenPrivilegeWillExpire()

@@ -138,6 +138,14 @@ class Pure1v1RoomViewController: UIViewController {
         return btn
     }()
     
+    private lazy var connectStatusLabel: UILabel = {
+        let label = UILabel()
+        label.textColor = .white
+        label.font = UIFont.systemFont(ofSize: 12)
+        label.numberOfLines = 0
+        return label
+    }()
+    
     private lazy var canvas: AgoraRtcVideoCanvas = {
         let canvas = AgoraRtcVideoCanvas()
         canvas.mirrorMode = .disabled
@@ -173,6 +181,8 @@ class Pure1v1RoomViewController: UIViewController {
         view.addSubview(callButton)
         view.addSubview(hangupButton)
         view.addSubview(muteAudioButton)
+        
+        view.addSubview(connectStatusLabel)
         
         currentUserLabel.frame = CGRect(x: 10, y: 80, width: 200, height: 40)
         targetUserLabel.sizeToFit()
@@ -438,8 +448,8 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
         }
     }
     
-    @objc func onCallEventChanged(with event: CallEvent) {
-        print("onCallEventChanged: \(event.rawValue)")
+    @objc func onCallEventChanged(with event: CallEvent, eventReason: String?) {
+        print("onCallEventChanged event: \(event.rawValue), eventReason: \(eventReason ?? "")")
         switch event {
         case .remoteLeave:
             hangupAction()
@@ -464,5 +474,35 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
         default:
             print("[CallApi][Error]\(message)")
         }
+    }
+    
+    @objc func onCallConnected(roomId: String,
+                               callUserId: UInt,
+                               currentUserId: UInt,
+                               timestamp: UInt64) {
+        print("onCallConnected roomId: \(roomId) callUserId: \(callUserId) currentUserId: \(currentUserId) timestamp: \(timestamp)")
+        
+        connectStatusLabel.text = "通话开始 \nRTC 频道号: \(roomId) \n呼叫用户id: \(callUserId) \n当前用户id: \(currentUserId) \n开始时间戳: \(timestamp)"
+        layoutConnectStatus()
+    }
+    
+    @objc func onCallDisconnected(roomId: String,
+                                  hangupUserId: UInt,
+                                  currentUserId: UInt,
+                                  timestamp: UInt64,
+                                  duration: UInt64) {
+        print("onCallDisconnected roomId: \(roomId) hangupUserId: \(hangupUserId) currentUserId: \(currentUserId) timestamp: \(timestamp) duration: \(duration)ms")
+        
+        connectStatusLabel.text = "通话结束 \nRTC 频道号: \(roomId) \n挂断用户id: \(hangupUserId) \n当前用户id: \(currentUserId) \n结束时间戳: \(timestamp) \n通话时长: \(duration)ms"
+        layoutConnectStatus()
+    }
+    
+    private func layoutConnectStatus() {
+        connectStatusLabel.frame = self.view.bounds
+        connectStatusLabel.sizeToFit()
+        connectStatusLabel.frame = CGRect(x: 20,
+                                          y: self.view.frame.height - connectStatusLabel.frame.height - 40,
+                                          width: connectStatusLabel.frame.width,
+                                          height: connectStatusLabel.frame.height)
     }
 }

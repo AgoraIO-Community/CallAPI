@@ -196,6 +196,45 @@ class CallApiImpl constructor(
         return message
     }
 
+    private fun getNtpTimeInMs(): Long {
+        val currentNtpTime = config?.rtcEngine?.ntpWallTimeInMs ?: 0L
+        return if (currentNtpTime != 0L) {
+            currentNtpTime
+        } else {
+            Log.e(TAG, "getNtpTimeInMs ntpWallTimeInMs is zero!!!!!!!!!!")
+            System.currentTimeMillis()
+        }
+    }
+
+    private fun _notifyCallConnected() {
+        val config = config ?: return
+        val ntpTime = getNtpTimeInMs()
+        connectInfo.callConnectedTs = ntpTime
+        val callUserId = (if (connectInfo.callingRoomId == prepareConfig?.roomId) config.userId else connectInfo.callingUserId) ?: 0
+        delegates.forEach { listener ->
+            listener.onCallConnected(
+                roomId = connectInfo.callingRoomId ?: "",
+                callUserId = callUserId,
+                currentUserId = config.userId,
+                timestamp = ntpTime
+            )
+        }
+    }
+
+    private fun _notifyCallDisconnected(hangupUserId: Int) {
+        val config = config ?: return
+        val ntpTime = getNtpTimeInMs()
+        delegates.forEach { listener ->
+            listener.onCallDisconnected(
+                roomId = connectInfo.callingRoomId ?: "",
+                hangupUserId = hangupUserId,
+                currentUserId = config.userId,
+                timestamp = ntpTime,
+                duration = ntpTime - connectInfo.callConnectedTs
+            )
+        }
+    }
+
     private fun _notifyTokenPrivilegeWillExpire() {
         delegates.forEach { listener ->
             listener.tokenPrivilegeWillExpire()
@@ -231,6 +270,24 @@ class CallApiImpl constructor(
                                       eventReason: String = "",
                                       eventInfo: Map<String, Any> = emptyMap()) {
         callPrint("call change[${connectInfo.callId}] state: $state, stateReason: '$stateReason', eventReason: $eventReason")
+
+        val oldState = this.state
+        //check connected/disconnected
+        if (state == CallStateType.Connected && oldState == CallStateType.Connecting) {
+            _notifyCallConnected()
+        } else if (state == CallStateType.Prepared && oldState == CallStateType.Connected) {
+            when (stateReason) {
+                //正常只会触发.remoteCancel, .remoteHangup，剩余的做兜底
+                CallStateReason.RemoteCancel, CallStateReason.RemoteHangup, CallStateReason.RemoteRejected, CallStateReason.RemoteCallBusy -> {
+                    _notifyCallDisconnected(connectInfo.callingUserId ?: 0)
+                }
+                else -> {
+                    //.localHangup 或 bad case
+                    _notifyCallDisconnected(config?.userId ?: 0)
+                }
+            }
+        }
+
         this.state = state
         delegates.forEach {
             it.onCallStateChanged(state, stateReason, eventReason, eventInfo)
@@ -266,17 +323,20 @@ class CallApiImpl constructor(
         }
     }
 
-    private fun _notifyEvent(event: CallEvent, eventReason: String? = null) {
-        callPrint("call change[${connectInfo.callId}] event: ${event.value} reason: '$eventReason'")
+    private fun _notifyEvent(event: CallEvent, reasonCode: String? = null, reasonString: String? = null) {
+        callPrint("call change[${connectInfo.callId}] event: ${event.value} reason: '$reasonCode' reasonString: '$reasonString'")
         config?.let { config ->
             var reason = ""
-            if (eventReason != null) {
-                reason = "&reason=$eventReason"
+            if (reasonCode != null) {
+                reason += "&reason=$reasonCode"
+            }
+            if (reasonString != null) {
+                reason += "&reasonString=$reasonString"
             }
             _reportEvent("event=${event.value}&userId=${config.userId}&state=${state.name}$reason", 0)
         } ?: callWarningPrint("_notifyEvent config == null")
         delegates.forEach { listener ->
-            listener.onCallEventChanged(event)
+            listener.onCallEventChanged(event, reasonCode)
         }
         when (event) {
             CallEvent.RemoteUserRecvCall -> _reportCostEvent(CallConnectCostType.RemoteUserRecvCall)
@@ -857,7 +917,7 @@ class CallApiImpl constructor(
 
     override fun onFirstLocalVideoFramePublished(source: Constants.VideoSourceType?, elapsed: Int) {
         super.onFirstLocalVideoFramePublished(source, elapsed)
-        _notifyEvent(event = CallEvent.PublishFirstLocalVideoFrame, eventReason = "elapsed: ${elapsed}ms")
+        _notifyEvent(event = CallEvent.PublishFirstLocalVideoFrame, reasonString = "elapsed: ${elapsed}ms")
     }
 
     override fun onFirstLocalVideoFrame(
@@ -867,7 +927,7 @@ class CallApiImpl constructor(
         elapsed: Int
     ) {
         super.onFirstLocalVideoFrame(source, width, height, elapsed)
-        _notifyEvent(event = CallEvent.CaptureFirstLocalVideoFrame, eventReason = "elapsed: ${elapsed}ms")
+        _notifyEvent(event = CallEvent.CaptureFirstLocalVideoFrame, reasonString = "elapsed: ${elapsed}ms")
         config?.rtcEngine?.removeHandler(localFrameProxy)
     }
 
@@ -953,7 +1013,7 @@ class CallApiImpl constructor(
         if (state == CallStateType.Calling) else {
             val errReason = "accept fail! current state is $state not calling"
             completion?.invoke(AGError(errReason, -1))
-            _notifyEvent(CallEvent.StateMismatch, errReason)
+            _notifyEvent(CallEvent.StateMismatch, reasonString = errReason)
             return
         }
 
@@ -1063,9 +1123,9 @@ class CallApiImpl constructor(
         _notifyEvent(CallEvent.RemoteJoin)
     }
     override fun onUserOffline(uid: Int, reason: Int) {
-        callPrint("didOfflineOfUid: $uid")
+        callPrint("didOfflineOfUid: $uid， reason: $reason")
         if (connectInfo.callingUserId != uid) { return }
-        _notifyEvent(CallEvent.RemoteLeave)
+        _notifyEvent(CallEvent.RemoteLeave, reasonCode = "$reason")
     }
     override fun onLeaveChannel(stats: RtcStats?) {
         callPrint("didLeaveChannel: $stats")

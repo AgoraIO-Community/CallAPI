@@ -1,4 +1,8 @@
 
+## [1.1.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.0)
+
+- 增加通话开始/结束的回调
+- onCallEventChanged回调方法增加eventReason参数
 
 ## [1.0.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.0.0)
 
