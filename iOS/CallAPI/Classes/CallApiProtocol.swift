@@ -152,6 +152,30 @@ import AgoraRtmKit
                                     errorCode: Int,
                                     message: String?)
     
+    /// 通话开始的回调
+    /// - Parameters:
+    ///   - roomId: 通话的频道id
+    ///   - callerUserId: 发起呼叫的用户id
+    ///   - currentUserId: 自己的id
+    ///   - timestamp: 通话开始的时间戳，和19700101的差值，单位ms
+    @objc optional func onCallConnected(roomId: String,
+                                        callUserId: UInt,
+                                        currentUserId: UInt,
+                                        timestamp: UInt64)
+    
+    /// 通话结束的回调
+    /// - Parameters:
+    ///   - roomId: 通话的频道id
+    ///   - hangupUserId: 挂断的用户id
+    ///   - currentUserId: 自己的用户id
+    ///   - timestamp: 通话结束的时间戳，和19700101的差值，单位ms
+    ///   - duration: 通话时长，单位ms
+    @objc optional func onCallDisconnected(roomId: String,
+                                           hangupUserId: UInt,
+                                           currentUserId: UInt,
+                                           timestamp: UInt64,
+                                           duration: UInt64)
+    
     /// token即将要过期(需要外部获取新token调用renewToken更新)
     @objc optional func tokenPrivilegeWillExpire()
     

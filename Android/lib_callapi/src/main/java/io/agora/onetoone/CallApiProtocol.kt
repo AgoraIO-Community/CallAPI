@@ -168,6 +168,32 @@ interface ICallApiListener {
                          message: String?) {}
 
     /**
+     * 通话开始的回调
+     * @param roomId: 通话的频道id
+     * @param callerUserId: 发起呼叫的用户id
+     * @param currentUserId: 自己的id
+     * @param timestamp: 通话开始的时间戳，和19700101的差值，单位ms
+     */
+    fun onCallConnected(roomId: String,
+                    callUserId: Int,
+                    currentUserId: Int,
+                    timestamp: Long) {}
+
+    /**
+     * 通话结束的回调
+     * @param roomId: 通话的频道id
+     * @param hangupUserId: 挂断的用户id
+     * @param currentUserId: 自己的id
+     * @param timestamp: 通话开始的时间戳，和19700101的差值，单位ms
+     * @param duration: 通话时长，单位ms
+     */
+    fun onCallDisconnected(roomId: String,
+                        hangupUserId: Int,
+                        currentUserId: Int,
+                        timestamp: Long,
+                        duration: Long) {}
+
+    /**
      * token快要过期了(需要外部获取新token调用renewToken更新)
      */
     fun tokenPrivilegeWillExpire() {}
