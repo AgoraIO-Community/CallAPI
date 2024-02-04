@@ -390,8 +390,8 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         }
     }
 
-    override fun onCallEventChanged(event: CallEvent) {
-        Log.d(TAG, "onCallEventChanged: $event")
+    override fun onCallEventChanged(event: CallEvent, eventReason: String?) {
+        Log.d(TAG, "onCallEventChanged: $event, eventReason: $eventReason")
         when(event) {
             CallEvent.RemoteLeave -> {
                 hangupAction()

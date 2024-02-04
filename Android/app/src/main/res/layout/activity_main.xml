@@ -240,6 +240,7 @@
         android:layout_height="50dp"
         android:text="收到呼叫自动接受"
         android:checked="true"
+        android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@+id/layoutFrameRate"
         app:layout_constraintStart_toStartOf="parent"
         />
