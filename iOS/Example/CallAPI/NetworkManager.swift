@@ -66,6 +66,7 @@ class NetworkManager:NSObject {
                         tokenTypes: [AgoraTokenType],
                         success: @escaping ([Int: String]) -> Void)
     {
+        print("generateTokens start")
         let group = DispatchGroup()
         var tokenMap: [Int: String] = [Int:String]()
         

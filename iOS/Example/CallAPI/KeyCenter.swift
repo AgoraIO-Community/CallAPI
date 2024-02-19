@@ -36,4 +36,7 @@ struct KeyCenter {
      注意：如果项目没有开启证书鉴权，这个字段留空。
      */
     static let Certificate: String? = <#Your Certificate#>
+    
+    
+    static var IMAppKey: String = <#Your EaseMob AppKey#>
 }

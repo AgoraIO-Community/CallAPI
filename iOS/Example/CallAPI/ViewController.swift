@@ -490,7 +490,7 @@ class ViewController: UIViewController {
             prepareConfig.rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
 //            prepareConfig.rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
             
-            let vc = Pure1v1RoomViewController(currentUid: currentUserId,
+            let vc = EMPure1v1RoomViewController(currentUid: currentUserId,
                                                prepareConfig: prepareConfig,
                                                rtmToken: tokens[AgoraTokenType.rtm.rawValue]!)
             vc.modalPresentationStyle = .fullScreen
