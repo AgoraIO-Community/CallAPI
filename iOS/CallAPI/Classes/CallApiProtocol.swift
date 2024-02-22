@@ -7,25 +7,23 @@
 
 import Foundation
 import AgoraRtcKit
-import AgoraRtmKit
 
 /// 初始化配置信息
 @objc public class CallConfig: NSObject {
-    public var appId: String = ""               //声网App Id
-    public var userId: UInt = 0                 //用户id
-    public var rtcEngine: AgoraRtcEngineKit!    //rtc engine实例
-    public var callMessageManager: ICallMessageManager!    //[可选]rtm client实例，如果设置则需要负责rtmClient的login和logout，需要使用appId和userId创建
+    public var appId: String = ""                          //声网App Id
+    public var userId: UInt = 0                            //用户id
+    public var rtcEngine: AgoraRtcEngineKit!               //rtc engine实例
+    public var callMessageManager: ICallMessageManager!    //信令通道对象实例
 }
 
 //TODO: 如何不设置万能token
 @objc public class PrepareConfig: NSObject {
     public var roomId: String = ""                      //自己的RTC频道名，用于呼叫对端用户时让对端用户进入加入这个RTC频道
     public var rtcToken: String = ""                    //rtc token，需要使用万能token，token创建的时候channel name为空字符串
-//    public var rtmToken: String = ""                    //rtm token
     public var localView: UIView!                       //显示本地流的画布
     public var remoteView: UIView!                      //显示远端流的画布
     public var autoJoinRTC: Bool = false                //是否在不呼叫的情况下提前加入自己的RTC频道，该设置可以加快呼叫的出图速度
-    public var callTimeoutMillisecond: UInt64 = 15000   //呼叫超时时间，单位豪秒，0表示内部不处理超时
+    public var callTimeoutMillisecond: UInt64 = 15000   //呼叫超时时间，单位毫秒，0表示内部不处理超时
     public var userExtension: [String: Any]?            //[可选]用户扩展字段，收到对端消息而改变状态(例如calling/connecting)时可以通过kFromUserExtension字段获取
 }
 
@@ -70,7 +68,7 @@ import AgoraRtmKit
 //    case joinRTCFailed = 4                        //加入RTC失败[已废弃，请使用onCallErrorOccur(state: rtcOccurError)]
     case joinRTCSuccessed = 5                     //加入RTC成功
 //    case rtmSetupFailed = 6                       //设置RTM失败[已废弃，请使用onCallErrorOccur(state: rtmSetupFail)]
-    case rtmSetupSuccessed = 7                    //设置RTM成功
+//    case rtmSetupSuccessed = 7                    //设置RTM成功[2.0.0已废弃，请]
 //    case messageFailed = 8                        //消息发送失败[已废弃，请使用onCallErrorOccur(state: sendMessageFail)]
     case stateMismatch = 9                        //状态流转异常
 //    case preparedRoomIdChanged = 10               //prepared了另一个roomId[已废弃]
@@ -121,15 +119,19 @@ import AgoraRtmKit
     case error = 2
 }
 
-
 @objc public protocol ICallMessageListener: NSObjectProtocol {
-    func onMessageReceive(message: [String: Any])
-    func debugInfo(message: String, logLevel: Int)
+    //TODO: on error
+    func onMessageReceive(message: String)
+    @objc optional func onTokenWillExpire(channelName: String?)
+    @objc optional func onDisconnected(channelName: String)
+    
+    @objc optional func debugInfo(message: String, logLevel: Int)
 }
 
 @objc public protocol ICallMessageManager: NSObjectProtocol {
-    func sendMessage(userId: String, 
-                     message: [String: Any],
+    func sendMessage(userId: String,
+                     messageId: Int,
+                     message: String,
                      completion: ((NSError?)-> Void)?)
     func addListener(listener: ICallMessageListener)
     func removeListener(listener: ICallMessageListener)

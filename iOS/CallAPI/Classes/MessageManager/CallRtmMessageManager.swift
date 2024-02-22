@@ -8,8 +8,6 @@
 import Foundation
 import AgoraRtmKit
 
-let kMessageId: String = "messageId"     //发送的消息id
-
 private func createRtmClient(appId: String,
                               userId: String) -> AgoraRtmClientKit {
     let rtmConfig = AgoraRtmClientConfig(appId: appId, userId: userId)
@@ -35,9 +33,6 @@ public class CallRtmMessageManager: NSObject {
     
     /// 是否外部传入的rtm，如果是则不需要手动logout
     private var isExternalRtmClient: Bool = false
-        
-    // 消息id
-    private var messageId: Int = 0
     
     deinit {
         clean()
@@ -115,18 +110,21 @@ public class CallRtmMessageManager: NSObject {
 }
 
 extension CallRtmMessageManager {
-    private func _sendMessage(userId: String, message: [String: Any], completion: ((NSError?)-> Void)?) {
+    private func _sendMessage(userId: String, 
+                              messageId: Int,
+                              message: String,
+                              completion: ((NSError?)-> Void)?) {
         if userId.count == 0 {
             completion?(NSError(domain: "send message fail! roomId is empty", code: -1))
             return
         }
-        let msgId = message[kMessageId] as? Int ?? 0
-        let data = try? JSONSerialization.data(withJSONObject: message)
+        let msgId = messageId
+        let data = message.data(using: .utf8)!
         let options = AgoraRtmPublishOptions()
         options.channelType = .user
         let date = Date()
         callMessagePrint("_sendMessage[\(msgId)] to '\(userId)', message: \(message)")
-        rtmClient.publish(channelName: userId, data: data!, option: options) { [weak self] resp, err in
+        rtmClient.publish(channelName: userId, data: data, option: options) { [weak self] resp, err in
             guard let self = self else {return}
             if let err = err {
                 let error = NSError(domain: err.reason, code: err.errorCode.rawValue)
@@ -140,7 +138,9 @@ extension CallRtmMessageManager {
         }
     }
     
-    private func loginRtm(rtmClient: AgoraRtmClientKit, token: String, completion: @escaping (AgoraRtmErrorInfo?)->()) {
+    private func loginRtm(rtmClient: AgoraRtmClientKit, 
+                          token: String,
+                          completion: @escaping (AgoraRtmErrorInfo?)->()) {
         if isLoginedRtm {
             completion(nil)
             return
@@ -157,35 +157,43 @@ extension CallRtmMessageManager {
     private func callMessagePrint(_ message: String, _ logLevel: Int = 0) {
         let tag = "[CallRtmMessageManager][\(String.init(format: "%p", self))][\(String.init(format: "%p", rtmClient))]"
         for element in delegates.allObjects {
-            element.debugInfo(message: "\(tag)\(message)", logLevel: logLevel)
+            element.debugInfo?(message: "\(tag)\(message)", logLevel: logLevel)
         }
     }
 }
 
 
 //MARK: AgoraRtmClientDelegate
+//TODO: error handler
 extension CallRtmMessageManager: AgoraRtmClientDelegate {
-//    func rtmKit(_ kit: AgoraRtmClientKit,
-//                channel channelName: String,
-//                connectionChangedToState state: AgoraRtmClientConnectionState,
-//                reason: AgoraRtmClientConnectionChangeReason) {
-//        callMessagePrint("rtm connectionChangedToState: \(state.rawValue) reason: \(reason.rawValue)")
-//        if reason == .changedTokenExpired {
-//            self.delegate?.rtmKit?(kit, tokenPrivilegeWillExpire: nil)
-//        } else if reason == .changedChangedLost {
-//            self.delegate?.onConnectionFail()
-//        }
-//    }
+    public func rtmKit(_ kit: AgoraRtmClientKit,
+                channel channelName: String,
+                connectionChangedToState state: AgoraRtmClientConnectionState,
+                reason: AgoraRtmClientConnectionChangeReason) {
+        callMessagePrint("rtm connectionChangedToState: \(state.rawValue) reason: \(reason.rawValue)")
+        if reason == .changedTokenExpired {
+            for element in delegates.allObjects {
+                element.onTokenWillExpire?(channelName: channelName)
+            }
+        } else if reason == .changedChangedLost {
+            //TODO: 内部重试，rtm 2.2.0支持
+            for element in delegates.allObjects {
+                element.onDisconnected?(channelName: channelName)
+            }
+        }
+    }
     
-//    func rtmKit(_ rtmKit: AgoraRtmClientKit, tokenPrivilegeWillExpire channel: String?) {
-//        callMessagePrint("rtm onTokenPrivilegeWillExpire[\(channel ?? "nil")]")
-//        self.delegate?.rtmKit?(rtmKit, tokenPrivilegeWillExpire: channel)
-//    }
+    public func rtmKit(_ rtmKit: AgoraRtmClientKit, tokenPrivilegeWillExpire channel: String?) {
+        callMessagePrint("rtm onTokenPrivilegeWillExpire[\(channel ?? "nil")]")
+        for element in delegates.allObjects {
+            element.onTokenWillExpire?(channelName: channel)
+        }
+    }
     
     //收到RTM消息
     public func rtmKit(_ rtmKit: AgoraRtmClientKit, didReceiveMessageEvent event: AgoraRtmMessageEvent) {
         guard let data = event.message.rawData,
-              let message = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+              let message = String(data: data, encoding: .utf8) else {
                callMessagePrint("on event message parse fail", 1)
                return
         }
@@ -196,19 +204,21 @@ extension CallRtmMessageManager: AgoraRtmClientDelegate {
 }
 
 extension CallRtmMessageManager: ICallMessageManager {
-    public func sendMessage(userId: String, message: [String : Any], completion: ((NSError?) -> Void)?) {
+    public func sendMessage(userId: String, 
+                            messageId: Int,
+                            message: String,
+                            completion: ((NSError?) -> Void)?) {
         guard userId.count > 0, userId != "0" else {
-        let errorStr = "sendMessage fail, invalid userId[\(userId)]"
-        callMessagePrint(errorStr)
-        completion?(NSError(domain: errorStr, code: -1))
-        return
+            let errorStr = "sendMessage fail, invalid userId[\(userId)]"
+            callMessagePrint(errorStr)
+            completion?(NSError(domain: errorStr, code: -1))
+            return
         }
 
-        messageId += 1
-        messageId %= Int.max
-        var message = message
-        message[kMessageId] = messageId
-        _sendMessage(userId: userId, message: message, completion: completion)
+        _sendMessage(userId: userId, 
+                     messageId: messageId,
+                     message: message, 
+                     completion: completion)
     }
     
     public func addListener(listener: ICallMessageListener) {

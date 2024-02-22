@@ -29,18 +29,17 @@ extension CallConfig {
         config.appId = appId
         config.userId = userId
         config.rtcEngine = rtcEngine
-//        config.rtmClient = rtmClient
         config.callMessageManager = callMessageManager
         return config
     }
 }
 
 extension Date {
-    func getCostMilliseconds() -> Int {
+    public func getCostMilliseconds() -> Int {
         return Int(-timeIntervalSinceNow * 1000)
     }
     
-    func millisecondsSince1970() -> Int {
+    public func millisecondsSince1970() -> Int {
         return Int(round(Date().timeIntervalSince1970 * 1000.0))
     }
 }

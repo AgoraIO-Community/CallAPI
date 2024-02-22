@@ -10,7 +10,6 @@
 import UIKit
 import CallAPI
 import AgoraRtcKit
-import AgoraRtmKit
 
 class EMPure1v1RoomViewController: UIViewController {
     private var currentUid: UInt             //当前用户UID
@@ -282,25 +281,6 @@ extension EMPure1v1RoomViewController {
         let mediaOptions = AgoraRtcChannelMediaOptions()
         mediaOptions.publishMicrophoneTrack = muteAudioButton.isSelected == false ? true : false
         rtcEngine.updateChannelEx(with: mediaOptions, connection: connection)
-    }
-    
-    //创建RTM
-    private func _createRtmClient() -> AgoraRtmClientKit {
-        let rtmConfig = AgoraRtmClientConfig(appId: KeyCenter.AppId, userId: "\(currentUid)")
-        if rtmConfig.userId.count == 0 {
-            print("userId is empty")
-        }
-        if rtmConfig.appId.count == 0 {
-            print("appId is empty")
-        }
-
-        var rtmClient: AgoraRtmClientKit? = nil
-        do {
-            rtmClient = try AgoraRtmClientKit(rtmConfig, delegate: nil)
-        } catch {
-            print("create rtm client fail: \(error.localizedDescription)")
-        }
-        return rtmClient!
     }
 }
 

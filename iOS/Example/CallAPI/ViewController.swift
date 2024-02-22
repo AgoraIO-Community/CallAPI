@@ -10,6 +10,11 @@ import UIKit
 import CallAPI
 import AgoraRtcKit
 
+enum CallRole: Int {
+    case callee = 0
+    case caller
+}
+
 private let fpsItems: [AgoraVideoFrameRate] = [
     .fps1,
     .fps7,
@@ -458,6 +463,7 @@ class ViewController: UIViewController {
             
             let targetUserId = role == .caller ? "\(callUserId)" : "\(currentUserId)"
             
+            #if canImport(AgoraRtmKit)
             let vc = ShowTo1v1RoomViewController(showRoomId: "\(targetUserId)_live",
                                                  showUserId: role == .callee ? currentUserId : callUserId,
                                                  showRoomToken: prepareConfig.rtcToken,
@@ -465,6 +471,15 @@ class ViewController: UIViewController {
                                                  role: role,
                                                  rtmToken: tokens[AgoraTokenType.rtm.rawValue]!,
                                                  prepareConfig: prepareConfig)
+            #else
+            let vc = EMShowTo1v1RoomViewController(showRoomId: "\(targetUserId)_live",
+                                                   showUserId: role == .callee ? currentUserId : callUserId,
+                                                   showRoomToken: prepareConfig.rtcToken,
+                                                   currentUid: currentUserId,
+                                                   role: role,
+                                                   rtmToken: tokens[AgoraTokenType.rtm.rawValue]!,
+                                                   prepareConfig: prepareConfig)
+            #endif
             vc.modalPresentationStyle = .fullScreen
             vc.videoEncoderConfig = videoEncoderConfig
             self.present(vc, animated: true)
@@ -490,9 +505,15 @@ class ViewController: UIViewController {
             prepareConfig.rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
 //            prepareConfig.rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
             
-            let vc = EMPure1v1RoomViewController(currentUid: currentUserId,
+            #if canImport(AgoraRtmKit)
+            let vc = Pure1v1RoomViewController(currentUid: currentUserId,
                                                prepareConfig: prepareConfig,
                                                rtmToken: tokens[AgoraTokenType.rtm.rawValue]!)
+            #else
+            let vc = EMPure1v1RoomViewController(currentUid: currentUserId,
+                                                 prepareConfig: prepareConfig,
+                                                 rtmToken: tokens[AgoraTokenType.rtm.rawValue]!)
+            #endif
             vc.modalPresentationStyle = .fullScreen
             vc.videoEncoderConfig = videoEncoderConfig
             self.view.isUserInteractionEnabled = true

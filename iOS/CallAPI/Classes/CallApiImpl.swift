@@ -7,10 +7,10 @@
 
 import Foundation
 import AgoraRtcKit
-import AgoraRtmKit
-
 
 let kReportCategory = "2_iOS_1.0.0"
+
+let kMessageId: String = "messageId"     //发送的消息id
 
 private let kCurrentMessageVersion = "1.0"
 private let kMessageAction = "message_action"
@@ -71,17 +71,13 @@ public class CallApiImpl: NSObject {
         }
     }
     private var prepareConfig: PrepareConfig? = nil
-//    private var messageManager: CallMessageManager? {
-//        didSet {
-//            if oldValue == messageManager {
-//                return
-//            }
-//            oldValue?.deinitialize()
-//        }
-//    }
+
+    // 消息id
+    private var messageId: Int = 0
     
+    //通话信息
     private var connectInfo = CallConnectInfo()
-        
+    //上报信息
     private var reportInfoList: [CallReportInfo] = []
     
     /// 是否加入频道
@@ -775,6 +771,21 @@ extension CallApiImpl {
 //        callPrint("sendCustomReportMessage[\(ret)] msgId:\(msgId) event:\(event) label:\(label) value: \(value)")
         #endif
     }
+    
+    private func _sendMessage(userId: String, 
+                              message: [String: Any],
+                              completion: ((NSError?)-> ())?) {
+        messageId += 1
+        messageId %= Int.max
+        var message = message
+        message[kMessageId] = messageId
+        let data = try? JSONSerialization.data(withJSONObject: message)
+        let messageStr = String(data: data!, encoding: .utf8)!
+        config?.callMessageManager.sendMessage(userId: "\(userId)",
+                                               messageId: messageId,
+                                               message: messageStr,
+                                               completion: completion)
+    }
 }
 
 //MARK: on Message
@@ -802,7 +813,7 @@ extension CallApiImpl {
             return
         }
         let message: [String: Any] = message ?? _messageDic(action: .cancelCall)
-        config?.callMessageManager.sendMessage(userId: "\(userId)", message: message) { err in
+        _sendMessage(userId: "\(userId)", message: message) { err in
             completion?(err)
             guard let error = err else { return }
             self._notifySendMessageErrorEvent(error: error, reason: "cancelCall fail: ")
@@ -820,17 +831,17 @@ extension CallApiImpl {
     private func _reject(remoteUserId: UInt,
                          message: [String: Any],
                          completion: ((NSError?) -> ())? = nil) {
-        config?.callMessageManager.sendMessage(userId: "\(remoteUserId)",
-                                               message: message,
-                                               completion: completion)
+        _sendMessage(userId: "\(remoteUserId)",
+                     message: message,
+                     completion: completion)
     }
     
     private func _hangup(remoteUserId: UInt,
                          message: [String: Any]? = nil,
                          completion: ((NSError?) -> ())? = nil) {
-        config?.callMessageManager.sendMessage(userId: "\(remoteUserId)",
-                                               message: message ?? _messageDic(action: .hangup),
-                                               completion: completion)
+        _sendMessage(userId: "\(remoteUserId)",
+                     message: message ?? _messageDic(action: .hangup),
+                     completion: completion)
     }
 }
 
@@ -1032,7 +1043,7 @@ extension CallApiImpl: CallApiProtocol {
         _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)")
         
         let message: [String: Any] = _callMessageDic(remoteUserId: remoteUserId, fromRoomId: fromRoomId)
-        config?.callMessageManager.sendMessage(userId: "\(remoteUserId)", message: message) {[weak self] err in
+        _sendMessage(userId: "\(remoteUserId)", message: message) {[weak self] err in
             guard let self = self else { return }
             completion?(err)
             if let error = err {
@@ -1078,7 +1089,7 @@ extension CallApiImpl: CallApiProtocol {
         connectInfo.set(userId: remoteUserId, roomId: roomId, isLocalAccepted: true)
         
         let message: [String: Any] = _messageDic(action: .accept)
-        config?.callMessageManager.sendMessage(userId: "\(remoteUserId)", message: message) { err in
+        _sendMessage(userId: "\(remoteUserId)", message: message) { err in
             completion?(err)
             guard let error = err else { return }
             self._notifySendMessageErrorEvent(error: error, reason: "accept fail: ")
@@ -1135,51 +1146,31 @@ extension CallApiImpl: ICallMessageListener {
         callPrint(message, CallLogLevel(rawValue: logLevel) ?? .normal)
     }
     
-    public func onMessageReceive(message: [String: Any]) {
+    public func onMessageReceive(message: String) {
         callPrint("on event message: \(message)")
-        guard let messageAction = CallAction(rawValue: message[kMessageAction] as? UInt ?? 0),
-              let messageVersion = message[kMessageVersion] as? String else {
+        guard let data = message.data(using: .utf8),
+              let msg = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) as? [String: Any] else {
+            return
+        }
+        guard let messageAction = CallAction(rawValue: msg[kMessageAction] as? UInt ?? 0),
+              let messageVersion = msg[kMessageVersion] as? String else {
             callWarningPrint("fail to parse message")
             return
         }
         
         //TODO: compatible other message version
         guard kCurrentMessageVersion == messageVersion else { return }
-        _processRespEvent(reason: messageAction, message: message)
+        _processRespEvent(reason: messageAction, message: msg)
     }
     
-//    public func rtmKit(_ rtmKit: AgoraRtmClientKit, tokenPrivilegeWillExpire channel: String?) {
-//        _notifyTokenPrivilegeWillExpire()
-//    }
-//    
-//    public func onConnectionFail() {
-//        //TODO: 内部重试，rtm 2.2.0支持
-//        _updateAndNotifyState(state: .failed, stateReason: .rtmLost)
-//        _notifyEvent(event: .rtmLost)
-//    }
-//    
-//    //收到RTM消息
-//    public func rtmKit(_ rtmKit: AgoraRtmClientKit, didReceiveMessageEvent event: AgoraRtmMessageEvent) {
-//        let message = event.message
-//        guard let data = message.rawData,
-//              let dic = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-//              let messageAction = CallAction(rawValue: dic[kMessageAction] as? UInt ?? 0),
-////              let msgTs = dic[kMessageTs] as? Int,
-////              let userId = dic[kFromUserId] as? UInt,
-//              let messageVersion = dic[kMessageVersion] as? String else {
-//            callWarningPrint("fail to parse message: \(message.rawData?.count ?? 0)")
-//            return
-//        }
-//        
-//        //TODO: compatible other message version
-//        guard kCurrentMessageVersion == messageVersion else { return }
-//        callPrint("on event message: \(String(data: data, encoding: .utf8) ?? "")")
-//        _processRespEvent(reason: messageAction, message: dic)
-//    }
-//    
-//    func debugInfo(message: String, logLevel: Int) {
-//        callPrint(message)
-//    }
+    public func onTokenWillExpire(channelName: String?) {
+        _notifyTokenPrivilegeWillExpire()
+    }
+    
+    public func onDisconnected(channelName: String) {
+        _updateAndNotifyState(state: .failed, stateReason: .rtmLost)
+        _notifyEvent(event: .rtmLost)
+    }
 }
 
 //MARK: AgoraRtcEngineDelegate

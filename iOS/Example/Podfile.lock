@@ -3,8 +3,10 @@ PODS:
   - AgoraRtm_iOS (2.1.8)
   - CallAPI (0.3.0):
     - AgoraRtcEngine_Special_iOS (= 4.1.1.17)
+    - CallAPI/All (= 0.3.0)
+  - CallAPI/All (0.3.0):
+    - AgoraRtcEngine_Special_iOS (= 4.1.1.17)
     - AgoraRtm_iOS (= 2.1.8)
-    - HyphenateChat
   - HyphenateChat (4.4.0)
   - YYCategories (1.0.4):
     - YYCategories/no-arc (= 1.0.4)
@@ -12,6 +14,7 @@ PODS:
 
 DEPENDENCIES:
   - CallAPI (from `../`)
+  - HyphenateChat
   - YYCategories
 
 SPEC REPOS:
@@ -28,10 +31,10 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   AgoraRtcEngine_Special_iOS: 5b3106aad2d76959393cc6497affe83dbdc926a0
   AgoraRtm_iOS: 9fb76b5f71900d012aaed6c033e235d6fd201ed9
-  CallAPI: 39918fdf7baf9ec0f4c5e1f743879f0ac578e233
+  CallAPI: ea841cbd2b0bc00effc38c2feccbb83b8db9d3ce
   HyphenateChat: e34bff25dcc08b092a2797eb1233b0d06ac45466
   YYCategories: 6bcd4314c6661a561410dce4a793379ebd306abd
 
-PODFILE CHECKSUM: 001572e2b62fba2a376de5284b36202d3cebc8fd
+PODFILE CHECKSUM: ded7dcd35f9a862d938445ed3118e688a2903734
 
 COCOAPODS: 1.12.1

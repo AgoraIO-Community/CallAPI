@@ -7,13 +7,13 @@
 
 import Foundation
 import HyphenateChat
+import CallAPI
 
 public class CallEasemobMessageManager: NSObject {
     private let delegates:NSHashTable<ICallMessageListener> = NSHashTable<ICallMessageListener>.weakObjects()
     private var appKey: String
     private var userId: String
-    // 消息id
-    private var messageId: Int = 0
+
     public init(appKey: String, userId: String) {
         self.appKey = appKey
         self.userId = userId
@@ -65,24 +65,22 @@ extension CallEasemobMessageManager {
     private func callMessagePrint(_ message: String, _ logLevel: Int = 0) {
         let tag = "[CallEasemobMessageManager]"
         for element in delegates.allObjects {
-            element.debugInfo(message: "\(tag)\(message)", logLevel: logLevel)
+            element.debugInfo?(message: "\(tag)\(message)", logLevel: logLevel)
         }
     }
     
-    private func _sendMessage(userId: String, message: [String: Any], completion: ((NSError?)-> Void)?) {
+    private func _sendMessage(userId: String, 
+                              messageId: Int,
+                              message: String,
+                              completion: ((NSError?)-> Void)?) {
         if userId.count == 0 {
             completion?(NSError(domain: "send message fail! roomId is empty", code: -1))
             return
         }
-        let msgId = message[kMessageId] as? Int ?? 0
-        guard let data = try? JSONSerialization.data(withJSONObject: message) else {
-            completion?(NSError(domain: "message data is empty", code: -1))
-            return
-        }
-        let text = String(data: data, encoding: .utf8)
         
-        let body = EMTextMessageBody(text: text)
-        callMessagePrint("_sendMessage[\(msgId)] to '\(userId)', message: \(String(describing: text))")
+        let msgId = messageId
+        let body = EMTextMessageBody(text: message)
+        callMessagePrint("_sendMessage[\(msgId)] to '\(userId)', message: \(message)")
         let emMessage = EMChatMessage(conversationID: userId, from: self.userId, to: userId, body: body, ext: nil)
         let date = Date()
         EMClient.shared().chatManager?.send(emMessage, progress: nil, completion: {[weak self] msg, err in
@@ -100,21 +98,22 @@ extension CallEasemobMessageManager {
     }
 }
 
-
 extension CallEasemobMessageManager: ICallMessageManager {
-    public func sendMessage(userId: String, message: [String : Any], completion: ((NSError?) -> Void)?) {
+    public func sendMessage(userId: String, 
+                            messageId: Int,
+                            message: String, 
+                            completion: ((NSError?) -> Void)?) {
         guard userId.count > 0, userId != "0" else {
-        let errorStr = "sendMessage fail, invalid userId[\(userId)]"
-        callMessagePrint(errorStr)
-        completion?(NSError(domain: errorStr, code: -1))
-        return
+            let errorStr = "sendMessage fail, invalid userId[\(userId)]"
+            callMessagePrint(errorStr)
+            completion?(NSError(domain: errorStr, code: -1))
+            return
         }
 
-        messageId += 1
-        messageId %= Int.max
-        var message = message
-        message[kMessageId] = messageId
-        _sendMessage(userId: userId, message: message, completion: completion)
+        _sendMessage(userId: userId, 
+                     messageId: messageId,
+                     message: message, 
+                     completion: completion)
     }
     
     public func addListener(listener: ICallMessageListener) {
@@ -132,7 +131,6 @@ extension CallEasemobMessageManager: ICallMessageManager {
     }
 }
 
-
 extension CallEasemobMessageManager: EMChatManagerDelegate {
     public func messagesDidReceive(_ aMessages: [EMChatMessage]) {
         for message in aMessages {
@@ -141,10 +139,9 @@ extension CallEasemobMessageManager: EMChatManagerDelegate {
             let body = message.body as? EMTextMessageBody
             let text = body?.text
             callMessagePrint("messagesDidReceive from: \(from), to: \(to), text: \(String(describing: text))")
-            if let text = text, let data = text.data(using: .utf8), 
-                let json = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers) as? [String: Any] {
+            if let text = text {
                 for element in delegates.allObjects {
-                    element.onMessageReceive(message: json)
+                    element.onMessageReceive(message: text)
                 }
             }
         }

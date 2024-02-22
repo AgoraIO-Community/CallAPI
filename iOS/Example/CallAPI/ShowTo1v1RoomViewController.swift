@@ -6,16 +6,13 @@
 //  Copyright © 2023 Agora. All rights reserved.
 //
 
+#if canImport(AgoraRtmKit)
 import UIKit
 import CallAPI
 import AgoraRtcKit
-import CoreData
 import AgoraRtmKit
 
-enum CallRole: Int {
-    case callee = 0
-    case caller
-}
+
 
 class ShowTo1v1RoomViewController: UIViewController {
     private var showRoomId: String          //直播频道名
@@ -30,17 +27,7 @@ class ShowTo1v1RoomViewController: UIViewController {
     
     private var rtmToken: String
     private var rtmClient: AgoraRtmClientKit?
-    
-    private lazy var debugPath: String = {
-        let path = "\(NSHomeDirectory())/Documents/ts/"
-        do {
-            try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
-        } catch {
-            print(error.localizedDescription)
-        }
-        
-        return path
-    }()
+    private var messageManager: CallRtmMessageManager?
     
     private let api = CallApiImpl()
     private let showView: UIView = UIView()
@@ -327,10 +314,12 @@ extension ShowTo1v1RoomViewController {
         config.appId = KeyCenter.AppId
         config.userId = currentUid
         config.rtcEngine = rtcEngine
-        config.callMessageManager = CallRtmMessageManager(appId: config.appId,
+        let manager = CallRtmMessageManager(appId: config.appId,
                                                           userId: "\(config.userId)",
                                                           rtmToken: rtmToken,
                                                           rtmClient: rtmClient)
+        config.callMessageManager = manager
+        messageManager = manager
         self.rtmClient = rtmClient
         self.api.initialize(config: config)
         
@@ -354,6 +343,7 @@ extension ShowTo1v1RoomViewController {
             AgoraRtcEngineKit.destroy()
             self.rtmClient?.logout()
             self.rtmClient?.destroy()
+            self.messageManager?.clean()
             self.dismiss(animated: true)
         }
     }
@@ -567,3 +557,4 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
                                           height: connectStatusLabel.frame.height)
     }
 }
+#endif

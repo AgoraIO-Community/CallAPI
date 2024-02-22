@@ -1,25 +1,29 @@
 //
-//  Pure1v1RoomViewController.swift
+//  EMShowTo1v1RoomViewController.swift
 //  CallAPI_Example
 //
-//  Created by wushengtao on 2023/7/3.
-//  Copyright © 2023 Agora. All rights reserved.
+//  Created by wushengtao on 2024/2/22.
+//  Copyright © 2024 Agora. All rights reserved.
 //
 
-
-#if canImport(AgoraRtmKit)
 import UIKit
 import CallAPI
 import AgoraRtcKit
-import AgoraRtmKit
 
-class Pure1v1RoomViewController: UIViewController {
+class EMShowTo1v1RoomViewController: UIViewController {
+    private var showRoomId: String           //直播频道名
+    private var showUserId: UInt             //房主uid，如果是主播，那么和currentUid一致
+    private var showRoomToken: String        //直播token
     private var currentUid: UInt             //当前用户UID
+    private var role: CallRole               //角色
     private var prepareConfig: PrepareConfig
     var videoEncoderConfig: AgoraVideoEncoderConfiguration?
+    private var connectedUserId: UInt?
+    private var connectedRoomId: String?
     
     private let api = CallApiImpl()
-    private lazy var leftView: UIView = {
+    private let showView: UIView = UIView()
+    private let leftView: UIView = {
         let view = UIView()
         view.backgroundColor = .white
         return view
@@ -30,30 +34,31 @@ class Pure1v1RoomViewController: UIViewController {
         return view
     }()
     private lazy var rtcEngine = _createRtcEngine()
-    private var messageManager: CallRtmMessageManager?
-    private var rtmToken: String
-    private var rtmClient: AgoraRtmClientKit?
-    
-    private var connectedUserId: UInt?
-    private var connectedRoomId: String?
+    private lazy var messageManager = _createMessageManager()
     
     private var callState: CallStateType = .idle {
         didSet {
             switch callState {
             case .calling:
+                publishMedia(false)
+                setupCanvas(nil)
                 self.rightView.isHidden = false
-                hangupButton.isHidden = true
+                hangupButton.isHidden = false
                 callButton.isHidden = true
             case .connected:
                 muteAudioButton.isSelected = false
                 muteAudioButton.isHidden = false
-                self.leftView.isHidden = false
+                leftView.isHidden = false
                 hangupButton.isHidden = false
             case .prepared, .idle, .failed:
+                rtcEngine.enableLocalAudio(true)
+                rtcEngine.enableLocalVideo(true)
+                self.publishMedia(true)
+                self.setupCanvas(self.showView)
                 muteAudioButton.isHidden = true
                 self.leftView.isHidden = true
                 self.rightView.isHidden = true
-                self.callButton.isHidden = false
+                self.callButton.isHidden = isBroadcaster
                 self.hangupButton.isHidden = true
             default:
                 break
@@ -61,18 +66,8 @@ class Pure1v1RoomViewController: UIViewController {
         }
     }
     
-    private var targetUserId: UInt {
-        get {
-            var uid = UInt(UserDefaults.standard.integer(forKey: "targetUserId"))
-            if uid > 0 {
-                return uid
-            }
-            uid = UInt(arc4random_uniform(99999))
-            UserDefaults.standard.set(uid, forKey: "targetUserId")
-            return uid
-        } set {
-            UserDefaults.standard.set(newValue, forKey: "targetUserId")
-        }
+    private var isBroadcaster: Bool {
+        return self.role == .callee
     }
     
     private func _createRtcEngine() ->AgoraRtcEngineKit {
@@ -84,33 +79,24 @@ class Pure1v1RoomViewController: UIViewController {
         let engine = AgoraRtcEngineKit.sharedEngine(with: config,
                                                     delegate: self)
         
-        engine.setClientRole(.broadcaster)
+        engine.setClientRole(isBroadcaster ? .broadcaster : .audience)
         return engine
     }
     
-    private lazy var currentUserLabel: UILabel = {
-        let label = UILabel()
-        label.textColor = .white
-        label.text = "当前用户id: \(currentUid)"
-        return label
-    }()
+    private func _createMessageManager() -> CallEasemobMessageManager {
+        let manager = CallEasemobMessageManager(appKey: KeyCenter.IMAppKey, userId: "\(currentUid)")
+        
+        return manager
+    }
     
-    private lazy var targetUserLabel: UILabel = {
+    private lazy var roomInfoLabel: UILabel = {
         let label = UILabel()
-        label.textColor = .white
-        label.text = "目标用户id"
+        label.backgroundColor = .white.withAlphaComponent(0.5)
+        label.textColor = .black
+        label.layer.cornerRadius = 8
+        label.font = UIFont.systemFont(ofSize: 15)
+        label.clipsToBounds = true
         return label
-    }()
-    
-    private lazy var targetUserTextField: UITextField = {
-        let tf = UITextField()
-        tf.backgroundColor = .white
-        tf.borderStyle = .roundedRect
-        tf.placeholder = "需要呼叫的用户id"
-        tf.textColor = .black
-        tf.keyboardType = .numberPad
-        tf.addTarget(self, action: #selector(targetUserChanged), for: .editingChanged)
-        return tf
     }()
     
     private lazy var closeButton: UIButton = {
@@ -156,14 +142,19 @@ class Pure1v1RoomViewController: UIViewController {
         return canvas
     }()
     
-    deinit {
-        print("deinit-- Pure1v1RoomViewController")
-    }
-    
-    required init(currentUid: UInt, prepareConfig: PrepareConfig, rtmToken: String) {
+    required init(showRoomId: String,
+                  showUserId: UInt,
+                  showRoomToken: String,
+                  currentUid: UInt,
+                  role: CallRole,
+                  rtmToken: String,
+                  prepareConfig: PrepareConfig) {
+        self.showRoomId = showRoomId
+        self.showUserId = showUserId
+        self.showRoomToken = showRoomToken
         self.currentUid = currentUid
+        self.role = role
         self.prepareConfig = prepareConfig
-        self.rtmToken = rtmToken
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -174,14 +165,11 @@ class Pure1v1RoomViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        view.backgroundColor = .black
-        targetUserTextField.text = "\(targetUserId)"
-        view.addSubview(currentUserLabel)
-        view.addSubview(targetUserLabel)
-        view.addSubview(targetUserTextField)
+        view.addSubview(showView)
         view.addSubview(leftView)
         view.addSubview(rightView)
         
+        view.addSubview(roomInfoLabel)
         view.addSubview(closeButton)
         view.addSubview(callButton)
         view.addSubview(hangupButton)
@@ -189,12 +177,11 @@ class Pure1v1RoomViewController: UIViewController {
         
         view.addSubview(connectStatusLabel)
         
-        currentUserLabel.frame = CGRect(x: 10, y: 80, width: 200, height: 40)
-        targetUserLabel.sizeToFit()
-        targetUserTextField.frame = CGRect(x: 10 + targetUserLabel.frame.width + 10, y: 120, width: 200, height: 40)
-        targetUserLabel.frame = CGRect(x: 10, y: 120, width: targetUserLabel.frame.width, height: 40)
-        
+        roomInfoLabel.text = " 房间Id: \(showRoomId) "
+        roomInfoLabel.sizeToFit()
         closeButton.frame = CGRect(x: view.frame.width - 50, y: UIDevice.current.safeDistanceTop, width: 40, height: 40)
+        roomInfoLabel.frame = CGRect(x: 10, y: UIDevice.current.safeDistanceTop, width: roomInfoLabel.frame.width, height: 40)
+        roomInfoLabel.layer.cornerRadius = 20
         let top = view.frame.height - UIDevice.current.safeDistanceBottom - 40
         callButton.frame = CGRect(x: view.frame.width - 50, y: top, width: 40, height: 40)
         hangupButton.frame = callButton.frame
@@ -204,81 +191,139 @@ class Pure1v1RoomViewController: UIViewController {
                                        width: callButton.frame.width,
                                        height: callButton.frame.height)
         
-        leftView.frame = CGRect(x: 0, y: 50, width: view.frame.width / 2, height: view.frame.height / 2)
-        rightView.frame = CGRect(x: view.frame.width / 2, y: 50, width: view.frame.width / 2, height: view.frame.height / 2)
+        leftView.frame = CGRect(x: 5, y: 50, width: view.frame.width / 2 - 10, height: view.frame.height / 2)
+        rightView.frame = CGRect(x: view.frame.width / 2 + 5, y: 50, width: view.frame.width / 2 - 10, height: view.frame.height / 2)
+        
+        showView.backgroundColor = .black
+        showView.frame = view.bounds
         
         self.callState = .idle
-        //外部创建rtmClient
-        rtmClient = _createRtmClient()
-        initCallApi { success in
-        }
-    }
-    
-    private func initCallApi(completion: @escaping ((Bool)->())) {
+        
         //外部创建需要自行管理login
-        NSLog("login")
-        rtmClient?.login(rtmToken) {[weak self] resp, err in
+        messageManager.login {[weak self] err in
             guard let self = self else {return}
             if let err = err {
-                NSLog("login error = \(err.localizedDescription)")
-                completion(false)
+                print("login error = \(err.localizedDescription)")
                 return
             }
-            self._initialize(rtmClient: self.rtmClient, completion: completion)
+            self._initialize() { success in
+                print("_initialize: \(success)")
+            }
         }
-    }
-    
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        super.touchesEnded(touches, with: event)
-        self.view.endEditing(true)
+        //内部创建rtmclient
+//        _initialize(role: role) { success in
+//            print("_initialize: \(success)")
+//        }
+        
+        print("will joinChannel  \(self.showRoomId) \(self.currentUid)")
+        let options = AgoraRtcChannelMediaOptions()
+        options.clientRoleType = isBroadcaster ? .broadcaster : .audience
+        options.publishMicrophoneTrack = isBroadcaster
+        options.publishCameraTrack = isBroadcaster
+        options.autoSubscribeAudio = !isBroadcaster
+        options.autoSubscribeVideo = !isBroadcaster
+        rtcEngine.joinChannel(byToken: showRoomToken,
+                              channelId: showRoomId,
+                              uid: currentUid,
+                              mediaOptions: options) { channel, uid, elapsed in
+            print("joinChannel success")
+        }
     }
 }
 
-extension Pure1v1RoomViewController {
-    private func _initialize(rtmClient: AgoraRtmClientKit?, completion: @escaping ((Bool)->())) {
+extension EMShowTo1v1RoomViewController {
+    private func setupCanvas(_ canvasView: UIView?) {
+        if role == .caller {
+            _setupRemoteVideo(roomId: showRoomId, uid: showUserId, canvasView: canvasView)
+        } else {
+            _setupLocalVideo(uid: currentUid, canvasView: canvasView)
+        }
+    }
+    
+    private func _setupLocalVideo(uid: UInt, canvasView: UIView?) {
+        //cannot setup canvasView = nil multiple times
+        if canvas.view == canvasView {
+            return
+        }
+        canvas.view = canvasView
+        canvas.uid = uid
+        canvas.mirrorMode = .auto
+        rtcEngine.enableAudio()
+        rtcEngine.enableVideo()
+        rtcEngine.setDefaultAudioRouteToSpeakerphone(true)
+        rtcEngine.setupLocalVideo(canvas)
+        rtcEngine.startPreview()
+        
+        
+        //setup configuration after join channel
+        rtcEngine.setVideoEncoderConfiguration(videoEncoderConfig!)
+
+        let cameraConfig = AgoraCameraCapturerConfiguration()
+        cameraConfig.cameraDirection = .front
+        cameraConfig.dimensions = videoEncoderConfig!.dimensions
+        cameraConfig.frameRate = Int32(videoEncoderConfig!.frameRate.rawValue)
+        rtcEngine.setCameraCapturerConfiguration(cameraConfig)
+    }
+    
+    private func _setupRemoteVideo(roomId: String, uid: UInt, canvasView: UIView?) {
+        let videoCanvas = AgoraRtcVideoCanvas()
+        videoCanvas.uid = uid
+        videoCanvas.view = canvasView
+        videoCanvas.renderMode = .hidden
+        let ret = rtcEngine.setupRemoteVideo(videoCanvas)
+        print("setupRemoteVideo: \(ret)")
+    }
+    
+    private func publishMedia(_ publish: Bool) {
+        print("publishMedia: \(publish)")
+        let mediaOptions = AgoraRtcChannelMediaOptions()
+        mediaOptions.publishMicrophoneTrack = publish
+        mediaOptions.publishCameraTrack = publish
+        mediaOptions.autoSubscribeVideo = publish
+        mediaOptions.autoSubscribeAudio = publish
+        rtcEngine.updateChannel(with: mediaOptions)
+    }
+}
+
+extension EMShowTo1v1RoomViewController {
+    private func _initialize(completion: @escaping ((Bool)->())) {
         let config = CallConfig()
         config.appId = KeyCenter.AppId
         config.userId = currentUid
         config.rtcEngine = rtcEngine
-        let manager = CallRtmMessageManager(appId: config.appId,
-                                            userId: "\(config.userId)",
-                                            rtmToken: rtmToken,
-                                            rtmClient: rtmClient)
-        config.callMessageManager = manager
-        messageManager = manager
-        self.rtmClient = rtmClient
+        config.callMessageManager = messageManager
         self.api.initialize(config: config)
+        
         prepareConfig.roomId = "\(currentUid)"
         prepareConfig.localView = rightView
         prepareConfig.remoteView = leftView
+        
         api.addListener(listener: self)
-        api.prepareForCall(prepareConfig: prepareConfig) { err in
+        self.api.prepareForCall(prepareConfig: prepareConfig) { err in
             completion(err == nil)
         }
     }
     
     @objc func closeAction() {
         api.deinitialize {
+            self.role = .callee
             self.api.removeListener(listener: self)
             self.rtcEngine.stopPreview()
             self.rtcEngine.delegate = nil
             self.rtcEngine.leaveChannel()
             AgoraRtcEngineKit.destroy()
-            self.rtmClient?.logout()
-            self.rtmClient?.destroy()
-            self.messageManager?.clean()
+            self.messageManager.logout()
             self.dismiss(animated: true)
         }
     }
 
     @objc func callAction() {
-        guard self.callState == .prepared else {
-            initCallApi { err in
-            }
-            AUIToast.show(text: "CallAPi初始化中")
+        guard role == .caller else {
             return
         }
-        api.call(remoteUserId: targetUserId) {[weak self] error in
+        
+        publishMedia(false)
+        api.call(remoteUserId: showUserId) {[weak self] error in
             guard let _ = error, self?.callState == .calling else {return}
             self?.api.cancelCall(completion: { err in
             })
@@ -286,7 +331,10 @@ extension Pure1v1RoomViewController {
     }
     
     @objc func hangupAction() {
-        api.hangup(remoteUserId: connectedUserId ?? 0, reason: "hangup by user") { error in
+        guard let connectedUserId = connectedUserId else {
+            return
+        }
+        api.hangup(remoteUserId: connectedUserId, reason: "hangup by user") { error in
         }
     }
     
@@ -299,34 +347,10 @@ extension Pure1v1RoomViewController {
         mediaOptions.publishMicrophoneTrack = muteAudioButton.isSelected == false ? true : false
         rtcEngine.updateChannelEx(with: mediaOptions, connection: connection)
     }
-    
-    //创建RTM
-    private func _createRtmClient() -> AgoraRtmClientKit {
-        let rtmConfig = AgoraRtmClientConfig(appId: KeyCenter.AppId, userId: "\(currentUid)")
-        if rtmConfig.userId.count == 0 {
-            print("userId is empty")
-        }
-        if rtmConfig.appId.count == 0 {
-            print("appId is empty")
-        }
-
-        var rtmClient: AgoraRtmClientKit? = nil
-        do {
-            rtmClient = try AgoraRtmClientKit(rtmConfig, delegate: nil)
-        } catch {
-            print("create rtm client fail: \(error.localizedDescription)")
-        }
-        return rtmClient!
-    }
 }
 
-extension Pure1v1RoomViewController {
-    @objc func targetUserChanged() {
-        targetUserId = UInt(targetUserTextField.text ?? "") ?? 0
-    }
-}
 
-extension Pure1v1RoomViewController: AgoraRtcEngineDelegate {
+extension EMShowTo1v1RoomViewController: AgoraRtcEngineDelegate {
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didJoinedOfUid uid: UInt, elapsed: Int) {
         print("didJoinedOfUid: \(uid)")
     }
@@ -336,9 +360,8 @@ extension Pure1v1RoomViewController: AgoraRtcEngineDelegate {
 }
 
 
-extension Pure1v1RoomViewController:CallApiListenerProtocol {
+extension EMShowTo1v1RoomViewController:CallApiListenerProtocol {
     func tokenPrivilegeWillExpire() {
-        //更新token
         NetworkManager.shared.generateTokens(channelName: "",
                                              uid: "\(currentUid)",
                                              tokenGeneratorType: .token007,
@@ -347,8 +370,10 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
             let rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
             self.prepareConfig.rtcToken = rtcToken
             let rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
-            self.rtmToken = rtmToken
             self.api.renewToken(with: rtcToken, rtmToken: rtmToken)
+            
+            self.showRoomToken = rtcToken
+            rtcEngine.renewToken(self.showRoomToken)
         }
     }
     
@@ -383,26 +408,11 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
             // 触发状态的用户是自己才处理
             if currentUid == toUserId {
                 connectedUserId = fromUserId
-//                if prepareConfig.autoAccept == false {
-                    AUIAlertView()
-                        .isShowCloseButton(isShow: true)
-                        .title(title: "用户 \(fromUserId) 邀请您1对1通话")
-                        .rightButton(title: "同意")
-                        .leftButton(title: "拒绝")
-                        .leftButtonTapClosure {[weak self] in
-                            guard let self = self else { return }
-                            self.api.reject(remoteUserId: fromUserId, reason: "reject by user") { err in
-                            }
-                        }
-                        .rightButtonTapClosure(onTap: {[weak self] text in
-                            guard let self = self else { return }
-                            self.api.accept(remoteUserId: fromUserId) { err in
-                            }
-                        })
-                        .show()
-//                }
+                self.api.accept(remoteUserId: fromUserId) { err in
+                }
             } else if currentUid == fromUserId {
                 connectedUserId = toUserId
+                
 //                if prepareConfig.autoAccept == false {
                     AUIAlertView()
                         .isShowCloseButton(isShow: true)
@@ -418,20 +428,20 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
             }
             break
         case .connected:
-            let costMap = eventInfo[kCostTimeMap] as? [String: Int] ?? [:]
-            AUIToast.show(text: getCostInfo(map: costMap), postion: .bottom)
             AUIAlertManager.hiddenView()
+            let costMap = eventInfo[kCostTimeMap] as? [String: Int] ?? [:]
+            AUIToast.show(text: getCostInfo(map: costMap))
             
-            //setup configuration after join channel ex
-            if let videoEncoderConfig = videoEncoderConfig {
-                rtcEngine.setVideoEncoderConfiguration(videoEncoderConfig)
-                let cameraConfig = AgoraCameraCapturerConfiguration()
-                cameraConfig.cameraDirection = .front
-                cameraConfig.dimensions = videoEncoderConfig.dimensions
-                cameraConfig.frameRate = Int32(videoEncoderConfig.frameRate.rawValue)
-                rtcEngine.setCameraCapturerConfiguration(cameraConfig)
-            }
+            //setup configuration after join channel
+            rtcEngine.setVideoEncoderConfiguration(videoEncoderConfig!)
+
+            let cameraConfig = AgoraCameraCapturerConfiguration()
+            cameraConfig.cameraDirection = .front
+            cameraConfig.dimensions = videoEncoderConfig!.dimensions
+            cameraConfig.frameRate = Int32(videoEncoderConfig!.frameRate.rawValue)
+            rtcEngine.setCameraCapturerConfiguration(cameraConfig)
         case .prepared:
+            AUIAlertManager.hiddenView()
             switch stateReason {
             case .localHangup, .remoteHangup:
                 AUIToast.show(text: "通话结束", postion: .bottom)
@@ -439,22 +449,19 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                 AUIToast.show(text: "通话被拒绝")
             case .callingTimeout:
                 AUIToast.show(text: "无应答")
-            case .localCancel, .remoteCancel:
-                AUIToast.show(text: "通话被取消")
             case .remoteCallBusy:
                 AUIToast.show(text: "用户正忙")
             default:
                 break
             }
-            AUIAlertManager.hiddenView()
             connectedUserId = nil
             connectedRoomId = nil
         case .failed:
-            AUIToast.show(text: eventReason, postion: .bottom)
             AUIAlertManager.hiddenView()
+            AUIToast.show(text: eventReason, postion: .bottom)
+            closeAction()
             connectedUserId = nil
             connectedRoomId = nil
-            closeAction()
         default:
             break
         }
@@ -518,4 +525,3 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                                           height: connectStatusLabel.frame.height)
     }
 }
-#endif

@@ -18,6 +18,8 @@
 		DD3667582A38428200969395 /* AUIAlertView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD3667542A38428200969395 /* AUIAlertView.swift */; };
 		DD3667592A38428200969395 /* AUIAlertManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD3667552A38428200969395 /* AUIAlertManager.swift */; };
 		DD36675A2A38428200969395 /* AUIToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD3667572A38428200969395 /* AUIToast.swift */; };
+		DD66E46C2B87469300D3AFB4 /* CallEasemobMessageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD66E46B2B87469300D3AFB4 /* CallEasemobMessageManager.swift */; };
+		DD66E46E2B876F8300D3AFB4 /* EMShowTo1v1RoomViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD66E46D2B876F8300D3AFB4 /* EMShowTo1v1RoomViewController.swift */; };
 		DDCB25CE2B832C000068F62F /* EMPure1v1RoomViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDCB25CD2B832C000068F62F /* EMPure1v1RoomViewController.swift */; };
 		DDE090782A24E8A700752E62 /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE090762A24E8A700752E62 /* NetworkManager.swift */; };
 		DDE090792A24E8A700752E62 /* KeyCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE090772A24E8A700752E62 /* KeyCenter.swift */; };
@@ -44,6 +46,8 @@
 		DD3667542A38428200969395 /* AUIAlertView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AUIAlertView.swift; sourceTree = "<group>"; };
 		DD3667552A38428200969395 /* AUIAlertManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AUIAlertManager.swift; sourceTree = "<group>"; };
 		DD3667572A38428200969395 /* AUIToast.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AUIToast.swift; sourceTree = "<group>"; };
+		DD66E46B2B87469300D3AFB4 /* CallEasemobMessageManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CallEasemobMessageManager.swift; sourceTree = "<group>"; };
+		DD66E46D2B876F8300D3AFB4 /* EMShowTo1v1RoomViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EMShowTo1v1RoomViewController.swift; sourceTree = "<group>"; };
 		DDCB25CD2B832C000068F62F /* EMPure1v1RoomViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EMPure1v1RoomViewController.swift; sourceTree = "<group>"; };
 		DDE090762A24E8A700752E62 /* NetworkManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
 		DDE090772A24E8A700752E62 /* KeyCenter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeyCenter.swift; sourceTree = "<group>"; };
@@ -93,6 +97,7 @@
 		607FACD21AFB9204008FA782 /* Example for CallAPI */ = {
 			isa = PBXGroup;
 			children = (
+				DD66E46A2B87469300D3AFB4 /* MessageManager */,
 				DD18F9572A29E6F4009EEEC0 /* Widget */,
 				DD18F9522A28974F009EEEC0 /* Extension */,
 				DDE090772A24E8A700752E62 /* KeyCenter.swift */,
@@ -102,6 +107,7 @@
 				DD18F9502A286AC4009EEEC0 /* ShowTo1v1RoomViewController.swift */,
 				DDEFE3C62A52D626006D6D2E /* Pure1v1RoomViewController.swift */,
 				DDCB25CD2B832C000068F62F /* EMPure1v1RoomViewController.swift */,
+				DD66E46D2B876F8300D3AFB4 /* EMShowTo1v1RoomViewController.swift */,
 				607FACD91AFB9204008FA782 /* Main.storyboard */,
 				607FACDC1AFB9204008FA782 /* Images.xcassets */,
 				607FACDE1AFB9204008FA782 /* LaunchScreen.xib */,
@@ -170,6 +176,14 @@
 				DD3667572A38428200969395 /* AUIToast.swift */,
 			);
 			path = Toast;
+			sourceTree = "<group>";
+		};
+		DD66E46A2B87469300D3AFB4 /* MessageManager */ = {
+			isa = PBXGroup;
+			children = (
+				DD66E46B2B87469300D3AFB4 /* CallEasemobMessageManager.swift */,
+			);
+			path = MessageManager;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -341,11 +355,13 @@
 				DDCB25CE2B832C000068F62F /* EMPure1v1RoomViewController.swift in Sources */,
 				DDE090792A24E8A700752E62 /* KeyCenter.swift in Sources */,
 				DD3667592A38428200969395 /* AUIAlertManager.swift in Sources */,
+				DD66E46E2B876F8300D3AFB4 /* EMShowTo1v1RoomViewController.swift in Sources */,
 				DDE090782A24E8A700752E62 /* NetworkManager.swift in Sources */,
 				607FACD81AFB9204008FA782 /* ViewController.swift in Sources */,
 				DD18F9512A286AC4009EEEC0 /* ShowTo1v1RoomViewController.swift in Sources */,
 				DD3667582A38428200969395 /* AUIAlertView.swift in Sources */,
 				DDEFE3C72A52D626006D6D2E /* Pure1v1RoomViewController.swift in Sources */,
+				DD66E46C2B87469300D3AFB4 /* CallEasemobMessageManager.swift in Sources */,
 				607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
