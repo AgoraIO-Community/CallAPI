@@ -68,7 +68,7 @@ import AgoraRtcKit
 //    case joinRTCFailed = 4                        //加入RTC失败[已废弃，请使用onCallErrorOccur(state: rtcOccurError)]
     case joinRTCSuccessed = 5                     //加入RTC成功
 //    case rtmSetupFailed = 6                       //设置RTM失败[已废弃，请使用onCallErrorOccur(state: rtmSetupFail)]
-//    case rtmSetupSuccessed = 7                    //设置RTM成功[2.0.0已废弃，请]
+//    case rtmSetupSuccessed = 7                    //设置RTM成功[2.0.0已废弃，Rtm是否成功请通过CallRtmMessageManager的login显式调用]
 //    case messageFailed = 8                        //消息发送失败[已废弃，请使用onCallErrorOccur(state: sendMessageFail)]
     case stateMismatch = 9                        //状态流转异常
 //    case preparedRoomIdChanged = 10               //prepared了另一个roomId[已废弃]

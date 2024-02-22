@@ -22,7 +22,10 @@ public class CallEasemobMessageManager: NSObject {
         let option = EMOptions(appkey: appKey)
         EMClient.shared().initializeSDK(with: option)
     }
-    
+}
+
+//MARK: public
+extension CallEasemobMessageManager {
     public func login(completion: @escaping ((NSError?)->())) {
         let uid = userId
         let pwd = uid
@@ -60,7 +63,7 @@ public class CallEasemobMessageManager: NSObject {
     }
 }
 
-
+//MARK: private
 extension CallEasemobMessageManager {
     private func callMessagePrint(_ message: String, _ logLevel: Int = 0) {
         let tag = "[CallEasemobMessageManager]"
@@ -98,6 +101,7 @@ extension CallEasemobMessageManager {
     }
 }
 
+//MARK: ICallMessageManager
 extension CallEasemobMessageManager: ICallMessageManager {
     public func sendMessage(userId: String, 
                             messageId: Int,
@@ -131,6 +135,7 @@ extension CallEasemobMessageManager: ICallMessageManager {
     }
 }
 
+//MARK: EMChatManagerDelegate
 extension CallEasemobMessageManager: EMChatManagerDelegate {
     public func messagesDidReceive(_ aMessages: [EMChatMessage]) {
         for message in aMessages {
