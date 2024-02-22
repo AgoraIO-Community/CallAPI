@@ -119,23 +119,50 @@ import AgoraRtcKit
     case error = 2
 }
 
+
+/// 信令回调协议
 @objc public protocol ICallMessageListener: NSObjectProtocol {
-    //TODO: on error
+    
+    /// 收到消息的回调
+    /// - Parameter message: 收到的消息
     func onMessageReceive(message: String)
+    
+    /// token过期回调，如果信令系统没有或者不需要则忽略
+    /// - Parameter channelName: 频道名
     @objc optional func onTokenWillExpire(channelName: String?)
+    
+    /// 信令断连的回调，如果信令系统不会出现此情况则忽略
+    /// - Parameter channelName: 频道名
     @objc optional func onDisconnected(channelName: String)
     
+    /// 信令日志回调
+    /// - Parameters:
+    ///   - message: 日志消息内容
+    ///   - logLevel: 日志优先级
     @objc optional func debugInfo(message: String, logLevel: Int)
 }
 
+/// 信令抽象协议
 @objc public protocol ICallMessageManager: NSObjectProtocol {
+    
+    /// CallApi往信令系统发消息
+    /// - Parameters:
+    ///   - userId: 目标用户id
+    ///   - messageId: 消息id
+    ///   - message: 消息对象
+    ///   - completion: 完成回调
     func sendMessage(userId: String,
                      messageId: Int,
                      message: String,
                      completion: ((NSError?)-> Void)?)
+    
+    /// 监听信令系统回调
+    /// - Parameter listener: <#listener description#>
     func addListener(listener: ICallMessageListener)
+    
+    /// 移除信令系统回调
+    /// - Parameter listener: <#listener description#>
     func removeListener(listener: ICallMessageListener)
-//    func clean()
 }
 
 @objc public protocol CallApiListenerProtocol: NSObjectProtocol {
