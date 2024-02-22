@@ -19,6 +19,7 @@ import es.dmoral.toasty.Toasty
 import io.agora.onetoone.*
 import io.agora.onetoone.databinding.ActivityLivingBinding
 import io.agora.onetoone.http.HttpManager
+import io.agora.onetoone.message.createRtmMessageManager
 import io.agora.onetoone.model.EnterRoomInfoModel
 import io.agora.onetoone.utils.Ov1Logger
 import io.agora.onetoone.utils.PermissionHelp
@@ -198,7 +199,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             appId = BuildConfig.AG_APP_ID,
             userId = enterModel.currentUid.toInt(),
             rtcEngine = _createRtcEngine(),
-            rtmClient = rtmClient
+            callMessageManager = createRtmMessageManager(rtmClient, BuildConfig.AG_APP_ID, enterModel.currentUid.toInt(), "")
         )
         api.initialize(config)
 
@@ -524,7 +525,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         var rtmTokenTemp = ""
         val runnable = Runnable {
             if (rtcTokenTemp.isNotEmpty() && rtmTokenTemp.isNotEmpty()) {
-                api.renewToken(rtcTokenTemp, rtmTokenTemp)
+                api.renewToken(rtcTokenTemp)
                 if (enterModel.isBrodCaster) {
                     rtcEngine.renewToken(enterModel.showRoomToken)
                 }

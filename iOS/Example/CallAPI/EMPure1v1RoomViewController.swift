@@ -1,17 +1,18 @@
 //
-//  Pure1v1RoomViewController.swift
+//  EMPure1v1RoomViewController.swift
 //  CallAPI_Example
 //
-//  Created by wushengtao on 2023/7/3.
-//  Copyright © 2023 Agora. All rights reserved.
+//  Created by wushengtao on 2024/2/8.
+//  Copyright © 2024 Agora. All rights reserved.
 //
+
 
 import UIKit
 import CallAPI
 import AgoraRtcKit
 import AgoraRtmKit
 
-class Pure1v1RoomViewController: UIViewController {
+class EMPure1v1RoomViewController: UIViewController {
     private var currentUid: UInt             //当前用户UID
     private var prepareConfig: PrepareConfig
     var videoEncoderConfig: AgoraVideoEncoderConfiguration?
@@ -28,8 +29,8 @@ class Pure1v1RoomViewController: UIViewController {
         return view
     }()
     private lazy var rtcEngine = _createRtcEngine()
-    private var rtmToken: String
-    private var rtmClient: AgoraRtmClientKit?
+    private lazy var messageManager = _createMessageManager()
+    private var emToken: String = ""
     
     private var connectedUserId: UInt?
     private var connectedRoomId: String?
@@ -83,6 +84,12 @@ class Pure1v1RoomViewController: UIViewController {
         
         engine.setClientRole(.broadcaster)
         return engine
+    }
+    
+    private func _createMessageManager() -> CallEasemobMessageManager {
+        let manager = CallEasemobMessageManager(appKey: KeyCenter.IMAppKey, userId: "\(currentUid)")
+        
+        return manager
     }
     
     private lazy var currentUserLabel: UILabel = {
@@ -139,14 +146,6 @@ class Pure1v1RoomViewController: UIViewController {
         return btn
     }()
     
-    private lazy var connectStatusLabel: UILabel = {
-        let label = UILabel()
-        label.textColor = .white
-        label.font = UIFont.systemFont(ofSize: 12)
-        label.numberOfLines = 0
-        return label
-    }()
-    
     private lazy var canvas: AgoraRtcVideoCanvas = {
         let canvas = AgoraRtcVideoCanvas()
         canvas.mirrorMode = .disabled
@@ -160,7 +159,7 @@ class Pure1v1RoomViewController: UIViewController {
     required init(currentUid: UInt, prepareConfig: PrepareConfig, rtmToken: String) {
         self.currentUid = currentUid
         self.prepareConfig = prepareConfig
-        self.rtmToken = rtmToken
+//        self.rtmToken = rtmToken
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -184,8 +183,6 @@ class Pure1v1RoomViewController: UIViewController {
         view.addSubview(hangupButton)
         view.addSubview(muteAudioButton)
         
-        view.addSubview(connectStatusLabel)
-        
         currentUserLabel.frame = CGRect(x: 10, y: 80, width: 200, height: 40)
         targetUserLabel.sizeToFit()
         targetUserTextField.frame = CGRect(x: 10 + targetUserLabel.frame.width + 10, y: 120, width: 200, height: 40)
@@ -205,24 +202,22 @@ class Pure1v1RoomViewController: UIViewController {
         rightView.frame = CGRect(x: view.frame.width / 2, y: 50, width: view.frame.width / 2, height: view.frame.height / 2)
         
         self.callState = .idle
-        //外部创建rtmClient
-        rtmClient = _createRtmClient()
         initCallApi { success in
         }
     }
     
     private func initCallApi(completion: @escaping ((Bool)->())) {
         //外部创建需要自行管理login
-        NSLog("login")
-        rtmClient?.login(rtmToken) {[weak self] resp, err in
+        self.messageManager.login() {[weak self] err in
             guard let self = self else {return}
             if let err = err {
                 NSLog("login error = \(err.localizedDescription)")
                 completion(false)
                 return
             }
-            self._initialize(rtmClient: self.rtmClient, completion: completion)
+            self._initialize(completion: completion)
         }
+        
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -231,17 +226,13 @@ class Pure1v1RoomViewController: UIViewController {
     }
 }
 
-extension Pure1v1RoomViewController {
-    private func _initialize(rtmClient: AgoraRtmClientKit?, completion: @escaping ((Bool)->())) {
+extension EMPure1v1RoomViewController {
+    private func _initialize(completion: @escaping ((Bool)->())) {
         let config = CallConfig()
         config.appId = KeyCenter.AppId
         config.userId = currentUid
         config.rtcEngine = rtcEngine
-        config.callMessageManager = CallRtmMessageManager(appId: config.appId,
-                                                          userId: "\(config.userId)",
-                                                          rtmToken: rtmToken,
-                                                          rtmClient: rtmClient)
-        self.rtmClient = rtmClient
+        config.callMessageManager = self.messageManager
         self.api.initialize(config: config)
         prepareConfig.roomId = "\(currentUid)"
         prepareConfig.localView = rightView
@@ -259,8 +250,7 @@ extension Pure1v1RoomViewController {
             self.rtcEngine.delegate = nil
             self.rtcEngine.leaveChannel()
             AgoraRtcEngineKit.destroy()
-            self.rtmClient?.logout()
-            self.rtmClient?.destroy()
+            self.messageManager.logout()
             self.dismiss(animated: true)
         }
     }
@@ -314,13 +304,13 @@ extension Pure1v1RoomViewController {
     }
 }
 
-extension Pure1v1RoomViewController {
+extension EMPure1v1RoomViewController {
     @objc func targetUserChanged() {
         targetUserId = UInt(targetUserTextField.text ?? "") ?? 0
     }
 }
 
-extension Pure1v1RoomViewController: AgoraRtcEngineDelegate {
+extension EMPure1v1RoomViewController: AgoraRtcEngineDelegate {
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didJoinedOfUid uid: UInt, elapsed: Int) {
         print("didJoinedOfUid: \(uid)")
     }
@@ -330,19 +320,17 @@ extension Pure1v1RoomViewController: AgoraRtcEngineDelegate {
 }
 
 
-extension Pure1v1RoomViewController:CallApiListenerProtocol {
+extension EMPure1v1RoomViewController:CallApiListenerProtocol {
     func tokenPrivilegeWillExpire() {
         //更新token
         NetworkManager.shared.generateTokens(channelName: "",
                                              uid: "\(currentUid)",
                                              tokenGeneratorType: .token007,
-                                             tokenTypes: [.rtc, .rtm]) {[weak self] tokens in
+                                             tokenTypes: [.rtc]) {[weak self] tokens in
             guard let self = self else {return}
             let rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
             self.prepareConfig.rtcToken = rtcToken
-            let rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
-            self.rtmToken = rtmToken
-            self.api.renewToken(with: rtcToken, rtmToken: rtmToken)
+            self.api.renewToken(with: rtcToken, rtmToken: "")
         }
     }
     
@@ -454,8 +442,8 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
         }
     }
     
-    @objc func onCallEventChanged(with event: CallEvent, eventReason: String?) {
-        print("onCallEventChanged event: \(event.rawValue), eventReason: \(eventReason ?? "")")
+    @objc func onCallEventChanged(with event: CallEvent) {
+        print("onCallEventChanged: \(event.rawValue)")
         switch event {
         case .remoteLeave:
             hangupAction()
@@ -480,35 +468,5 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
         default:
             print("[CallApi][Error]\(message)")
         }
-    }
-    
-    @objc func onCallConnected(roomId: String,
-                               callUserId: UInt,
-                               currentUserId: UInt,
-                               timestamp: UInt64) {
-        print("onCallConnected roomId: \(roomId) callUserId: \(callUserId) currentUserId: \(currentUserId) timestamp: \(timestamp)")
-        
-        connectStatusLabel.text = "通话开始 \nRTC 频道号: \(roomId) \n呼叫用户id: \(callUserId) \n当前用户id: \(currentUserId) \n开始时间戳: \(timestamp)"
-        layoutConnectStatus()
-    }
-    
-    @objc func onCallDisconnected(roomId: String,
-                                  hangupUserId: UInt,
-                                  currentUserId: UInt,
-                                  timestamp: UInt64,
-                                  duration: UInt64) {
-        print("onCallDisconnected roomId: \(roomId) hangupUserId: \(hangupUserId) currentUserId: \(currentUserId) timestamp: \(timestamp) duration: \(duration)ms")
-        
-        connectStatusLabel.text = "通话结束 \nRTC 频道号: \(roomId) \n挂断用户id: \(hangupUserId) \n当前用户id: \(currentUserId) \n结束时间戳: \(timestamp) \n通话时长: \(duration)ms"
-        layoutConnectStatus()
-    }
-    
-    private func layoutConnectStatus() {
-        connectStatusLabel.frame = self.view.bounds
-        connectStatusLabel.sizeToFit()
-        connectStatusLabel.frame = CGRect(x: 20,
-                                          y: self.view.frame.height - connectStatusLabel.frame.height - 40,
-                                          width: connectStatusLabel.frame.width,
-                                          height: connectStatusLabel.frame.height)
     }
 }

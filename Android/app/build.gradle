@@ -24,6 +24,9 @@ android {
 
         buildConfigField("String", "AG_APP_ID", "\"${project.getProperty("AG_APP_ID")}\"")
         buildConfigField("String", "AG_APP_CERTIFICATE", "\"${project.getProperty("AG_APP_CERTIFICATE")}\"")
+        buildConfigField "String", "IM_APP_KEY", "\"${IM_APP_KEY}\""
+        buildConfigField "String", "IM_APP_CLIENT_ID", "\"${IM_APP_CLIENT_ID}\""
+        buildConfigField "String", "IM_APP_CLIENT_SECRET", "\"${IM_APP_CLIENT_SECRET}\""
     }
 
     signingConfigs {

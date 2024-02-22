@@ -12,7 +12,7 @@ extension PrepareConfig {
         let config = PrepareConfig()
         config.roomId = roomId
         config.rtcToken = rtcToken
-        config.rtmToken = rtmToken
+//        config.rtmToken = rtmToken
         config.localView = localView
         config.remoteView = remoteView
 //        config.autoAccept = autoAccept
@@ -29,7 +29,8 @@ extension CallConfig {
         config.appId = appId
         config.userId = userId
         config.rtcEngine = rtcEngine
-        config.rtmClient = rtmClient
+//        config.rtmClient = rtmClient
+        config.callMessageManager = callMessageManager
         return config
     }
 }

@@ -2,7 +2,6 @@ package io.agora.onetoone
 
 import android.view.ViewGroup
 import io.agora.rtc2.RtcEngineEx
-import io.agora.rtm.RtmClient
 
 open class CallConfig(
     //声网App Id
@@ -11,8 +10,8 @@ open class CallConfig(
     var userId: Int = 0,
     //rtc engine实例
     var rtcEngine: RtcEngineEx? = null,
-    //[可选]rtm client实例，如果设置则需要负责rtmClient的login和logout，需要使用appId和userId创建
-    var rtmClient: RtmClient? = null,
+    //ICallMessageManager实例
+    var callMessageManager: ICallMessageManager
 ){}
 
 open class PrepareConfig(
@@ -114,8 +113,8 @@ enum class CallErrorEvent(val value: Int) {
     NormalError(0),         // 通用错误
     RtcOccurError(100),     // rtc出现错误
     StartCaptureFail(110),  // rtc开启采集失败
-    RtmSetupFail(200),      // rtm初始化失败
-    SendMessageFail(210)    // 消息发送失败
+    // RtmSetupFail(200),      // rtm初始化失败[已废弃，改为messageManager自己手动初始化]
+    SendMessageFail(210)    // 消息的错误，使用如果使用CallRtmMessageManager则是AgoraRtmErrorCode，自定义信道则是对应信道的error code
 }
 
 /*
@@ -124,7 +123,7 @@ enum class CallErrorEvent(val value: Int) {
 enum class CallErrorCodeType(val value: Int) {
     Normal(0),   // 业务类型的错误，暂无
     Rtc(1),      // rtc的错误，使用AgoraErrorCode
-    Rtm(2)       // rtm的错误，使用AgoraRtmErrorCode
+    Message(2)       // rtm的错误，使用AgoraRtmErrorCode
 }
 
 /*
@@ -134,6 +133,23 @@ enum class CallLogLevel(val value: Int) {
     Normal(0),
     Warning(1),
     Error(2),
+}
+
+/*
+ * 信息通道回调
+ */
+interface ICallMessageListener {
+    fun onMessageReceive(message: Map<String, Any>)
+    fun debugInfo(message: String, logLevel: Int)
+}
+
+/*
+ * CallApi 使用的信息通道接口, 可以使用自己实现的信息通道
+ */
+interface ICallMessageManager {
+    fun sendMessage(userId: String, message: Map<String, Any>, completion: ((AGError?)-> Unit)?)
+    fun addListener(listener: ICallMessageListener)
+    fun removeListener(listener: ICallMessageListener)
 }
 
 interface ICallApiListener {
@@ -227,7 +243,7 @@ interface ICallApi {
     /**
      * 更新自己的rtc/rtm的token
      */
-    fun renewToken(rtcToken: String, rtmToken: String)
+    fun renewToken(rtcToken: String)
 
     /**
      * 准备通话环境，需要调用成功才可以进行呼叫，如需要更换通话的RTC 频道号可以重复调用，确保调用时必须是非通话状态(非calling、connecting、connected)才可调用成功
