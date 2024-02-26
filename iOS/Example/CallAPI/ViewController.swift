@@ -9,6 +9,7 @@
 import UIKit
 import CallAPI
 import AgoraRtcKit
+import SVProgressHUD
 
 enum CallRole: Int {
     case callee = 0
@@ -30,7 +31,7 @@ class ViewController: UIViewController {
     private let videoEncoderConfig = AgoraVideoEncoderConfiguration()
     
     private lazy var modeControl: UISegmentedControl = {
-        let items = ["秀场转1v1", "纯1v1"]
+        let items = ["RTM秀场1v1", "RTM纯1v1", "环信秀场1v1", "环信纯1v1"]
         let control = UISegmentedControl(items: items)
         control.selectedSegmentIndex = 0
         control.addTarget(self, action: #selector(modeChanged), for: .valueChanged)
@@ -82,7 +83,7 @@ class ViewController: UIViewController {
         } set {
             UserDefaults.standard.set(newValue, forKey: "modeIndex")
             
-            if newValue == 0 {
+            if newValue % 2 == 0 {
                 roleControl.isHidden = false
                 enterButton1.isHidden = false
                 enterButton2.isHidden = true
@@ -335,7 +336,7 @@ class ViewController: UIViewController {
     }
     
     private func updateUI() {
-        if role == .caller, modeIndex == 0 {
+        if role == .caller, modeIndex % 2 == 0 {
             callUserLabel.isHidden = false
             callUserTextField.isHidden = false
         } else {
@@ -343,7 +344,7 @@ class ViewController: UIViewController {
             callUserTextField.isHidden = true
         }
         
-        modeControl.frame = CGRect(x: 10, y: 80, width: 200, height: 40)
+        modeControl.frame = CGRect(x: 10, y: 80, width: view.frame.width - 20, height: 40)
         var topEdge: CGFloat = modeControl.frame.origin.y + modeControl.frame.height + 10
         if roleControl.isHidden == false {
             roleControl.frame = CGRect(x: 10, y: topEdge, width: 200, height: 40)
@@ -448,10 +449,12 @@ class ViewController: UIViewController {
         let prepareConfig = PrepareConfig()
 //        prepareConfig.autoAccept = autoAcceptSwitch.isOn
         prepareConfig.autoJoinRTC = autoJoinRTCSwitch.isOn
+        SVProgressHUD.show()
         NetworkManager.shared.generateTokens(channelName: "",
                                              uid: "\(currentUserId)",
                                              tokenGeneratorType: .token007,
                                              tokenTypes: [.rtc, .rtm]) {[weak self] tokens in
+            SVProgressHUD.dismiss()
             guard let self = self else {return}
             self.view.isUserInteractionEnabled = true
             guard tokens.count == 2 else {
@@ -463,25 +466,34 @@ class ViewController: UIViewController {
             
             let targetUserId = role == .caller ? "\(callUserId)" : "\(currentUserId)"
             
+            var showVc: UIViewController? = nil
+            if modeIndex == 0 {
             #if canImport(AgoraRtmKit)
-            let vc = ShowTo1v1RoomViewController(showRoomId: "\(targetUserId)_live",
-                                                 showUserId: role == .callee ? currentUserId : callUserId,
-                                                 showRoomToken: prepareConfig.rtcToken,
-                                                 currentUid: currentUserId,
-                                                 role: role,
-                                                 rtmToken: tokens[AgoraTokenType.rtm.rawValue]!,
-                                                 prepareConfig: prepareConfig)
+                let vc = ShowTo1v1RoomViewController(showRoomId: "\(targetUserId)_live",
+                                                     showUserId: role == .callee ? currentUserId : callUserId,
+                                                     showRoomToken: prepareConfig.rtcToken,
+                                                     currentUid: currentUserId,
+                                                     role: role,
+                                                     rtmToken: tokens[AgoraTokenType.rtm.rawValue]!,
+                                                     prepareConfig: prepareConfig)
+                vc.videoEncoderConfig = videoEncoderConfig
+                showVc = vc
             #else
-            let vc = EMShowTo1v1RoomViewController(showRoomId: "\(targetUserId)_live",
-                                                   showUserId: role == .callee ? currentUserId : callUserId,
-                                                   showRoomToken: prepareConfig.rtcToken,
-                                                   currentUid: currentUserId,
-                                                   role: role,
-                                                   rtmToken: tokens[AgoraTokenType.rtm.rawValue]!,
-                                                   prepareConfig: prepareConfig)
+                AUIToast.show(text: "CallAPI未包含RTM，请检查引入方式")
             #endif
+            } else {
+                let vc = EMShowTo1v1RoomViewController(showRoomId: "\(targetUserId)_live",
+                                                       showUserId: role == .callee ? currentUserId : callUserId,
+                                                       showRoomToken: prepareConfig.rtcToken,
+                                                       currentUid: currentUserId,
+                                                       role: role,
+                                                       rtmToken: tokens[AgoraTokenType.rtm.rawValue]!,
+                                                       prepareConfig: prepareConfig)
+                vc.videoEncoderConfig = videoEncoderConfig
+                showVc = vc
+            }
+            guard let vc = showVc else { return }
             vc.modalPresentationStyle = .fullScreen
-            vc.videoEncoderConfig = videoEncoderConfig
             self.present(vc, animated: true)
         }
     }
@@ -492,31 +504,41 @@ class ViewController: UIViewController {
         let prepareConfig = PrepareConfig()
 //        prepareConfig.autoAccept = autoAcceptSwitch.isOn
         prepareConfig.autoJoinRTC = autoJoinRTCSwitch.isOn
+        SVProgressHUD.show()
         NetworkManager.shared.generateTokens(channelName: "",
                                              uid: "\(currentUserId)",
                                              tokenGeneratorType: .token007,
                                              tokenTypes: [.rtc, .rtm]) {[weak self] tokens in
+            SVProgressHUD.dismiss()
             guard let self = self else {return}
+            self.view.isUserInteractionEnabled = true
             guard tokens.count == 2 else {
                 print("generateTokens fail")
-                self.view.isUserInteractionEnabled = true
                 return
             }
             prepareConfig.rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
 //            prepareConfig.rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
             
+            var showVc: UIViewController? = nil
+            if modeIndex == 1 {
             #if canImport(AgoraRtmKit)
-            let vc = Pure1v1RoomViewController(currentUid: currentUserId,
-                                               prepareConfig: prepareConfig,
-                                               rtmToken: tokens[AgoraTokenType.rtm.rawValue]!)
+                let vc = Pure1v1RoomViewController(currentUid: currentUserId,
+                                                   prepareConfig: prepareConfig,
+                                                   rtmToken: tokens[AgoraTokenType.rtm.rawValue]!)
+                vc.videoEncoderConfig = videoEncoderConfig
+                showVc = vc
             #else
-            let vc = EMPure1v1RoomViewController(currentUid: currentUserId,
-                                                 prepareConfig: prepareConfig,
-                                                 rtmToken: tokens[AgoraTokenType.rtm.rawValue]!)
+                AUIToast.show(text: "CallAPI未包含RTM，请检查引入方式")
             #endif
+            } else {
+                let vc = EMPure1v1RoomViewController(currentUid: currentUserId,
+                                                     prepareConfig: prepareConfig,
+                                                     rtmToken: tokens[AgoraTokenType.rtm.rawValue]!)
+                vc.videoEncoderConfig = videoEncoderConfig
+                showVc = vc
+            }
+            guard let vc = showVc else { return }
             vc.modalPresentationStyle = .fullScreen
-            vc.videoEncoderConfig = videoEncoderConfig
-            self.view.isUserInteractionEnabled = true
             self.present(vc, animated: true)
         }
     }

@@ -8,6 +8,7 @@ target 'CallAPI_Example' do
   pod 'CallAPI', :path => '../'
   pod 'YYCategories'
   pod 'HyphenateChat'
+  pod 'SVProgressHUD'
 
 end
 
