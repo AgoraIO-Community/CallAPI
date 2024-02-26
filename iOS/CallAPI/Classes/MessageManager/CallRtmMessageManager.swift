@@ -72,7 +72,7 @@ public class CallRtmMessageManager: NSObject {
         
         if !isLoginedRtm {
             loginRtm(rtmClient: rtmClient, token: rtmToken ?? "") {/*[weak self]*/ err in
-                if let err = err, err.errorCode != .ok {
+                if let err = err, err.errorCode != .ok, err.errorCode != .duplicateOperation {
                     completion(NSError(domain: err.reason, code: err.errorCode.rawValue))
                     return
                 }
@@ -191,7 +191,8 @@ extension CallRtmMessageManager: AgoraRtmClientDelegate {
     }
     
     //收到RTM消息
-    public func rtmKit(_ rtmKit: AgoraRtmClientKit, didReceiveMessageEvent event: AgoraRtmMessageEvent) {
+    public func rtmKit(_ rtmKit: AgoraRtmClientKit, 
+                       event: AgoraRtmMessageEvent) {
         guard let data = event.message.rawData,
               let message = String(data: data, encoding: .utf8) else {
                callMessagePrint("on event message parse fail", 1)

@@ -203,21 +203,9 @@ class ShowTo1v1RoomViewController: UIViewController {
         
         //外部创建rtmClient
         rtmClient = _createRtmClient()
-        //外部创建需要自行管理login
-        rtmClient?.login(rtmToken) {[weak self] resp, err in
-            guard let self = self else {return}
-            if let err = err {
-                print("login error = \(err.localizedDescription)")
-                return
-            }
-            self._initialize(rtmClient: self.rtmClient, role: role) { success in
-                print("_initialize: \(success)")
-            }
+        
+        initCallApi { _ in
         }
-        //内部创建rtmclient
-//        _initialize(role: role) { success in
-//            print("_initialize: \(success)")
-//        }
         
         print("will joinChannel  \(self.showRoomId) \(self.currentUid)")
         let options = AgoraRtcChannelMediaOptions()
@@ -251,6 +239,19 @@ class ShowTo1v1RoomViewController: UIViewController {
             print("create rtm client fail: \(error.localizedDescription)")
         }
         return rtmClient!
+    }
+    
+    private func initCallApi(completion: @escaping ((Bool)->())) {
+        //外部创建需要自行管理login
+        rtmClient?.login(rtmToken) {[weak self] resp, err in
+            guard let self = self else {return}
+            if let err = err {
+                print("login error = \(err.localizedDescription)")
+                completion(false)
+                return
+            }
+            self._initialize(rtmClient: self.rtmClient, role: role, completion: completion) 
+        }
     }
 }
 
@@ -310,6 +311,7 @@ extension ShowTo1v1RoomViewController {
 
 extension ShowTo1v1RoomViewController {
     private func _initialize(rtmClient: AgoraRtmClientKit?, role: CallRole, completion: @escaping ((Bool)->())) {
+        print("_initialize...: \(self.callState.rawValue)")
         let config = CallConfig()
         config.appId = KeyCenter.AppId
         config.userId = currentUid
@@ -350,6 +352,13 @@ extension ShowTo1v1RoomViewController {
 
     @objc func callAction() {
         guard role == .caller else {
+            return
+        }
+        
+        if callState == .failed || callState == .idle {
+            initCallApi { _ in
+            }
+            AUIToast.show(text: "CallAPi初始化中")
             return
         }
         
@@ -504,6 +513,8 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
         switch event {
         case .remoteLeave:
             hangupAction()
+        case .rtmLost:
+            AUIToast.show(text: "连接已断开")
         default:
             break
         }

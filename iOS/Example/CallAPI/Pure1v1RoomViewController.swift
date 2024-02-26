@@ -272,7 +272,7 @@ extension Pure1v1RoomViewController {
     }
 
     @objc func callAction() {
-        guard self.callState == .prepared else {
+        if callState == .idle || callState == .failed {
             initCallApi { err in
             }
             AUIToast.show(text: "CallAPi初始化中")
@@ -465,6 +465,8 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
         switch event {
         case .remoteLeave:
             hangupAction()
+        case .rtmLost:
+            AUIToast.show(text: "连接已断开")
         default:
             break
         }
