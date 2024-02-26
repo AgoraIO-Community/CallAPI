@@ -192,7 +192,7 @@ extension CallRtmMessageManager: AgoraRtmClientDelegate {
     
     //收到RTM消息
     public func rtmKit(_ rtmKit: AgoraRtmClientKit, 
-                       event: AgoraRtmMessageEvent) {
+                       didReceiveMessageEvent event: AgoraRtmMessageEvent) {
         guard let data = event.message.rawData,
               let message = String(data: data, encoding: .utf8) else {
                callMessagePrint("on event message parse fail", 1)

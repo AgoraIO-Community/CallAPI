@@ -126,7 +126,7 @@ public class CallApiImpl: NSObject {
             case .idle, .failed:
                 _leaveRTC()
                 connectInfo.clean()
-                config = nil
+//                config = nil
                 isPreparing = false
 //                self.messageManager = nil
             default:
@@ -1095,12 +1095,16 @@ extension CallApiImpl: CallApiProtocol {
             self._notifySendMessageErrorEvent(error: error, reason: "accept fail: ")
         }
         
-        _updateAndNotifyState(state: .connecting, stateReason: .localAccepted, eventInfo: message)
-        _notifyEvent(event: .localAccepted)
-        
         if calleeJoinRTCPolicy == .accepted {
+            /*
+             因为connecting会autosubscribeAudio=true，这里join时是会设置成false，
+             因此如果需要调用该方法，必须在状态机变成connecting之前调用
+             */
             _joinRTCAsBroadcaster(roomId: roomId)
         }
+        
+        _updateAndNotifyState(state: .connecting, stateReason: .localAccepted, eventInfo: message)
+        _notifyEvent(event: .localAccepted)
     }
     
     //拒绝
