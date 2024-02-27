@@ -30,10 +30,11 @@ extension CallEasemobSignalClient {
     public func login(completion: @escaping ((NSError?)->())) {
         let uid = userId
         let pwd = uid
-        let date = Date()
-        callMessagePrint("register start")
         EMClient.shared().chatManager?.add(self, delegateQueue: nil)
         EMClient.shared().add(self, delegateQueue: DispatchQueue.main)
+        
+        let date = Date()
+        callMessagePrint("register start")
         EMClient.shared().register(withUsername: uid, password: pwd) {[weak self] username, err in
             if let err = err, err.code != EMErrorCode.userAlreadyExist {
                 self?.callMessagePrint("register fail: \(String(describing: err.errorDescription))")

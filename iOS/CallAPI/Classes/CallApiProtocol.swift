@@ -18,7 +18,7 @@ import AgoraRtcKit
 
 //TODO: 如何不设置万能token
 @objc public class PrepareConfig: NSObject {
-    public var roomId: String = ""                      //自己的RTC频道名，用于呼叫对端用户时让对端用户进入加入这个RTC频道
+    public var roomId: String = ""                      //自己的RTC频道名，用于呼叫对端用户时让对端用户加入这个RTC频道
     public var rtcToken: String = ""                    //rtc token，需要使用万能token，token创建的时候channel name为空字符串
     public var localView: UIView!                       //显示本地流的画布
     public var remoteView: UIView!                      //显示远端流的画布
