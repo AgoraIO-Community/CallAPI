@@ -28,7 +28,7 @@ class EMPure1v1RoomViewController: UIViewController {
         return view
     }()
     private lazy var rtcEngine = _createRtcEngine()
-    private lazy var messageManager = _createMessageManager()
+    private lazy var signalClient = _createSignalClient()
     private var emToken: String = ""
     
     private var connectedUserId: UInt?
@@ -85,10 +85,10 @@ class EMPure1v1RoomViewController: UIViewController {
         return engine
     }
     
-    private func _createMessageManager() -> CallEasemobMessageManager {
-        let manager = CallEasemobMessageManager(appKey: KeyCenter.IMAppKey, userId: "\(currentUid)")
+    private func _createSignalClient() -> CallEasemobSignalClient {
+        let signalClient = CallEasemobSignalClient(appKey: KeyCenter.IMAppKey, userId: "\(currentUid)")
         
-        return manager
+        return signalClient
     }
     
     private lazy var currentUserLabel: UILabel = {
@@ -207,7 +207,7 @@ class EMPure1v1RoomViewController: UIViewController {
     
     private func initCallApi(completion: @escaping ((Bool)->())) {
         //外部创建需要自行管理login
-        self.messageManager.login() {[weak self] err in
+        self.signalClient.login() {[weak self] err in
             guard let self = self else {return}
             if let err = err {
                 NSLog("login error = \(err.localizedDescription)")
@@ -231,7 +231,7 @@ extension EMPure1v1RoomViewController {
         config.appId = KeyCenter.AppId
         config.userId = currentUid
         config.rtcEngine = rtcEngine
-        config.callMessageManager = self.messageManager
+        config.signalClient = self.signalClient
         self.api.initialize(config: config)
         prepareConfig.roomId = "\(currentUid)"
         prepareConfig.localView = rightView
@@ -249,7 +249,7 @@ extension EMPure1v1RoomViewController {
             self.rtcEngine.delegate = nil
             self.rtcEngine.leaveChannel()
             AgoraRtcEngineKit.destroy()
-            self.messageManager.logout()
+            self.signalClient.logout()
             self.dismiss(animated: true)
         }
     }
@@ -310,7 +310,7 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
             guard let self = self else {return}
             let rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
             self.prepareConfig.rtcToken = rtcToken
-            self.api.renewToken(with: rtcToken, rtmToken: "")
+            self.api.renewToken(with: rtcToken)
         }
     }
     

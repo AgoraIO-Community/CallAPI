@@ -66,8 +66,8 @@ public class CallApiImpl: NSObject {
     private lazy var localFrameProxy: CallLocalFirstFrameProxy = CallLocalFirstFrameProxy(delegate: self)
     private var config: CallConfig? {
         didSet {
-            oldValue?.callMessageManager.removeListener(listener: self)
-            config?.callMessageManager.addListener(listener: self)
+            oldValue?.signalClient.removeListener(listener: self)
+            config?.signalClient.addListener(listener: self)
         }
     }
     private var prepareConfig: PrepareConfig? = nil
@@ -411,7 +411,7 @@ extension CallApiImpl {
             return
         }
         
-        var enableLoginRtm = true
+//        var enableLoginRtm = true
         switch state {
         case .calling, .connecting, .connected:
             let reason = "currently busy"
@@ -419,7 +419,8 @@ extension CallApiImpl {
             completion?(NSError(domain: reason, code: -1))
             return
         case .prepared:
-            enableLoginRtm = false
+//            enableLoginRtm = false
+            break
         case.failed, .idle:
             break
         }
@@ -781,10 +782,10 @@ extension CallApiImpl {
         message[kMessageId] = messageId
         let data = try? JSONSerialization.data(withJSONObject: message)
         let messageStr = String(data: data!, encoding: .utf8)!
-        config?.callMessageManager.sendMessage(userId: "\(userId)",
-                                               messageId: messageId,
-                                               message: messageStr,
-                                               completion: completion)
+        config?.signalClient.sendMessage(userId: "\(userId)",
+                                         messageId: messageId,
+                                         message: messageStr,
+                                         completion: completion)
     }
 }
 
@@ -973,8 +974,8 @@ extension CallApiImpl: CallApiProtocol {
         }
     }
     
-    public func renewToken(with rtcToken: String, rtmToken: String) {
-        _reportMethod(event: "\(#function)", label: "rtcToken=\(rtcToken)&rtmToken=\(rtmToken)")
+    public func renewToken(with rtcToken: String) {
+        _reportMethod(event: "\(#function)", label: "rtcToken=\(rtcToken)")
         guard let roomId = prepareConfig?.roomId else {
             callWarningPrint("renewToken failed, roomid missmatch")
             return
@@ -998,7 +999,7 @@ extension CallApiImpl: CallApiProtocol {
         _prepareForCall(prepareConfig: prepareConfig) { err in
             if let err = err {
                 self._updateAndNotifyState(state: .failed,
-                                           stateReason: .rtmSetupFailed,
+                                           stateReason: .none,
                                            eventReason: err.localizedDescription)
                 completion?(err)
                 return
@@ -1145,7 +1146,7 @@ extension CallApiImpl: CallApiProtocol {
 }
 
 //MARK: CallMessageDelegate
-extension CallApiImpl: ICallMessageListener {
+extension CallApiImpl: ISignalClientListener {
     public func debugInfo(message: String, logLevel: Int) {
         callPrint(message, CallLogLevel(rawValue: logLevel) ?? .normal)
     }
@@ -1167,14 +1168,14 @@ extension CallApiImpl: ICallMessageListener {
         _processRespEvent(reason: messageAction, message: msg)
     }
     
-    public func onTokenWillExpire(channelName: String?) {
-        _notifyTokenPrivilegeWillExpire()
-    }
-    
-    public func onDisconnected(channelName: String) {
-        _updateAndNotifyState(state: .failed, stateReason: .rtmLost)
-        _notifyEvent(event: .rtmLost)
-    }
+//    public func onTokenWillExpire(channelName: String?) {
+//        _notifyTokenPrivilegeWillExpire()
+//    }
+//    
+//    public func onDisconnected(channelName: String) {
+//        _updateAndNotifyState(state: .failed, stateReason: .rtmLost)
+//        _notifyEvent(event: .rtmLost)
+//    }
 }
 
 //MARK: AgoraRtcEngineDelegate

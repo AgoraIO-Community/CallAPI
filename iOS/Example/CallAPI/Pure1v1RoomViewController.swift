@@ -6,7 +6,6 @@
 //  Copyright © 2023 Agora. All rights reserved.
 //
 
-
 #if canImport(AgoraRtmKit)
 import UIKit
 import CallAPI
@@ -29,8 +28,9 @@ class Pure1v1RoomViewController: UIViewController {
         view.backgroundColor = .white
         return view
     }()
+    private var rtmManager: CallRtmManager?
     private lazy var rtcEngine = _createRtcEngine()
-    private var messageManager: CallRtmMessageManager?
+    private var signalClient: CallRtmSignalClient?
     private var rtmToken: String
     private var rtmClient: AgoraRtmClientKit?
     
@@ -217,6 +217,13 @@ class Pure1v1RoomViewController: UIViewController {
     private func initCallApi(completion: @escaping ((Bool)->())) {
         //外部创建需要自行管理login
         NSLog("login")
+        
+        let rtmManager = CallRtmManager(appId: KeyCenter.AppId,
+                                        userId: "\(currentUid)",
+                                        rtmClient: rtmClient)
+        rtmManager.delegate = self
+        self.rtmManager = rtmManager
+        
         rtmClient?.login(rtmToken) {[weak self] resp, err in
             guard let self = self else {return}
             if let err = err {
@@ -224,6 +231,7 @@ class Pure1v1RoomViewController: UIViewController {
                 completion(false)
                 return
             }
+
             self._initialize(rtmClient: self.rtmClient, completion: completion)
         }
     }
@@ -240,12 +248,10 @@ extension Pure1v1RoomViewController {
         config.appId = KeyCenter.AppId
         config.userId = currentUid
         config.rtcEngine = rtcEngine
-        let manager = CallRtmMessageManager(appId: config.appId,
-                                            userId: "\(config.userId)",
-                                            rtmToken: rtmToken,
-                                            rtmClient: rtmClient)
-        config.callMessageManager = manager
-        messageManager = manager
+        
+        let client = CallRtmSignalClient(rtmClient: rtmManager!.getRtmClient())
+        config.signalClient = client
+        signalClient = client
         self.rtmClient = rtmClient
         self.api.initialize(config: config)
         prepareConfig.roomId = "\(currentUid)"
@@ -264,14 +270,19 @@ extension Pure1v1RoomViewController {
             self.rtcEngine.delegate = nil
             self.rtcEngine.leaveChannel()
             AgoraRtcEngineKit.destroy()
+            self.rtmManager?.logout()
             self.rtmClient?.logout()
             self.rtmClient?.destroy()
-            self.messageManager?.clean()
+            self.signalClient?.clean()
             self.dismiss(animated: true)
         }
     }
 
     @objc func callAction() {
+        guard rtmManager?.isConnected == true else {
+            AUIToast.show(text: "rtm未登录或连接异常")
+            return
+        }
         if callState == .idle || callState == .failed {
             initCallApi { err in
             }
@@ -348,7 +359,12 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
             self.prepareConfig.rtcToken = rtcToken
             let rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
             self.rtmToken = rtmToken
-            self.api.renewToken(with: rtcToken, rtmToken: rtmToken)
+            
+            //rtc renew
+            self.api.renewToken(with: rtcToken)
+            
+            //rtm renew
+            self.rtmManager?.renewToken(rtmToken: rtmToken)
         }
     }
     
@@ -383,38 +399,34 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
             // 触发状态的用户是自己才处理
             if currentUid == toUserId {
                 connectedUserId = fromUserId
-//                if prepareConfig.autoAccept == false {
-                    AUIAlertView()
-                        .isShowCloseButton(isShow: true)
-                        .title(title: "用户 \(fromUserId) 邀请您1对1通话")
-                        .rightButton(title: "同意")
-                        .leftButton(title: "拒绝")
-                        .leftButtonTapClosure {[weak self] in
-                            guard let self = self else { return }
-                            self.api.reject(remoteUserId: fromUserId, reason: "reject by user") { err in
-                            }
+                AUIAlertView()
+                    .isShowCloseButton(isShow: true)
+                    .title(title: "用户 \(fromUserId) 邀请您1对1通话")
+                    .rightButton(title: "同意")
+                    .leftButton(title: "拒绝")
+                    .leftButtonTapClosure {[weak self] in
+                        guard let self = self else { return }
+                        self.api.reject(remoteUserId: fromUserId, reason: "reject by user") { err in
                         }
-                        .rightButtonTapClosure(onTap: {[weak self] text in
-                            guard let self = self else { return }
-                            self.api.accept(remoteUserId: fromUserId) { err in
-                            }
-                        })
-                        .show()
-//                }
+                    }
+                    .rightButtonTapClosure(onTap: {[weak self] text in
+                        guard let self = self else { return }
+                        self.api.accept(remoteUserId: fromUserId) { err in
+                        }
+                    })
+                    .show()
             } else if currentUid == fromUserId {
                 connectedUserId = toUserId
-//                if prepareConfig.autoAccept == false {
-                    AUIAlertView()
-                        .isShowCloseButton(isShow: true)
-                        .title(title: "呼叫用户 \(toUserId) 中")
-                        .rightButton(title: "取消")
-                        .rightButtonTapClosure(onTap: {[weak self] text in
-                            guard let self = self else { return }
-                            self.api.cancelCall { err in
-                            }
-                        })
-                        .show()
-//                }
+                AUIAlertView()
+                    .isShowCloseButton(isShow: true)
+                    .title(title: "呼叫用户 \(toUserId) 中")
+                    .rightButton(title: "取消")
+                    .rightButtonTapClosure(onTap: {[weak self] text in
+                        guard let self = self else { return }
+                        self.api.cancelCall { err in
+                        }
+                    })
+                    .show()
             }
             break
         case .connected:
@@ -465,8 +477,6 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
         switch event {
         case .remoteLeave:
             hangupAction()
-        case .rtmLost:
-            AUIToast.show(text: "连接已断开")
         default:
             break
         }
@@ -518,6 +528,25 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                                           y: self.view.frame.height - connectStatusLabel.frame.height - 40,
                                           width: connectStatusLabel.frame.width,
                                           height: connectStatusLabel.frame.height)
+    }
+}
+
+extension Pure1v1RoomViewController: ICallRtmManagerListener {
+    func onConnectionLost() {
+        print("onConnectionLost")
+        // relogin
+    }
+    
+    func onConnected() {
+        print("onConnected")
+    }
+    
+    func onDisconnected() {
+        print("onDisconnected")
+    }
+    
+    func onTokenPrivilegeWillExpire(channelName: String) {
+        tokenPrivilegeWillExpire()
     }
 }
 #endif

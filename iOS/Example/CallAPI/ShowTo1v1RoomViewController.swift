@@ -12,8 +12,6 @@ import CallAPI
 import AgoraRtcKit
 import AgoraRtmKit
 
-
-
 class ShowTo1v1RoomViewController: UIViewController {
     private var showRoomId: String          //直播频道名
     private var showUserId: UInt             //房主uid，如果是主播，那么和currentUid一致
@@ -27,7 +25,8 @@ class ShowTo1v1RoomViewController: UIViewController {
     
     private var rtmToken: String
     private var rtmClient: AgoraRtmClientKit?
-    private var messageManager: CallRtmMessageManager?
+    private var signalClient: CallRtmSignalClient?
+    private var rtmManager: CallRtmManager?
     
     private let api = CallApiImpl()
     private let showView: UIView = UIView()
@@ -243,6 +242,12 @@ class ShowTo1v1RoomViewController: UIViewController {
     
     private func initCallApi(completion: @escaping ((Bool)->())) {
         //外部创建需要自行管理login
+        
+        let rtmManager = CallRtmManager(appId: KeyCenter.AppId,
+                                        userId: "\(currentUid)",
+                                        rtmClient: rtmClient)
+        rtmManager.delegate = self
+        self.rtmManager = rtmManager
         rtmClient?.login(rtmToken) {[weak self] resp, err in
             guard let self = self else {return}
             if let err = err {
@@ -250,7 +255,8 @@ class ShowTo1v1RoomViewController: UIViewController {
                 completion(false)
                 return
             }
-            self._initialize(rtmClient: self.rtmClient, role: role, completion: completion) 
+            
+            self._initialize(rtmClient: self.rtmClient, role: role, completion: completion)
         }
     }
 }
@@ -316,12 +322,11 @@ extension ShowTo1v1RoomViewController {
         config.appId = KeyCenter.AppId
         config.userId = currentUid
         config.rtcEngine = rtcEngine
-        let manager = CallRtmMessageManager(appId: config.appId,
-                                                          userId: "\(config.userId)",
-                                                          rtmToken: rtmToken,
-                                                          rtmClient: rtmClient)
-        config.callMessageManager = manager
-        messageManager = manager
+        
+        
+        let signalClient = CallRtmSignalClient(rtmClient: rtmManager!.getRtmClient())
+        config.signalClient = signalClient
+        self.signalClient = signalClient
         self.rtmClient = rtmClient
         self.api.initialize(config: config)
         
@@ -343,15 +348,21 @@ extension ShowTo1v1RoomViewController {
             self.rtcEngine.delegate = nil
             self.rtcEngine.leaveChannel()
             AgoraRtcEngineKit.destroy()
+            self.rtmManager?.logout()
             self.rtmClient?.logout()
             self.rtmClient?.destroy()
-            self.messageManager?.clean()
+            self.signalClient?.clean()
             self.dismiss(animated: true)
         }
     }
 
     @objc func callAction() {
         guard role == .caller else {
+            return
+        }
+        
+        guard rtmManager?.isConnected == true else {
+            AUIToast.show(text: "rtm未登录或连接异常")
             return
         }
         
@@ -389,7 +400,6 @@ extension ShowTo1v1RoomViewController {
     }
 }
 
-
 extension ShowTo1v1RoomViewController: AgoraRtcEngineDelegate {
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didJoinedOfUid uid: UInt, elapsed: Int) {
         print("didJoinedOfUid: \(uid)")
@@ -410,11 +420,15 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
             let rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
             self.prepareConfig.rtcToken = rtcToken
             let rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
-            self.rtmToken = rtmToken
-            self.api.renewToken(with: rtcToken, rtmToken: rtmToken)
+            //rtc renew
+            self.api.renewToken(with: rtcToken)
             
             self.showRoomToken = rtcToken
             rtcEngine.renewToken(self.showRoomToken)
+            
+            self.rtmToken = rtmToken
+            //rtm renew
+            self.rtmManager?.renewToken(rtmToken: rtmToken)
         }
     }
     
@@ -454,18 +468,16 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
             } else if currentUid == fromUserId {
                 connectedUserId = toUserId
                 
-//                if prepareConfig.autoAccept == false {
-                    AUIAlertView()
-                        .isShowCloseButton(isShow: true)
-                        .title(title: "呼叫用户 \(toUserId) 中")
-                        .rightButton(title: "取消")
-                        .rightButtonTapClosure(onTap: {[weak self] text in
-                            guard let self = self else { return }
-                            self.api.cancelCall { err in
-                            }
-                        })
-                        .show()
-//                }
+                AUIAlertView()
+                    .isShowCloseButton(isShow: true)
+                    .title(title: "呼叫用户 \(toUserId) 中")
+                    .rightButton(title: "取消")
+                    .rightButtonTapClosure(onTap: {[weak self] text in
+                        guard let self = self else { return }
+                        self.api.cancelCall { err in
+                        }
+                    })
+                    .show()
             }
             break
         case .connected:
@@ -513,8 +525,6 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
         switch event {
         case .remoteLeave:
             hangupAction()
-        case .rtmLost:
-            AUIToast.show(text: "连接已断开")
         default:
             break
         }
@@ -567,5 +577,26 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
                                           width: connectStatusLabel.frame.width,
                                           height: connectStatusLabel.frame.height)
     }
+}
+
+extension ShowTo1v1RoomViewController: ICallRtmManagerListener {
+    func onConnectionLost() {
+        print("onConnectionLost")
+        // relogin
+    }
+    
+    func onConnected() {
+        print("onConnected")
+    }
+    
+    func onDisconnected() {
+        print("onDisconnected")
+    }
+    
+    func onTokenPrivilegeWillExpire(channelName: String) {
+        tokenPrivilegeWillExpire()
+    }
+    
+    
 }
 #endif

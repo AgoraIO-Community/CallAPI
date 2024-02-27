@@ -34,7 +34,7 @@ class EMShowTo1v1RoomViewController: UIViewController {
         return view
     }()
     private lazy var rtcEngine = _createRtcEngine()
-    private lazy var messageManager = _createMessageManager()
+    private lazy var signalClient = _createSignalClient()
     
     private var callState: CallStateType = .idle {
         didSet {
@@ -83,10 +83,10 @@ class EMShowTo1v1RoomViewController: UIViewController {
         return engine
     }
     
-    private func _createMessageManager() -> CallEasemobMessageManager {
-        let manager = CallEasemobMessageManager(appKey: KeyCenter.IMAppKey, userId: "\(currentUid)")
+    private func _createSignalClient() -> CallEasemobSignalClient {
+        let signalClient = CallEasemobSignalClient(appKey: KeyCenter.IMAppKey, userId: "\(currentUid)")
         
-        return manager
+        return signalClient
     }
     
     private lazy var roomInfoLabel: UILabel = {
@@ -200,7 +200,7 @@ class EMShowTo1v1RoomViewController: UIViewController {
         self.callState = .idle
         
         //外部创建需要自行管理login
-        messageManager.login {[weak self] err in
+        signalClient.login {[weak self] err in
             guard let self = self else {return}
             if let err = err {
                 print("login error = \(err.localizedDescription)")
@@ -291,7 +291,7 @@ extension EMShowTo1v1RoomViewController {
         config.appId = KeyCenter.AppId
         config.userId = currentUid
         config.rtcEngine = rtcEngine
-        config.callMessageManager = messageManager
+        config.signalClient = signalClient
         self.api.initialize(config: config)
         
         prepareConfig.roomId = "\(currentUid)"
@@ -312,7 +312,7 @@ extension EMShowTo1v1RoomViewController {
             self.rtcEngine.delegate = nil
             self.rtcEngine.leaveChannel()
             AgoraRtcEngineKit.destroy()
-            self.messageManager.logout()
+            self.signalClient.logout()
             self.dismiss(animated: true)
         }
     }
@@ -369,8 +369,7 @@ extension EMShowTo1v1RoomViewController:CallApiListenerProtocol {
             guard let self = self else {return}
             let rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
             self.prepareConfig.rtcToken = rtcToken
-            let rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
-            self.api.renewToken(with: rtcToken, rtmToken: rtmToken)
+            self.api.renewToken(with: rtcToken)
             
             self.showRoomToken = rtcToken
             rtcEngine.renewToken(self.showRoomToken)
