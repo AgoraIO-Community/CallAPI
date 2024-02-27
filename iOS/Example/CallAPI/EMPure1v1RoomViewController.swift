@@ -152,13 +152,12 @@ class EMPure1v1RoomViewController: UIViewController {
     }()
     
     deinit {
-        print("deinit-- Pure1v1RoomViewController")
+        NSLog("deinit-- Pure1v1RoomViewController")
     }
     
-    required init(currentUid: UInt, prepareConfig: PrepareConfig, rtmToken: String) {
+    required init(currentUid: UInt, prepareConfig: PrepareConfig) {
         self.currentUid = currentUid
         self.prepareConfig = prepareConfig
-//        self.rtmToken = rtmToken
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -242,6 +241,16 @@ extension EMPure1v1RoomViewController {
         }
     }
     
+    private func _checkConnectionAndNotify() -> Bool{
+        //如果信令状态异常，不允许执行callapi操作
+        guard signalClient.isConnected == true else {
+            AUIToast.show(text: "环信未登录或连接异常")
+            return false
+        }
+        
+        return true
+    }
+    
     @objc func closeAction() {
         api.deinitialize {
             self.api.removeListener(listener: self)
@@ -255,6 +264,8 @@ extension EMPure1v1RoomViewController {
     }
 
     @objc func callAction() {
+        guard _checkConnectionAndNotify() else { return }
+        
         guard self.callState == .prepared else {
             initCallApi { err in
             }
@@ -269,6 +280,8 @@ extension EMPure1v1RoomViewController {
     }
     
     @objc func hangupAction() {
+        guard _checkConnectionAndNotify() else { return }
+        
         api.hangup(remoteUserId: connectedUserId ?? 0, reason: "hangup by user") { error in
         }
     }
@@ -292,10 +305,10 @@ extension EMPure1v1RoomViewController {
 
 extension EMPure1v1RoomViewController: AgoraRtcEngineDelegate {
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didJoinedOfUid uid: UInt, elapsed: Int) {
-        print("didJoinedOfUid: \(uid)")
+        NSLog("didJoinedOfUid: \(uid)")
     }
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didJoinChannel channel: String, withUid uid: UInt, elapsed: Int) {
-        print("didJoinChannel: \(channel) uid: \(uid)")
+        NSLog("didJoinChannel: \(channel) uid: \(uid)")
     }
 }
 
@@ -327,7 +340,7 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
                                    stateReason: CallStateReason,
                                    eventReason: String,
                                    eventInfo: [String : Any]) {
-        print("onCallStateChanged state: \(state.rawValue), stateReason: \(stateReason.rawValue), eventReason: \(eventReason), eventInfo: \(eventInfo)")
+        NSLog("onCallStateChanged state: \(state.rawValue), stateReason: \(stateReason.rawValue), eventReason: \(eventReason), eventInfo: \(eventInfo)")
         
         self.callState = state
         
@@ -353,11 +366,13 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
                         .leftButton(title: "拒绝")
                         .leftButtonTapClosure {[weak self] in
                             guard let self = self else { return }
+                            guard self._checkConnectionAndNotify() else { return }
                             self.api.reject(remoteUserId: fromUserId, reason: "reject by user") { err in
                             }
                         }
                         .rightButtonTapClosure(onTap: {[weak self] text in
                             guard let self = self else { return }
+                            guard self._checkConnectionAndNotify() else { return }
                             self.api.accept(remoteUserId: fromUserId) { err in
                             }
                         })
@@ -372,6 +387,7 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
                         .rightButton(title: "取消")
                         .rightButtonTapClosure(onTap: {[weak self] text in
                             guard let self = self else { return }
+                            guard self._checkConnectionAndNotify() else { return }
                             self.api.cancelCall { err in
                             }
                         })
@@ -423,7 +439,7 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
     }
     
     @objc func onCallEventChanged(with event: CallEvent) {
-        print("onCallEventChanged: \(event.rawValue)")
+        NSLog("onCallEventChanged: \(event.rawValue)")
         switch event {
         case .remoteLeave:
             hangupAction()
@@ -436,7 +452,7 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
                            errorType: CallErrorCodeType,
                            errorCode: Int,
                            message: String?) {
-        print("onCallErrorOccur errorEvent:\(errorEvent.rawValue), errorType: \(errorType.rawValue), errorCode: \(errorCode), message: \(message ?? "")")
+        NSLog("onCallErrorOccur errorEvent:\(errorEvent.rawValue), errorType: \(errorType.rawValue), errorCode: \(errorCode), message: \(message ?? "")")
     }
     
     @objc func callDebugInfo(message: String, logLevel: CallLogLevel) {

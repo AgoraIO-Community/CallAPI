@@ -27,11 +27,9 @@ import Foundation
     /// CallApi往信令系统发消息
     /// - Parameters:
     ///   - userId: 目标用户id
-    ///   - messageId: 消息id
     ///   - message: 消息对象
     ///   - completion: 完成回调
     func sendMessage(userId: String,
-                     messageId: Int,
                      message: String,
                      completion: ((NSError?)-> Void)?)
     

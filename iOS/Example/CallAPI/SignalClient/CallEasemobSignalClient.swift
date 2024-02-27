@@ -10,6 +10,7 @@ import HyphenateChat
 import CallAPI
 
 public class CallEasemobSignalClient: NSObject {
+    public var isConnected: Bool = false
     private let delegates:NSHashTable<ISignalClientListener> = NSHashTable<ISignalClientListener>.weakObjects()
     private var appKey: String
     private var userId: String
@@ -31,6 +32,8 @@ extension CallEasemobSignalClient {
         let pwd = uid
         let date = Date()
         callMessagePrint("register start")
+        EMClient.shared().chatManager?.add(self, delegateQueue: nil)
+        EMClient.shared().add(self, delegateQueue: DispatchQueue.main)
         EMClient.shared().register(withUsername: uid, password: pwd) {[weak self] username, err in
             if let err = err, err.code != EMErrorCode.userAlreadyExist {
                 self?.callMessagePrint("register fail: \(String(describing: err.errorDescription))")
@@ -39,13 +42,13 @@ extension CallEasemobSignalClient {
             }
             self?.callMessagePrint("login start")
             EMClient.shared().login(withUsername: uid, password: pwd) { username, err in
+                guard let self = self else { return }
                 if let err = err, err.code != EMErrorCode.userAlreadyLoginSame {
-                    self?.callMessagePrint("login fail: \(String(describing: err.errorDescription))")
+                    self.callMessagePrint("login fail: \(String(describing: err.errorDescription))")
                     completion(NSError(domain: err.errorDescription, code: err.code.rawValue))
                     return
                 }
-                self?.callMessagePrint("login success \(-date.timeIntervalSinceNow * 1000) ms")
-                EMClient.shared().chatManager?.add(self, delegateQueue: nil)
+                self.callMessagePrint("login success \(-date.timeIntervalSinceNow * 1000) ms")
                 completion(nil)
             }
         }
@@ -53,6 +56,7 @@ extension CallEasemobSignalClient {
     
     public func logout() {
         let date = Date()
+        EMClient.shared().removeDelegate(self)
         EMClient.shared().chatManager?.remove(self)
         EMClient.shared().logout(false)
         print("logout success: \(-date.timeIntervalSinceNow * 1000) ms")
@@ -72,8 +76,7 @@ extension CallEasemobSignalClient {
         }
     }
     
-    private func _sendMessage(userId: String, 
-                              messageId: Int,
+    private func _sendMessage(userId: String,
                               message: String,
                               completion: ((NSError?)-> Void)?) {
         if userId.count == 0 {
@@ -81,21 +84,20 @@ extension CallEasemobSignalClient {
             return
         }
         
-        let msgId = messageId
         let body = EMTextMessageBody(text: message)
-        callMessagePrint("_sendMessage[\(msgId)] to '\(userId)', message: \(message)")
+        callMessagePrint("_sendMessage to '\(userId)', message: \(message)")
         let emMessage = EMChatMessage(conversationID: userId, from: self.userId, to: userId, body: body, ext: nil)
         let date = Date()
         EMClient.shared().chatManager?.send(emMessage, progress: nil, completion: {[weak self] msg, err in
             guard let self = self else {return}
             if let err = err {
                 let error = NSError(domain: err.errorDescription, code: err.code.rawValue)
-                self.callMessagePrint("_sendMessage[\(msgId)] fail: \(error) cost: \(date.getCostMilliseconds()) ms", 1)
+                self.callMessagePrint("_sendMessage fail: \(error) cost: \(date.getCostMilliseconds()) ms", 1)
 
                 completion?(error)
                 return
             }
-            self.callMessagePrint("_sendMessage[\(msgId)] publish cost \(date.getCostMilliseconds()) ms")
+            self.callMessagePrint("_sendMessage publish cost \(date.getCostMilliseconds()) ms")
             completion?(nil)
         })
     }
@@ -104,7 +106,6 @@ extension CallEasemobSignalClient {
 //MARK: ICallMessageManager
 extension CallEasemobSignalClient: ISignalClient {
     public func sendMessage(userId: String,
-                            messageId: Int,
                             message: String, 
                             completion: ((NSError?) -> Void)?) {
         guard userId.count > 0, userId != "0" else {
@@ -114,8 +115,7 @@ extension CallEasemobSignalClient: ISignalClient {
             return
         }
 
-        _sendMessage(userId: userId, 
-                     messageId: messageId,
+        _sendMessage(userId: userId,
                      message: message, 
                      completion: completion)
     }
@@ -149,6 +149,18 @@ extension CallEasemobSignalClient: EMChatManagerDelegate {
                     element.onMessageReceive(message: text)
                 }
             }
+        }
+    }
+}
+
+extension CallEasemobSignalClient: EMClientDelegate {
+    public func connectionStateDidChange(_ aConnectionState: EMConnectionState) {
+        print("connectionStateDidChange: \(aConnectionState.rawValue)")
+        switch aConnectionState {
+        case .connected:
+            isConnected = true
+        default:
+            isConnected = false
         }
     }
 }

@@ -8,8 +8,8 @@
 import Foundation
 import AgoraRtmKit
 
-@objcMembers
-public class CallRtmSignalClient: NSObject {
+/// RTM信令管理类
+@objcMembers public class CallRtmSignalClient: NSObject {
     private let delegates:NSHashTable<ISignalClientListener> = NSHashTable<ISignalClientListener>.weakObjects()
     private var rtmClient: AgoraRtmClientKit
     
@@ -28,31 +28,31 @@ public class CallRtmSignalClient: NSObject {
     }
 }
 
+//MARK: private
 extension CallRtmSignalClient {
     private func _sendMessage(userId: String,
-                              messageId: Int,
                               message: String,
                               completion: ((NSError?)-> Void)?) {
         if userId.count == 0 {
             completion?(NSError(domain: "send message fail! roomId is empty", code: -1))
             return
         }
-        let msgId = messageId
+        
         let data = message.data(using: .utf8)!
         let options = AgoraRtmPublishOptions()
         options.channelType = .user
         let date = Date()
-        callMessagePrint("_sendMessage[\(msgId)] to '\(userId)', message: \(message)")
+        callMessagePrint("_sendMessage to '\(userId)', message: \(message)")
         rtmClient.publish(channelName: userId, data: data, option: options) { [weak self] resp, err in
             guard let self = self else {return}
             if let err = err {
                 let error = NSError(domain: err.reason, code: err.errorCode.rawValue)
-                self.callMessagePrint("_sendMessage[\(msgId)] fail: \(error) cost: \(date.getCostMilliseconds()) ms", 1)
+                self.callMessagePrint("_sendMessage fail: \(error) cost: \(date.getCostMilliseconds()) ms", 1)
 
                 completion?(error)
                 return
             }
-            self.callMessagePrint("_sendMessage[\(msgId)] publish cost \(date.getCostMilliseconds()) ms")
+            self.callMessagePrint("_sendMessage publish cost \(date.getCostMilliseconds()) ms")
             completion?(nil)
         }
     }
@@ -63,36 +63,15 @@ extension CallRtmSignalClient {
             element.debugInfo?(message: "\(tag)\(message)", logLevel: logLevel)
         }
     }
+    
+    private func clean() {
+        delegates.removeAllObjects()
+        rtmClient.removeDelegate(self)
+    }
 }
 
-
 //MARK: AgoraRtmClientDelegate
-//TODO: error handler
 extension CallRtmSignalClient: AgoraRtmClientDelegate {
-//    public func rtmKit(_ kit: AgoraRtmClientKit,
-//                channel channelName: String,
-//                connectionChangedToState state: AgoraRtmClientConnectionState,
-//                reason: AgoraRtmClientConnectionChangeReason) {
-//        callMessagePrint("rtm connectionChangedToState: \(state.rawValue) reason: \(reason.rawValue)")
-//        if reason == .changedTokenExpired {
-//            for element in delegates.allObjects {
-//                element.onTokenWillExpire?(channelName: channelName)
-//            }
-//        } else if reason == .changedChangedLost {
-//            //TODO: 内部重试，rtm 2.2.0支持
-//            for element in delegates.allObjects {
-//                element.onDisconnected?(channelName: channelName)
-//            }
-//        }
-//    }
-//    
-//    public func rtmKit(_ rtmKit: AgoraRtmClientKit, tokenPrivilegeWillExpire channel: String?) {
-//        callMessagePrint("rtm onTokenPrivilegeWillExpire[\(channel ?? "nil")]")
-//        for element in delegates.allObjects {
-//            element.onTokenWillExpire?(channelName: channel)
-//        }
-//    }
-    
     //收到RTM消息
     public func rtmKit(_ rtmKit: AgoraRtmClientKit, 
                        didReceiveMessageEvent event: AgoraRtmMessageEvent) {
@@ -107,9 +86,9 @@ extension CallRtmSignalClient: AgoraRtmClientDelegate {
     }
 }
 
+//MARK: ISignalClient
 extension CallRtmSignalClient: ISignalClient {
     public func sendMessage(userId: String,
-                            messageId: Int,
                             message: String,
                             completion: ((NSError?) -> Void)?) {
         guard userId.count > 0, userId != "0" else {
@@ -119,8 +98,7 @@ extension CallRtmSignalClient: ISignalClient {
             return
         }
 
-        _sendMessage(userId: userId, 
-                     messageId: messageId,
+        _sendMessage(userId: userId,
                      message: message, 
                      completion: completion)
     }
@@ -132,10 +110,5 @@ extension CallRtmSignalClient: ISignalClient {
     
     public func removeListener(listener: ISignalClientListener) {
         delegates.remove(listener)
-    }
-    
-    public func clean() {
-        delegates.removeAllObjects()
-        rtmClient.removeDelegate(self)
     }
 }

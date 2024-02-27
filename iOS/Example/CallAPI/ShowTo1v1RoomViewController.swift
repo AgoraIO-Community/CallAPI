@@ -206,7 +206,7 @@ class ShowTo1v1RoomViewController: UIViewController {
         initCallApi { _ in
         }
         
-        print("will joinChannel  \(self.showRoomId) \(self.currentUid)")
+        NSLog("will joinChannel  \(self.showRoomId) \(self.currentUid)")
         let options = AgoraRtcChannelMediaOptions()
         options.clientRoleType = isBroadcaster ? .broadcaster : .audience
         options.publishMicrophoneTrack = isBroadcaster
@@ -217,7 +217,7 @@ class ShowTo1v1RoomViewController: UIViewController {
                               channelId: showRoomId,
                               uid: currentUid,
                               mediaOptions: options) { channel, uid, elapsed in
-            print("joinChannel success")
+            NSLog("joinChannel success")
         }
     }
     
@@ -225,34 +225,29 @@ class ShowTo1v1RoomViewController: UIViewController {
     private func _createRtmClient() -> AgoraRtmClientKit {
         let rtmConfig = AgoraRtmClientConfig(appId: KeyCenter.AppId, userId: "\(currentUid)")
         if rtmConfig.userId.count == 0 {
-            print("userId is empty")
+            NSLog("userId is empty")
         }
         if rtmConfig.appId.count == 0 {
-            print("appId is empty")
+            NSLog("appId is empty")
         }
 
         var rtmClient: AgoraRtmClientKit? = nil
         do {
             rtmClient = try AgoraRtmClientKit(rtmConfig, delegate: nil)
         } catch {
-            print("create rtm client fail: \(error.localizedDescription)")
+            NSLog("create rtm client fail: \(error.localizedDescription)")
         }
         return rtmClient!
     }
     
-    private func initCallApi(completion: @escaping ((Bool)->())) {
+    private func initCallApi(completion: ((Bool)->())? = nil) {
         //外部创建需要自行管理login
-        
-        let rtmManager = CallRtmManager(appId: KeyCenter.AppId,
-                                        userId: "\(currentUid)",
-                                        rtmClient: rtmClient)
-        rtmManager.delegate = self
-        self.rtmManager = rtmManager
         rtmClient?.login(rtmToken) {[weak self] resp, err in
             guard let self = self else {return}
             if let err = err {
-                print("login error = \(err.localizedDescription)")
-                completion(false)
+                NSLog("login error = \(err.localizedDescription)")
+                AUIToast.show(text: "rtm登录失败: \(err.localizedDescription)")
+                completion?(false)
                 return
             }
             
@@ -284,7 +279,6 @@ extension ShowTo1v1RoomViewController {
         rtcEngine.setupLocalVideo(canvas)
         rtcEngine.startPreview()
         
-        
         //setup configuration after join channel
         rtcEngine.setVideoEncoderConfiguration(videoEncoderConfig!)
 
@@ -301,11 +295,11 @@ extension ShowTo1v1RoomViewController {
         videoCanvas.view = canvasView
         videoCanvas.renderMode = .hidden
         let ret = rtcEngine.setupRemoteVideo(videoCanvas)
-        print("setupRemoteVideo: \(ret)")
+        NSLog("setupRemoteVideo: \(ret)")
     }
     
     private func publishMedia(_ publish: Bool) {
-        print("publishMedia: \(publish)")
+        NSLog("publishMedia: \(publish)")
         let mediaOptions = AgoraRtcChannelMediaOptions()
         mediaOptions.publishMicrophoneTrack = publish
         mediaOptions.publishCameraTrack = publish
@@ -316,27 +310,51 @@ extension ShowTo1v1RoomViewController {
 }
 
 extension ShowTo1v1RoomViewController {
-    private func _initialize(rtmClient: AgoraRtmClientKit?, role: CallRole, completion: @escaping ((Bool)->())) {
-        print("_initialize...: \(self.callState.rawValue)")
+    private func _checkConnectionAndNotify() -> Bool{
+        //如果信令状态异常，不允许执行callapi操作
+        guard rtmManager?.isConnected == true else {
+            AUIToast.show(text: "rtm未登录或连接异常")
+            return false
+        }
+        
+        return true
+    }
+    
+    private func _initialize(rtmClient: AgoraRtmClientKit?, 
+                             role: CallRole,
+                             completion: ((Bool)->())?) {
+        NSLog("_initialize...: \(self.callState.rawValue)")
+        
+        // create rtm manager
+        let rtmManager = CallRtmManager(appId: KeyCenter.AppId,
+                                        userId: "\(currentUid)",
+                                        rtmClient: rtmClient)
+        rtmManager.delegate = self
+        self.rtmManager = rtmManager
+        
+        // create signal client
+        let signalClient = CallRtmSignalClient(rtmClient: rtmManager.getRtmClient())
+        
+        // callapi initialize
         let config = CallConfig()
         config.appId = KeyCenter.AppId
         config.userId = currentUid
         config.rtcEngine = rtcEngine
-        
-        
-        let signalClient = CallRtmSignalClient(rtmClient: rtmManager!.getRtmClient())
         config.signalClient = signalClient
         self.signalClient = signalClient
         self.rtmClient = rtmClient
+        self.api.deinitialize {
+        }
         self.api.initialize(config: config)
         
+        api.addListener(listener: self)
+        
+        // callapi prepareForCall
         prepareConfig.roomId = "\(currentUid)"
         prepareConfig.localView = rightView
         prepareConfig.remoteView = leftView
-        
-        api.addListener(listener: self)
         self.api.prepareForCall(prepareConfig: prepareConfig) { err in
-            completion(err == nil)
+            completion?(err == nil)
         }
     }
     
@@ -351,24 +369,20 @@ extension ShowTo1v1RoomViewController {
             self.rtmManager?.logout()
             self.rtmClient?.logout()
             self.rtmClient?.destroy()
-            self.signalClient?.clean()
+            self.signalClient = nil
             self.dismiss(animated: true)
         }
     }
 
     @objc func callAction() {
+        guard _checkConnectionAndNotify() else { return }
+        
         guard role == .caller else {
             return
         }
         
-        guard rtmManager?.isConnected == true else {
-            AUIToast.show(text: "rtm未登录或连接异常")
-            return
-        }
-        
         if callState == .failed || callState == .idle {
-            initCallApi { _ in
-            }
+            initCallApi()
             AUIToast.show(text: "CallAPi初始化中")
             return
         }
@@ -382,6 +396,8 @@ extension ShowTo1v1RoomViewController {
     }
     
     @objc func hangupAction() {
+        guard _checkConnectionAndNotify() else { return }
+        
         guard let connectedUserId = connectedUserId else {
             return
         }
@@ -402,10 +418,10 @@ extension ShowTo1v1RoomViewController {
 
 extension ShowTo1v1RoomViewController: AgoraRtcEngineDelegate {
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didJoinedOfUid uid: UInt, elapsed: Int) {
-        print("didJoinedOfUid: \(uid)")
+        NSLog("didJoinedOfUid: \(uid)")
     }
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didJoinChannel channel: String, withUid uid: UInt, elapsed: Int) {
-        print("didJoinChannel: \(channel) uid: \(uid)")
+        NSLog("didJoinChannel: \(channel) uid: \(uid)")
     }
 }
 
@@ -445,7 +461,7 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
                                    stateReason: CallStateReason,
                                    eventReason: String,
                                    eventInfo: [String : Any]) {
-        print("onCallStateChanged state: \(state.rawValue), stateReason: \(stateReason.rawValue), eventReason: \(eventReason), eventInfo: \(eventInfo)")
+        NSLog("onCallStateChanged state: \(state.rawValue), stateReason: \(stateReason.rawValue), eventReason: \(eventReason), eventInfo: \(eventInfo)")
         
         self.callState = state
         
@@ -463,7 +479,12 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
             // 触发状态的用户是自己才处理
             if currentUid == toUserId {
                 connectedUserId = fromUserId
-                self.api.accept(remoteUserId: fromUserId) { err in
+                self.api.accept(remoteUserId: fromUserId) {[weak self] err in
+                    if let err = err {
+                        //如果接受消息出错，则发起拒绝，回到初始状态
+                        self?.api.reject(remoteUserId: fromUserId, reason: err.localizedDescription, completion: { err in
+                        })
+                    }
                 }
             } else if currentUid == fromUserId {
                 connectedUserId = toUserId
@@ -521,7 +542,7 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
     }
     
     @objc func onCallEventChanged(with event: CallEvent, eventReason: String?) {
-        print("onCallEventChanged event: \(event.rawValue), eventReason: \(eventReason ?? "")")
+        NSLog("onCallEventChanged event: \(event.rawValue), eventReason: \(eventReason ?? "")")
         switch event {
         case .remoteLeave:
             hangupAction()
@@ -534,7 +555,7 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
                            errorType: CallErrorCodeType,
                            errorCode: Int,
                            message: String?) {
-        print("onCallErrorOccur errorEvent:\(errorEvent.rawValue), errorType: \(errorType.rawValue), errorCode: \(errorCode), message: \(message ?? "")")
+        NSLog("onCallErrorOccur errorEvent:\(errorEvent.rawValue), errorType: \(errorType.rawValue), errorCode: \(errorCode), message: \(message ?? "")")
     }
     
     @objc func callDebugInfo(message: String, logLevel: CallLogLevel) {
@@ -552,7 +573,7 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
                                callUserId: UInt,
                                currentUserId: UInt,
                                timestamp: UInt64) {
-        print("onCallConnected roomId: \(roomId) callUserId: \(callUserId) currentUserId: \(currentUserId) timestamp: \(timestamp)")
+        NSLog("onCallConnected roomId: \(roomId) callUserId: \(callUserId) currentUserId: \(currentUserId) timestamp: \(timestamp)")
         
         connectStatusLabel.text = "通话开始 \nRTC 频道号: \(roomId) \n呼叫用户id: \(callUserId) \n当前用户id: \(currentUserId) \n开始时间戳: \(timestamp)"
         layoutConnectStatus()
@@ -563,7 +584,7 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
                                   currentUserId: UInt,
                                   timestamp: UInt64,
                                   duration: UInt64) {
-        print("onCallDisconnected roomId: \(roomId) hangupUserId: \(hangupUserId) currentUserId: \(currentUserId) timestamp: \(timestamp) duration: \(duration)ms")
+        NSLog("onCallDisconnected roomId: \(roomId) hangupUserId: \(hangupUserId) currentUserId: \(currentUserId) timestamp: \(timestamp) duration: \(duration)ms")
         
         connectStatusLabel.text = "通话结束 \nRTC 频道号: \(roomId) \n挂断用户id: \(hangupUserId) \n当前用户id: \(currentUserId) \n结束时间戳: \(timestamp) \n通话时长: \(duration)ms"
         layoutConnectStatus()
@@ -581,22 +602,30 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
 
 extension ShowTo1v1RoomViewController: ICallRtmManagerListener {
     func onConnectionLost() {
-        print("onConnectionLost")
-        // relogin
+        NSLog("onConnectionLost")
+        AUIToast.show(text: "rtm连接错误，需要重新登录")
+        // 表示rtm超时断连了，需要重新登录，这里模拟了3s重新登录
+        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 3) {
+            self.rtmClient?.logout()
+            self.rtmClient?.login(self.rtmToken)
+        }
     }
     
     func onConnected() {
-        print("onConnected")
+        NSLog("onConnected")
+        AUIToast.show(text: "rtm已连接")
+        //表示连接成功，可以调用callapi进行通话呼叫了
     }
     
     func onDisconnected() {
-        print("onDisconnected")
+        NSLog("onDisconnected")
+        AUIToast.show(text: "rtm未连接")
+        //表示连接没有成功，此时调用callapi会失败
     }
     
     func onTokenPrivilegeWillExpire(channelName: String) {
+        //token过期，需要重新renew
         tokenPrivilegeWillExpire()
     }
-    
-    
 }
 #endif

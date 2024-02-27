@@ -147,7 +147,6 @@ class EMShowTo1v1RoomViewController: UIViewController {
                   showRoomToken: String,
                   currentUid: UInt,
                   role: CallRole,
-                  rtmToken: String,
                   prepareConfig: PrepareConfig) {
         self.showRoomId = showRoomId
         self.showUserId = showUserId
@@ -203,19 +202,15 @@ class EMShowTo1v1RoomViewController: UIViewController {
         signalClient.login {[weak self] err in
             guard let self = self else {return}
             if let err = err {
-                print("login error = \(err.localizedDescription)")
+                NSLog("login error = \(err.localizedDescription)")
                 return
             }
             self._initialize() { success in
-                print("_initialize: \(success)")
+                NSLog("_initialize: \(success)")
             }
         }
-        //内部创建rtmclient
-//        _initialize(role: role) { success in
-//            print("_initialize: \(success)")
-//        }
         
-        print("will joinChannel  \(self.showRoomId) \(self.currentUid)")
+        NSLog("will joinChannel  \(self.showRoomId) \(self.currentUid)")
         let options = AgoraRtcChannelMediaOptions()
         options.clientRoleType = isBroadcaster ? .broadcaster : .audience
         options.publishMicrophoneTrack = isBroadcaster
@@ -226,7 +221,7 @@ class EMShowTo1v1RoomViewController: UIViewController {
                               channelId: showRoomId,
                               uid: currentUid,
                               mediaOptions: options) { channel, uid, elapsed in
-            print("joinChannel success")
+            NSLog("joinChannel success")
         }
     }
 }
@@ -271,11 +266,11 @@ extension EMShowTo1v1RoomViewController {
         videoCanvas.view = canvasView
         videoCanvas.renderMode = .hidden
         let ret = rtcEngine.setupRemoteVideo(videoCanvas)
-        print("setupRemoteVideo: \(ret)")
+        NSLog("setupRemoteVideo: \(ret)")
     }
     
     private func publishMedia(_ publish: Bool) {
-        print("publishMedia: \(publish)")
+        NSLog("publishMedia: \(publish)")
         let mediaOptions = AgoraRtcChannelMediaOptions()
         mediaOptions.publishMicrophoneTrack = publish
         mediaOptions.publishCameraTrack = publish
@@ -304,6 +299,16 @@ extension EMShowTo1v1RoomViewController {
         }
     }
     
+    private func _checkConnectionAndNotify() -> Bool{
+        //如果信令状态异常，不允许执行callapi操作
+        guard signalClient.isConnected == true else {
+            AUIToast.show(text: "环信未登录或连接异常")
+            return false
+        }
+        
+        return true
+    }
+    
     @objc func closeAction() {
         api.deinitialize {
             self.role = .callee
@@ -318,6 +323,8 @@ extension EMShowTo1v1RoomViewController {
     }
 
     @objc func callAction() {
+        guard _checkConnectionAndNotify() else { return }
+        
         guard role == .caller else {
             return
         }
@@ -331,6 +338,8 @@ extension EMShowTo1v1RoomViewController {
     }
     
     @objc func hangupAction() {
+        guard _checkConnectionAndNotify() else { return }
+        
         guard let connectedUserId = connectedUserId else {
             return
         }
@@ -352,10 +361,10 @@ extension EMShowTo1v1RoomViewController {
 
 extension EMShowTo1v1RoomViewController: AgoraRtcEngineDelegate {
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didJoinedOfUid uid: UInt, elapsed: Int) {
-        print("didJoinedOfUid: \(uid)")
+        NSLog("didJoinedOfUid: \(uid)")
     }
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didJoinChannel channel: String, withUid uid: UInt, elapsed: Int) {
-        print("didJoinChannel: \(channel) uid: \(uid)")
+        NSLog("didJoinChannel: \(channel) uid: \(uid)")
     }
 }
 
@@ -365,7 +374,7 @@ extension EMShowTo1v1RoomViewController:CallApiListenerProtocol {
         NetworkManager.shared.generateTokens(channelName: "",
                                              uid: "\(currentUid)",
                                              tokenGeneratorType: .token007,
-                                             tokenTypes: [.rtc, .rtm]) {[weak self] tokens in
+                                             tokenTypes: [.rtc]) {[weak self] tokens in
             guard let self = self else {return}
             let rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
             self.prepareConfig.rtcToken = rtcToken
@@ -389,7 +398,7 @@ extension EMShowTo1v1RoomViewController:CallApiListenerProtocol {
                                    stateReason: CallStateReason,
                                    eventReason: String,
                                    eventInfo: [String : Any]) {
-        print("onCallStateChanged state: \(state.rawValue), stateReason: \(stateReason.rawValue), eventReason: \(eventReason), eventInfo: \(eventInfo)")
+        NSLog("onCallStateChanged state: \(state.rawValue), stateReason: \(stateReason.rawValue), eventReason: \(eventReason), eventInfo: \(eventInfo)")
         
         self.callState = state
         
@@ -467,7 +476,7 @@ extension EMShowTo1v1RoomViewController:CallApiListenerProtocol {
     }
     
     @objc func onCallEventChanged(with event: CallEvent, eventReason: String?) {
-        print("onCallEventChanged event: \(event.rawValue), eventReason: \(eventReason ?? "")")
+        NSLog("onCallEventChanged event: \(event.rawValue), eventReason: \(eventReason ?? "")")
         switch event {
         case .remoteLeave:
             hangupAction()
@@ -480,7 +489,7 @@ extension EMShowTo1v1RoomViewController:CallApiListenerProtocol {
                            errorType: CallErrorCodeType,
                            errorCode: Int,
                            message: String?) {
-        print("onCallErrorOccur errorEvent:\(errorEvent.rawValue), errorType: \(errorType.rawValue), errorCode: \(errorCode), message: \(message ?? "")")
+        NSLog("onCallErrorOccur errorEvent:\(errorEvent.rawValue), errorType: \(errorType.rawValue), errorCode: \(errorCode), message: \(message ?? "")")
     }
     
     @objc func callDebugInfo(message: String, logLevel: CallLogLevel) {
@@ -498,7 +507,7 @@ extension EMShowTo1v1RoomViewController:CallApiListenerProtocol {
                                callUserId: UInt,
                                currentUserId: UInt,
                                timestamp: UInt64) {
-        print("onCallConnected roomId: \(roomId) callUserId: \(callUserId) currentUserId: \(currentUserId) timestamp: \(timestamp)")
+        NSLog("onCallConnected roomId: \(roomId) callUserId: \(callUserId) currentUserId: \(currentUserId) timestamp: \(timestamp)")
         
         connectStatusLabel.text = "通话开始 \nRTC 频道号: \(roomId) \n呼叫用户id: \(callUserId) \n当前用户id: \(currentUserId) \n开始时间戳: \(timestamp)"
         layoutConnectStatus()
@@ -509,7 +518,7 @@ extension EMShowTo1v1RoomViewController:CallApiListenerProtocol {
                                   currentUserId: UInt,
                                   timestamp: UInt64,
                                   duration: UInt64) {
-        print("onCallDisconnected roomId: \(roomId) hangupUserId: \(hangupUserId) currentUserId: \(currentUserId) timestamp: \(timestamp) duration: \(duration)ms")
+        NSLog("onCallDisconnected roomId: \(roomId) hangupUserId: \(hangupUserId) currentUserId: \(currentUserId) timestamp: \(timestamp) duration: \(duration)ms")
         
         connectStatusLabel.text = "通话结束 \nRTC 频道号: \(roomId) \n挂断用户id: \(hangupUserId) \n当前用户id: \(currentUserId) \n结束时间戳: \(timestamp) \n通话时长: \(duration)ms"
         layoutConnectStatus()

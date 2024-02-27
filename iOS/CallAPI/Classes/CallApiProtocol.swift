@@ -55,7 +55,7 @@ import AgoraRtcKit
     case recvRemoteFirstFrame = 13 //收到远端首帧
     case callingTimeout = 14       //呼叫超时
     case cancelByCallerRecall = 15 //同样的主叫呼叫不同频道导致取消
-    case rtmLost = 16              //rtm超时断连
+//    case rtmLost = 16              //rtm超时断连[2.0.0废弃，请从信令管理中实现中处理相关的异常]
     case remoteCallBusy = 17       //远端用户忙
 }
 
@@ -88,7 +88,7 @@ import AgoraRtcKit
     case localLeave = 112                         //本地用户离开RTC频道
     case recvRemoteFirstFrame = 113               //收到远端首帧
 //    case cancelByCallerRecall = 114               //同样的主叫呼叫不同频道导致取消[已废弃]
-//    case rtmLost = 115                            //rtm超时断连[2.0.0废弃，请从ISignalClient实现中处理信令相关的异常]
+//    case rtmLost = 115                            //rtm超时断连[2.0.0废弃，请从信令管理中实现中处理相关的异常]
 //    case rtcOccurError = 116                      //rtc出现错误[已废弃，请使用onCallErrorOccur(state: rtcOccurError)]
     case remoteCallBusy = 117                     //远端用户忙
 //    case startCaptureFail = 118                   //开启采集失败[已废弃，请使用onCallErrorOccur(state: startCaptureFail)]
@@ -193,7 +193,7 @@ import AgoraRtcKit
     /// 释放缓存
     func deinitialize(completion: @escaping (()->()))
     
-    /// 更新自己rtc/rtm的token
+    /// 更新rtc token
     /// - Parameter config: <#config description#>
     func renewToken(with rtcToken: String)
     

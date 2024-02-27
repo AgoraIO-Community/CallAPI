@@ -20,7 +20,7 @@ private func createRtmClient(appId: String, userId: String) -> AgoraRtmClientKit
 }
 
 func callMessagePrint(_ message: String) {
-    print(message)
+    NSLog(message)
 }
 
 /// <#Description#>
@@ -61,6 +61,7 @@ public class CallRtmManager: NSObject {
             self.isLoginedRtm = true
             self.isExternalRtmClient = true
             self.rtmClient = rtmClient
+            self.isConnected = true
         } else {
             self.rtmClient = createRtmClient(appId: appId, userId: userId)
         }
@@ -155,9 +156,11 @@ extension CallRtmManager: AgoraRtmClientDelegate {
             self.isConnected = false
             self.delegate?.onConnectionLost()
         } else if state == .connected {
+            if self.isConnected == true { return }
             self.isConnected = true
             self.delegate?.onConnected()
         } else {
+            if self.isConnected == false { return }
             self.isConnected = false
             self.delegate?.onDisconnected()
         }

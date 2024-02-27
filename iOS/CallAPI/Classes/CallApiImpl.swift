@@ -783,7 +783,6 @@ extension CallApiImpl {
         let data = try? JSONSerialization.data(withJSONObject: message)
         let messageStr = String(data: data!, encoding: .utf8)!
         config?.signalClient.sendMessage(userId: "\(userId)",
-                                         messageId: messageId,
                                          message: messageStr,
                                          completion: completion)
     }
