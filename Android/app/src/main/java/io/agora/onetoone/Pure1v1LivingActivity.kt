@@ -206,6 +206,9 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
             return true
         } else {
             val client = emClient ?: return false
+            if (!client.isConnected) {
+                Toasty.normal(this, "环信未登录或连接异常", Toast.LENGTH_SHORT).show()
+            }
             return client.isConnected
         }
     }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.widget.Toast
 import com.hyphenate.EMCallBack
 import com.hyphenate.EMConnectionListener
 import com.hyphenate.EMMessageListener
@@ -12,6 +13,7 @@ import com.hyphenate.chat.EMMessage
 import com.hyphenate.chat.EMOptions
 import com.hyphenate.chat.EMTextMessageBody
 import com.hyphenate.exceptions.HyphenateException
+import es.dmoral.toasty.Toasty
 import io.agora.onetoone.AGError
 import io.agora.rtm.PublishOptions
 import io.agora.rtm.RtmConstants
@@ -138,10 +140,12 @@ class CallEasemobSignalClient(
 
     // ---------------- EMConnectionListener ----------------
     override fun onConnected() {
+        Toasty.normal(context, "环信已连接", Toast.LENGTH_SHORT).show()
         isConnected = true
     }
 
     override fun onDisconnected(errorCode: Int) {
+        Toasty.normal(context, "环信已断开", Toast.LENGTH_SHORT).show()
         isConnected = false
     }
 
