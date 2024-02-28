@@ -9,8 +9,7 @@ import Foundation
 import AgoraRtmKit
 
 /// RTM信令管理类
-@objcMembers public class CallRtmSignalClient: NSObject {
-    private let delegates:NSHashTable<ISignalClientListener> = NSHashTable<ISignalClientListener>.weakObjects()
+@objcMembers public class CallRtmSignalClient: CallBaseSignalClient {
     private var rtmClient: AgoraRtmClientKit
     
     deinit {
@@ -101,14 +100,5 @@ extension CallRtmSignalClient: ISignalClient {
         _sendMessage(userId: userId,
                      message: message, 
                      completion: completion)
-    }
-    
-    public func addListener(listener: ISignalClientListener) {
-        if delegates.contains(listener) { return }
-        delegates.add(listener)
-    }
-    
-    public func removeListener(listener: ISignalClientListener) {
-        delegates.remove(listener)
     }
 }

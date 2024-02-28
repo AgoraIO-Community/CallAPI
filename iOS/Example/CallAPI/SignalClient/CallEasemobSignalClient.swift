@@ -9,9 +9,8 @@ import Foundation
 import HyphenateChat
 import CallAPI
 
-public class CallEasemobSignalClient: NSObject {
+public class CallEasemobSignalClient: CallBaseSignalClient {
     public var isConnected: Bool = false
-    private let delegates:NSHashTable<ISignalClientListener> = NSHashTable<ISignalClientListener>.weakObjects()
     private var appKey: String
     private var userId: String
 
@@ -66,6 +65,11 @@ extension CallEasemobSignalClient {
     public func renew(token: String) {
         EMClient.shared().renewToken(token)
     }
+    
+    public func clean() {
+        delegates.removeAllObjects()
+        logout()
+    }
 }
 
 //MARK: private
@@ -119,20 +123,6 @@ extension CallEasemobSignalClient: ISignalClient {
         _sendMessage(userId: userId,
                      message: message, 
                      completion: completion)
-    }
-    
-    public func addListener(listener: ISignalClientListener) {
-        if delegates.contains(listener) { return }
-        delegates.add(listener)
-    }
-    
-    public func removeListener(listener: ISignalClientListener) {
-        delegates.remove(listener)
-    }
-    
-    public func clean() {
-        delegates.removeAllObjects()
-        logout()
     }
 }
 
