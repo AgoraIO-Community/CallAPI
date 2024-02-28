@@ -5,6 +5,7 @@ import java.io.Serializable
 /**  加入房间时携带的信息
  */
 data class EnterRoomInfoModel (
+    var isRtm: Boolean = true,
     var isBrodCaster: Boolean = true,
     var currentUid: String = "",
     var showRoomId: String = "",

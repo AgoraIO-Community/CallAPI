@@ -1,11 +1,11 @@
-package io.agora.onetoone.message
+package io.agora.onetoone.signalClient
 
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import com.google.gson.Gson
 import com.hyphenate.EMCallBack
+import com.hyphenate.EMConnectionListener
 import com.hyphenate.EMMessageListener
 import com.hyphenate.chat.EMClient
 import com.hyphenate.chat.EMMessage
@@ -13,19 +13,16 @@ import com.hyphenate.chat.EMOptions
 import com.hyphenate.chat.EMTextMessageBody
 import com.hyphenate.exceptions.HyphenateException
 import io.agora.onetoone.AGError
-import io.agora.onetoone.ICallMessageListener
-import io.agora.onetoone.ICallMessageManager
 import io.agora.rtm.PublishOptions
 import io.agora.rtm.RtmConstants
-import org.json.JSONObject
 
-fun createHyphenateMessageManager(context: Context, appKey: String, userId: Int) = CallHyphenateMessageImpl(context, appKey, userId)
+fun createEasemobSignalClient(context: Context, appKey: String, userId: Int) = CallEasemobSignalClient(context, appKey, userId)
 
-class CallHyphenateMessageImpl(
+class CallEasemobSignalClient(
     private val context: Context,
     private val appKey: String,
     private val userId: Int = 0
-): ICallMessageManager, EMMessageListener {
+): ISignalClient, EMMessageListener, EMConnectionListener {
 
     companion object {
         private const val TAG = "CALL_HY_MSG_MANAGER"
@@ -40,6 +37,7 @@ class CallHyphenateMessageImpl(
         EMClient.getInstance().init(context, options)
         // 注册消息监听
         EMClient.getInstance().chatManager().addMessageListener(this)
+        EMClient.getInstance().addConnectionListener(this)
 
         // 注册
         try {
@@ -69,17 +67,16 @@ class CallHyphenateMessageImpl(
         })
     }
 
+    var isConnected: Boolean = false
+
     private val mHandler = Handler(Looper.getMainLooper())
 
-    // 消息id
-    private var messageId: Int = 0
-
     // 回调
-    private val listeners = mutableListOf<ICallMessageListener>()
+    private val listeners = mutableListOf<ISignalClientListener>()
 
     override fun sendMessage(
         userId: String,
-        message: Map<String, Any>,
+        message: String,
         completion: ((AGError?) -> Unit)?
     ) {
         if (userId.isEmpty() || userId == "0") {
@@ -87,30 +84,24 @@ class CallHyphenateMessageImpl(
             completion?.invoke(AGError(errorStr, -1))
             return
         }
-        messageId += 1
-        messageId %= Int.MAX_VALUE
-        val map = message.toMutableMap()
-        map[kMessageId] = messageId
-        innerSendMessage(userId, map, completion)
+        innerSendMessage(userId, message, completion)
     }
 
     private fun innerSendMessage(
         userId: String,
-        message: Map<String, Any>,
+        message: String,
         completion: ((AGError?) -> Unit)?
     ) {
         if (userId.isEmpty()) {
             completion?.invoke(AGError("send message fail! roomId is empty", -1))
             return
         }
-        val msgId = message[kMessageId] as? Int ?: 0
-        val json = Gson().toJson(message)
         val options = PublishOptions()
         options.setChannelType(RtmConstants.RtmChannelType.USER)
         val startTime = System.currentTimeMillis()
 
         // `content` 为要发送的文本内容，`toChatUsername` 为对方的账号。
-        val msg = EMMessage.createTextSendMessage(json, userId)
+        val msg = EMMessage.createTextSendMessage(message, userId)
         // 会话类型：单聊为 EMMessage.ChatType.Chat
         msg.chatType = EMMessage.ChatType.Chat
         // 发送消息时可以设置 `EMCallBack` 的实例，获得消息发送的状态。可以在该回调中更新消息的显示状态。例如消息发送失败后的提示等等。
@@ -131,42 +122,44 @@ class CallHyphenateMessageImpl(
         EMClient.getInstance().chatManager().sendMessage(msg)
     }
 
-    override fun addListener(listener: ICallMessageListener) {
+    override fun addListener(listener: ISignalClientListener) {
+        if (listeners.contains(listener)) return
         listeners.add(listener)
     }
 
-    override fun removeListener(listener: ICallMessageListener) {
+    override fun removeListener(listener: ISignalClientListener) {
         listeners.remove(listener)
     }
 
     fun clean() {
+        isConnected = false
         listeners.clear()
+        EMClient.getInstance().removeConnectionListener(this)
         EMClient.getInstance().logout(false)
     }
 
-    // EMMessageListener
+    // ---------------- EMMessageListener ----------------
     override fun onMessageReceived(messages: MutableList<EMMessage>?) {
         messages?.forEach {
             runOnUiThread {
                 val body = it.body as EMTextMessageBody
                 listeners.forEach {
-                    it.onMessageReceive(jsonStringToMap(body.message))
+                    it.onMessageReceive(body.message)
                 }
             }
         }
     }
 
-    private fun jsonStringToMap(jsonString: String): Map<String, Any> {
-        val json = JSONObject(jsonString)
-        val map = mutableMapOf<String, Any>()
-        val keys = json.keys()
-        while (keys.hasNext()) {
-            val key = keys.next()
-            map[key] = json.get(key)
-        }
-        return map
+    // ---------------- EMConnectionListener ----------------
+    override fun onConnected() {
+        isConnected = true
     }
 
+    override fun onDisconnected(errorCode: Int) {
+        isConnected = false
+    }
+
+    // ---------------- inner private ----------------
     private fun runOnUiThread(runnable: Runnable) {
         if (Thread.currentThread() == Looper.getMainLooper().thread) {
             runnable.run()
