@@ -63,6 +63,8 @@ class CallApiImpl constructor(
         const val kRejectByInternal = "rejectByInternal"
 
         const val kHangupReason = "hangupReason"
+        // 发送的消息id
+        private const val kMessageId = "messageId"
     }
 
     private val kCallTimeoutInterval: Long = 15000
@@ -81,6 +83,8 @@ class CallApiImpl constructor(
     private var connectInfo = CallConnectInfo()
     private var reportInfoList = listOf<CallReportInfo>()
     private var isChannelJoined = false
+    // 消息id
+    private var messageId: Int = 0
 
     private var tempRemoteCanvasView = TextureView(context)
     private var tempLocalCanvasView = TextureView(context)
@@ -724,6 +728,19 @@ class CallApiImpl constructor(
         }
     }
 
+    private fun _sendMessage(
+        userId: String,
+        message: Map<String, Any>,
+        completion: ((AGError?) -> Unit)?
+    ) {
+        messageId += 1
+        messageId %= Int.MAX_VALUE
+        val map = message.toMutableMap()
+        map[kMessageId] = messageId
+        val jsonString = Gson().toJson(map).toString()
+        config?.signalClient?.sendMessage(userId, jsonString, completion)
+    }
+
     //MARK: on Message
     private fun _processRespEvent(reason: CallAction, message: Map<String, Any>) {
         when (reason) {
@@ -744,8 +761,7 @@ class CallApiImpl constructor(
             return
         }
         val msg = message ?: _messageDic(CallAction.CancelCall)
-        val jsonString = Gson().toJson(msg).toString()
-        config?.signalClient?.sendMessage(userId.toString(), jsonString) { err ->
+        _sendMessage(userId.toString(), msg) { err ->
             completion?.invoke(err)
             if (err != null) {
                 _notifySendMessageErrorEvent(err, "cancel call fail: ")
@@ -754,13 +770,11 @@ class CallApiImpl constructor(
     }
 
     private fun _reject(remoteUserId: Int, message: Map<String, Any>, completion: ((AGError?) -> Unit)? = null) {
-        val jsonString = Gson().toJson(message).toString()
-        config?.signalClient?.sendMessage(remoteUserId.toString(), jsonString, completion)
+        _sendMessage(remoteUserId.toString(), message, completion)
     }
 
     private fun _hangup(remoteUserId: Int, message: Map<String, Any>? = null, completion: ((AGError?) -> Unit)? = null) {
-        val jsonString = Gson().toJson(message ?: _messageDic(CallAction.Hangup)).toString()
-        config?.signalClient?.sendMessage(remoteUserId.toString(), jsonString, completion)
+        _sendMessage(remoteUserId.toString(), message ?: _messageDic(CallAction.Hangup), completion)
     }
 
     //收到呼叫消息
@@ -961,8 +975,7 @@ class CallApiImpl constructor(
         _reportMethod("call", "remoteUserId=$remoteUserId")
 
         val message = _callMessageDic(remoteUserId, fromRoomId)
-        val jsonString = Gson().toJson(message).toString()
-        config?.signalClient?.sendMessage(remoteUserId.toString(), jsonString) { err ->
+        _sendMessage(remoteUserId.toString(), message) { err ->
             completion?.invoke(err)
             if (err != null) {
                 //_updateAndNotifyState(CallStateType.Prepared, CallReason.MessageFailed, err.msg)
@@ -1017,8 +1030,7 @@ class CallApiImpl constructor(
 
         //先查询presence里是不是正在呼叫的被叫是自己，如果是则不再发送消息
         val message = _messageDic(CallAction.Accept)
-        val jsonString = Gson().toJson(message).toString()
-        config?.signalClient?.sendMessage(remoteUserId.toString(), jsonString) { err ->
+        _sendMessage(remoteUserId.toString(), message) { err ->
             completion?.invoke(err)
             if (err != null) {
                 _notifySendMessageErrorEvent(err, "accept fail: ")

@@ -10,7 +10,7 @@ fun createRtmSignalClient(client: RtmClient) = CallRtmSignalClient(client)
 
 class CallRtmSignalClient(
     client: RtmClient
-): ISignalClient, RtmEventListener {
+): ISignalClient, CallBaseSignalClient(), RtmEventListener {
 
     companion object {
         private const val TAG = "CALL_RTM_MSG_MANAGER"
@@ -19,9 +19,6 @@ class CallRtmSignalClient(
     private val mHandler = Handler(Looper.getMainLooper())
 
     private var rtmClient: RtmClient
-
-    // 回调
-    private val listeners = mutableListOf<ISignalClientListener>()
 
     init {
         rtmClient = client
@@ -44,15 +41,6 @@ class CallRtmSignalClient(
             return
         }
         innerSendMessage(userId, message, completion)
-    }
-
-    override fun addListener(listener: ISignalClientListener) {
-        if (listeners.contains(listener)) return
-        listeners.add(listener)
-    }
-
-    override fun removeListener(listener: ISignalClientListener) {
-        listeners.add(listener)
     }
 
     // --------------- MARK: AgoraRtmClientDelegate -------------

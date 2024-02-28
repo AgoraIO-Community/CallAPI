@@ -22,12 +22,10 @@ class CallEasemobSignalClient(
     private val context: Context,
     private val appKey: String,
     private val userId: Int = 0
-): ISignalClient, EMMessageListener, EMConnectionListener {
+): ISignalClient, EMMessageListener, EMConnectionListener, CallBaseSignalClient() {
 
     companion object {
         private const val TAG = "CALL_HY_MSG_MANAGER"
-        // 发送的消息id
-        private const val kMessageId = "messageId"
     }
 
     init {
@@ -70,9 +68,6 @@ class CallEasemobSignalClient(
     var isConnected: Boolean = false
 
     private val mHandler = Handler(Looper.getMainLooper())
-
-    // 回调
-    private val listeners = mutableListOf<ISignalClientListener>()
 
     override fun sendMessage(
         userId: String,
@@ -120,15 +115,6 @@ class CallEasemobSignalClient(
         })
         // 发送消息
         EMClient.getInstance().chatManager().sendMessage(msg)
-    }
-
-    override fun addListener(listener: ISignalClientListener) {
-        if (listeners.contains(listener)) return
-        listeners.add(listener)
-    }
-
-    override fun removeListener(listener: ISignalClientListener) {
-        listeners.remove(listener)
     }
 
     fun clean() {

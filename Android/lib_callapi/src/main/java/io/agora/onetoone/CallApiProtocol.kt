@@ -11,7 +11,7 @@ open class CallConfig(
     var userId: Int = 0,
     //rtc engine实例
     var rtcEngine: RtcEngineEx? = null,
-    //ICallMessageManager实例
+    //ISignalClient实例
     var signalClient: ISignalClient
 ){}
 
