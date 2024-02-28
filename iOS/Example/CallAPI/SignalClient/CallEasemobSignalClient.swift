@@ -1,5 +1,5 @@
 //
-//  CallEasemobMessageManager.swift
+//  CallEasemobSignalClient.swift
 //  CallAPI
 //
 //  Created by wushengtao on 2024/2/8.
@@ -9,8 +9,8 @@ import Foundation
 import HyphenateChat
 import CallAPI
 
-public class CallEasemobMessageManager: NSObject {
-    private let delegates:NSHashTable<ICallMessageListener> = NSHashTable<ICallMessageListener>.weakObjects()
+public class CallEasemobSignalClient: CallBaseSignalClient {
+    public var isConnected: Bool = false
     private var appKey: String
     private var userId: String
 
@@ -25,10 +25,13 @@ public class CallEasemobMessageManager: NSObject {
 }
 
 //MARK: public
-extension CallEasemobMessageManager {
+extension CallEasemobSignalClient {
     public func login(completion: @escaping ((NSError?)->())) {
         let uid = userId
         let pwd = uid
+        EMClient.shared().chatManager?.add(self, delegateQueue: nil)
+        EMClient.shared().add(self, delegateQueue: DispatchQueue.main)
+        
         let date = Date()
         callMessagePrint("register start")
         EMClient.shared().register(withUsername: uid, password: pwd) {[weak self] username, err in
@@ -39,13 +42,13 @@ extension CallEasemobMessageManager {
             }
             self?.callMessagePrint("login start")
             EMClient.shared().login(withUsername: uid, password: pwd) { username, err in
+                guard let self = self else { return }
                 if let err = err, err.code != EMErrorCode.userAlreadyLoginSame {
-                    self?.callMessagePrint("login fail: \(String(describing: err.errorDescription))")
+                    self.callMessagePrint("login fail: \(String(describing: err.errorDescription))")
                     completion(NSError(domain: err.errorDescription, code: err.code.rawValue))
                     return
                 }
-                self?.callMessagePrint("login success \(-date.timeIntervalSinceNow * 1000) ms")
-                EMClient.shared().chatManager?.add(self, delegateQueue: nil)
+                self.callMessagePrint("login success \(-date.timeIntervalSinceNow * 1000) ms")
                 completion(nil)
             }
         }
@@ -53,6 +56,7 @@ extension CallEasemobMessageManager {
     
     public func logout() {
         let date = Date()
+        EMClient.shared().removeDelegate(self)
         EMClient.shared().chatManager?.remove(self)
         EMClient.shared().logout(false)
         print("logout success: \(-date.timeIntervalSinceNow * 1000) ms")
@@ -61,10 +65,15 @@ extension CallEasemobMessageManager {
     public func renew(token: String) {
         EMClient.shared().renewToken(token)
     }
+    
+    public func clean() {
+        delegates.removeAllObjects()
+        logout()
+    }
 }
 
 //MARK: private
-extension CallEasemobMessageManager {
+extension CallEasemobSignalClient {
     private func callMessagePrint(_ message: String, _ logLevel: Int = 0) {
         let tag = "[CallEasemobMessageManager]"
         for element in delegates.allObjects {
@@ -72,8 +81,7 @@ extension CallEasemobMessageManager {
         }
     }
     
-    private func _sendMessage(userId: String, 
-                              messageId: Int,
+    private func _sendMessage(userId: String,
                               message: String,
                               completion: ((NSError?)-> Void)?) {
         if userId.count == 0 {
@@ -81,30 +89,28 @@ extension CallEasemobMessageManager {
             return
         }
         
-        let msgId = messageId
         let body = EMTextMessageBody(text: message)
-        callMessagePrint("_sendMessage[\(msgId)] to '\(userId)', message: \(message)")
+        callMessagePrint("_sendMessage to '\(userId)', message: \(message)")
         let emMessage = EMChatMessage(conversationID: userId, from: self.userId, to: userId, body: body, ext: nil)
         let date = Date()
         EMClient.shared().chatManager?.send(emMessage, progress: nil, completion: {[weak self] msg, err in
             guard let self = self else {return}
             if let err = err {
                 let error = NSError(domain: err.errorDescription, code: err.code.rawValue)
-                self.callMessagePrint("_sendMessage[\(msgId)] fail: \(error) cost: \(date.getCostMilliseconds()) ms", 1)
+                self.callMessagePrint("_sendMessage fail: \(error) cost: \(date.getCostMilliseconds()) ms", 1)
 
                 completion?(error)
                 return
             }
-            self.callMessagePrint("_sendMessage[\(msgId)] publish cost \(date.getCostMilliseconds()) ms")
+            self.callMessagePrint("_sendMessage publish cost \(date.getCostMilliseconds()) ms")
             completion?(nil)
         })
     }
 }
 
 //MARK: ICallMessageManager
-extension CallEasemobMessageManager: ICallMessageManager {
-    public func sendMessage(userId: String, 
-                            messageId: Int,
+extension CallEasemobSignalClient: ISignalClient {
+    public func sendMessage(userId: String,
                             message: String, 
                             completion: ((NSError?) -> Void)?) {
         guard userId.count > 0, userId != "0" else {
@@ -114,29 +120,14 @@ extension CallEasemobMessageManager: ICallMessageManager {
             return
         }
 
-        _sendMessage(userId: userId, 
-                     messageId: messageId,
+        _sendMessage(userId: userId,
                      message: message, 
                      completion: completion)
-    }
-    
-    public func addListener(listener: ICallMessageListener) {
-        if delegates.contains(listener) { return }
-        delegates.add(listener)
-    }
-    
-    public func removeListener(listener: ICallMessageListener) {
-        delegates.remove(listener)
-    }
-    
-    public func clean() {
-        delegates.removeAllObjects()
-        logout()
     }
 }
 
 //MARK: EMChatManagerDelegate
-extension CallEasemobMessageManager: EMChatManagerDelegate {
+extension CallEasemobSignalClient: EMChatManagerDelegate {
     public func messagesDidReceive(_ aMessages: [EMChatMessage]) {
         for message in aMessages {
             let from = message.from
@@ -149,6 +140,18 @@ extension CallEasemobMessageManager: EMChatManagerDelegate {
                     element.onMessageReceive(message: text)
                 }
             }
+        }
+    }
+}
+
+extension CallEasemobSignalClient: EMClientDelegate {
+    public func connectionStateDidChange(_ aConnectionState: EMConnectionState) {
+        print("connectionStateDidChange: \(aConnectionState.rawValue)")
+        switch aConnectionState {
+        case .connected:
+            isConnected = true
+        default:
+            isConnected = false
         }
     }
 }

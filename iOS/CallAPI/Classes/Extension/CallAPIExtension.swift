@@ -29,7 +29,7 @@ extension CallConfig {
         config.appId = appId
         config.userId = userId
         config.rtcEngine = rtcEngine
-        config.callMessageManager = callMessageManager
+        config.signalClient = signalClient
         return config
     }
 }

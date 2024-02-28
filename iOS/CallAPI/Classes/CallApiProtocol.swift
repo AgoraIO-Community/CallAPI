@@ -13,12 +13,12 @@ import AgoraRtcKit
     public var appId: String = ""                          //声网App Id
     public var userId: UInt = 0                            //用户id
     public var rtcEngine: AgoraRtcEngineKit!               //rtc engine实例
-    public var callMessageManager: ICallMessageManager!    //信令通道对象实例
+    public var signalClient: ISignalClient!                //信令通道对象实例
 }
 
 //TODO: 如何不设置万能token
 @objc public class PrepareConfig: NSObject {
-    public var roomId: String = ""                      //自己的RTC频道名，用于呼叫对端用户时让对端用户进入加入这个RTC频道
+    public var roomId: String = ""                      //自己的RTC频道名，用于呼叫对端用户时让对端用户加入这个RTC频道
     public var rtcToken: String = ""                    //rtc token，需要使用万能token，token创建的时候channel name为空字符串
     public var localView: UIView!                       //显示本地流的画布
     public var remoteView: UIView!                      //显示远端流的画布
@@ -41,8 +41,8 @@ import AgoraRtcKit
 @objc public enum CallStateReason: UInt {
     case none = 0
     case joinRTCFailed = 1         //加入RTC失败
-    case rtmSetupFailed = 2        //设置RTM失败
-    case rtmSetupSuccessed = 3     //设置RTM成功
+//    case rtmSetupFailed = 2        //设置RTM失败[2.0.0已废弃, prepareForCall失败reason变更为none]
+//    case rtmSetupSuccessed = 3     //设置RTM成功[2.0.0已废弃，信令成功通过ISignalClient自行维护]
     case messageFailed = 4         //消息发送失败
     case localRejected = 5         //本地用户拒绝
     case remoteRejected = 6        //远端用户拒绝
@@ -55,7 +55,7 @@ import AgoraRtcKit
     case recvRemoteFirstFrame = 13 //收到远端首帧
     case callingTimeout = 14       //呼叫超时
     case cancelByCallerRecall = 15 //同样的主叫呼叫不同频道导致取消
-    case rtmLost = 16              //rtm超时断连
+//    case rtmLost = 16              //rtm超时断连[2.0.0废弃，请从信令管理中实现中处理相关的异常]
     case remoteCallBusy = 17       //远端用户忙
 }
 
@@ -88,7 +88,7 @@ import AgoraRtcKit
     case localLeave = 112                         //本地用户离开RTC频道
     case recvRemoteFirstFrame = 113               //收到远端首帧
 //    case cancelByCallerRecall = 114               //同样的主叫呼叫不同频道导致取消[已废弃]
-    case rtmLost = 115                            //rtm超时断连
+//    case rtmLost = 115                            //rtm超时断连[2.0.0废弃，请从信令管理中实现中处理相关的异常]
 //    case rtcOccurError = 116                      //rtc出现错误[已废弃，请使用onCallErrorOccur(state: rtcOccurError)]
     case remoteCallBusy = 117                     //远端用户忙
 //    case startCaptureFail = 118                   //开启采集失败[已废弃，请使用onCallErrorOccur(state: startCaptureFail)]
@@ -120,50 +120,6 @@ import AgoraRtcKit
 }
 
 
-/// 信令回调协议
-@objc public protocol ICallMessageListener: NSObjectProtocol {
-    
-    /// 收到消息的回调
-    /// - Parameter message: 收到的消息
-    func onMessageReceive(message: String)
-    
-    /// token过期回调，如果信令系统没有或者不需要则忽略
-    /// - Parameter channelName: 频道名
-    @objc optional func onTokenWillExpire(channelName: String?)
-    
-    /// 信令断连的回调，如果信令系统不会出现此情况则忽略
-    /// - Parameter channelName: 频道名
-    @objc optional func onDisconnected(channelName: String)
-    
-    /// 信令日志回调
-    /// - Parameters:
-    ///   - message: 日志消息内容
-    ///   - logLevel: 日志优先级
-    @objc optional func debugInfo(message: String, logLevel: Int)
-}
-
-/// 信令抽象协议
-@objc public protocol ICallMessageManager: NSObjectProtocol {
-    
-    /// CallApi往信令系统发消息
-    /// - Parameters:
-    ///   - userId: 目标用户id
-    ///   - messageId: 消息id
-    ///   - message: 消息对象
-    ///   - completion: 完成回调
-    func sendMessage(userId: String,
-                     messageId: Int,
-                     message: String,
-                     completion: ((NSError?)-> Void)?)
-    
-    /// 监听信令系统回调
-    /// - Parameter listener: <#listener description#>
-    func addListener(listener: ICallMessageListener)
-    
-    /// 移除信令系统回调
-    /// - Parameter listener: <#listener description#>
-    func removeListener(listener: ICallMessageListener)
-}
 
 @objc public protocol CallApiListenerProtocol: NSObjectProtocol {
     /// 状态响应回调
@@ -237,9 +193,9 @@ import AgoraRtcKit
     /// 释放缓存
     func deinitialize(completion: @escaping (()->()))
     
-    /// 更新自己rtc/rtm的token
+    /// 更新rtc token
     /// - Parameter config: <#config description#>
-    func renewToken(with rtcToken: String, rtmToken: String)
+    func renewToken(with rtcToken: String)
     
     /// 准备通话环境，需要调用成功才可以进行呼叫，如需要更换通话的RTC 频道号可以重复调用，确保调用时必须是非通话状态(非calling、connecting、connected)才可调用成功
     /// - Parameters:

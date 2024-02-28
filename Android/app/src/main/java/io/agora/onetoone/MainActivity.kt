@@ -16,6 +16,7 @@ class MainActivity : AppCompatActivity() {
 
     private val TAG = "LOG_MainActivity"
 
+    private val kIsRtm = "isRtm"
     private val kIsShowMode = "isShowMode"
     private val kIsBrodCaster = "isBrodCaster"
     private val kLocalUid = "localUid"
@@ -70,8 +71,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onEnterAction() {
-        val isShowMode = (mViewBinding.btnShow.isChecked)
-        val isBrodCaster = (mViewBinding.btnBroadcaster.isChecked)
+        val isRtm = mViewBinding.btnShow.isChecked || mViewBinding.btnOneToOne.isChecked
+        val isShowMode = mViewBinding.btnShow.isChecked || mViewBinding.btnHyShow.isChecked
+        val isBrodCaster = mViewBinding.btnBroadcaster.isChecked
         val currentUserId = mViewBinding.etLocalUid.text.toString()
         val remoteUserId = mViewBinding.etOwnerUid.text.toString()
 
@@ -91,6 +93,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         // save
+        SPUtil.putBoolean(kIsRtm, isRtm)
         SPUtil.putBoolean(kIsShowMode, isShowMode)
         SPUtil.putBoolean(kIsBrodCaster, isBrodCaster)
         SPUtil.putString(kLocalUid, currentUserId)
@@ -103,6 +106,7 @@ class MainActivity : AppCompatActivity() {
         val showUserId = if (isBrodCaster) currentUserId else remoteUserId
 
         val enterModel = EnterRoomInfoModel(
+            isRtm,
             isBrodCaster,
             currentUserId,
             showRoomId,
@@ -154,11 +158,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupSaved() {
+        val isRtm = SPUtil.getBoolean(kIsRtm, true)
         val isShowMode = SPUtil.getBoolean(kIsShowMode, true)
         val isBrodCaster = SPUtil.getBoolean(kIsBrodCaster, true)
         val localUid = SPUtil.getString(kLocalUid, "")
         val ownerUid = SPUtil.getString(kOwnerUid, "")
-        mViewBinding.rgMode.check(if (isShowMode) R.id.btnShow else R.id.btnOneToOne)
+        mViewBinding.rgMode.check(if (isShowMode) (if (isRtm) R.id.btnShow else R.id.btnHyShow) else (if (isRtm) R.id.btnOneToOne else R.id.btnHyOneToOne))
         mViewBinding.rgRole.check(if (isBrodCaster) R.id.btnBroadcaster else R.id.btnAudience)
         mViewBinding.etLocalUid.setText(localUid)
         mViewBinding.etOwnerUid.setText(ownerUid)
@@ -171,7 +176,7 @@ class MainActivity : AppCompatActivity() {
     private fun updateUI() {
         val modeChecked = mViewBinding.rgMode.checkedRadioButtonId
         val roleChecked = mViewBinding.rgRole.checkedRadioButtonId
-        if (modeChecked == R.id.btnShow) {
+        if (modeChecked == R.id.btnShow || modeChecked == R.id.btnHyShow) {
             mViewBinding.rgRole.isVisible = true
             if (roleChecked == R.id.btnBroadcaster) {
                 mViewBinding.tvOwnerUid.isVisible = false

@@ -7,8 +7,10 @@ import android.util.Log
 import android.view.TextureView
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import com.google.gson.Gson
 import io.agora.callapi.BuildConfig
 import io.agora.onetoone.extension.*
+import io.agora.onetoone.signalClient.ISignalClientListener
 import io.agora.rtc2.*
 import io.agora.rtc2.video.VideoCanvas
 import org.json.JSONObject
@@ -42,7 +44,7 @@ enum class CalleeJoinRTCPolicy(val value: Int) {
 
 class CallApiImpl constructor(
     context: Context
-): ICallApi, ICallMessageListener, IRtcEngineEventHandler() {
+): ICallApi, ISignalClientListener, IRtcEngineEventHandler() {
 
     companion object {
         val calleeJoinRTCPolicy = CalleeJoinRTCPolicy.Calling
@@ -61,6 +63,8 @@ class CallApiImpl constructor(
         const val kRejectByInternal = "rejectByInternal"
 
         const val kHangupReason = "hangupReason"
+        // 发送的消息id
+        private const val kMessageId = "messageId"
     }
 
     private val kCallTimeoutInterval: Long = 15000
@@ -76,15 +80,11 @@ class CallApiImpl constructor(
     private val localFrameProxy = CallLocalFirstFrameProxy(this)
     private var config: CallConfig? = null
     private var prepareConfig: PrepareConfig? = null
-//    private var messageManager: CallMessageManager? = null
-//        set(value) {
-//            val oldValue = field
-//            field = value
-//            oldValue?.deinitialize()
-//        }
     private var connectInfo = CallConnectInfo()
     private var reportInfoList = listOf<CallReportInfo>()
     private var isChannelJoined = false
+    // 消息id
+    private var messageId: Int = 0
 
     private var tempRemoteCanvasView = TextureView(context)
     private var tempLocalCanvasView = TextureView(context)
@@ -127,7 +127,6 @@ class CallApiImpl constructor(
                 CallStateType.Idle, CallStateType.Failed -> {
                     _leaveRTC()
                     connectInfo.clean()
-                    config = null
                     isPreparing = false
                 }
                 else -> {}
@@ -406,23 +405,10 @@ class CallApiImpl constructor(
         //login rtm if need
         if (enableLoginRtm) {
             isPreparing = true
-            config?.callMessageManager?.addListener(this)
+            config?.signalClient?.addListener(this)
             isPreparing = false
             _notifyEvent(CallEvent.RtmSetupSuccessed)
             completion?.invoke(null)
-//            val messageManager = CallMessageManager(cfg, this)
-//            this.messageManager = messageManager
-//
-//            messageManager.initialize(prepareConfig) { err ->
-//                isPreparing = false
-//                callWarningPrint("prepareForCall[$tag] rtmInitialize completion: ${err?.msg ?: "success"})")
-//                if (err != null) {
-//                    _notifyErrorEvent(CallErrorEvent.RtmSetupFail, CallErrorCodeType.Rtm, err.code, err.msg)
-//                } else {
-//                    _notifyEvent(CallEvent.RtmSetupSuccessed)
-//                }
-//                completion?.invoke(err)
-//            }
         } else {
             completion?.invoke(null)
         }
@@ -742,6 +728,19 @@ class CallApiImpl constructor(
         }
     }
 
+    private fun _sendMessage(
+        userId: String,
+        message: Map<String, Any>,
+        completion: ((AGError?) -> Unit)?
+    ) {
+        messageId += 1
+        messageId %= Int.MAX_VALUE
+        val map = message.toMutableMap()
+        map[kMessageId] = messageId
+        val jsonString = Gson().toJson(map).toString()
+        config?.signalClient?.sendMessage(userId, jsonString, completion)
+    }
+
     //MARK: on Message
     private fun _processRespEvent(reason: CallAction, message: Map<String, Any>) {
         when (reason) {
@@ -762,7 +761,7 @@ class CallApiImpl constructor(
             return
         }
         val msg = message ?: _messageDic(CallAction.CancelCall)
-        config?.callMessageManager?.sendMessage(userId.toString(), msg) { err ->
+        _sendMessage(userId.toString(), msg) { err ->
             completion?.invoke(err)
             if (err != null) {
                 _notifySendMessageErrorEvent(err, "cancel call fail: ")
@@ -771,11 +770,11 @@ class CallApiImpl constructor(
     }
 
     private fun _reject(remoteUserId: Int, message: Map<String, Any>, completion: ((AGError?) -> Unit)? = null) {
-        config?.callMessageManager?.sendMessage(remoteUserId.toString(), message, completion)
+        _sendMessage(remoteUserId.toString(), message, completion)
     }
 
     private fun _hangup(remoteUserId: Int, message: Map<String, Any>? = null, completion: ((AGError?) -> Unit)? = null) {
-        config?.callMessageManager?.sendMessage(remoteUserId.toString(), message ?: _messageDic(CallAction.Hangup), completion)
+        _sendMessage(remoteUserId.toString(), message ?: _messageDic(CallAction.Hangup), completion)
     }
 
     //收到呼叫消息
@@ -976,7 +975,7 @@ class CallApiImpl constructor(
         _reportMethod("call", "remoteUserId=$remoteUserId")
 
         val message = _callMessageDic(remoteUserId, fromRoomId)
-        config?.callMessageManager?.sendMessage(remoteUserId.toString(), message) { err ->
+        _sendMessage(remoteUserId.toString(), message) { err ->
             completion?.invoke(err)
             if (err != null) {
                 //_updateAndNotifyState(CallStateType.Prepared, CallReason.MessageFailed, err.msg)
@@ -1031,18 +1030,18 @@ class CallApiImpl constructor(
 
         //先查询presence里是不是正在呼叫的被叫是自己，如果是则不再发送消息
         val message = _messageDic(CallAction.Accept)
-        config?.callMessageManager?.sendMessage(remoteUserId.toString(), message) { err ->
+        _sendMessage(remoteUserId.toString(), message) { err ->
             completion?.invoke(err)
             if (err != null) {
                 _notifySendMessageErrorEvent(err, "accept fail: ")
             }
         }
-        _updateAndNotifyState(CallStateType.Connecting, CallStateReason.LocalAccepted, eventInfo = message)
-        _notifyEvent(CallEvent.LocalAccepted)
 
         if (calleeJoinRTCPolicy == CalleeJoinRTCPolicy.Accepted) {
             _joinRTCAsBroadcaster(roomId)
         }
+        _updateAndNotifyState(CallStateType.Connecting, CallStateReason.LocalAccepted, eventInfo = message)
+        _notifyEvent(CallEvent.LocalAccepted)
     }
 
     //拒绝
@@ -1090,11 +1089,12 @@ class CallApiImpl constructor(
 //        _notifyEvent(CallEvent.RtmLost)
 //    }
 
-    override fun onMessageReceive(message: Map<String, Any>) {
-        val messageAction = message[kMessageAction] as? Int ?: 0
-        val msgTs = message[kMessageTs] as? Long
-        val userId = message[kFromUserId] as? Int
-        val messageVersion = message[kMessageVersion] as? String
+    override fun onMessageReceive(message: String) {
+        val messageDic = jsonStringToMap(message)
+        val messageAction = messageDic[kMessageAction] as? Int ?: 0
+        val msgTs = messageDic[kMessageTs] as? Long
+        val userId = messageDic[kFromUserId] as? Int
+        val messageVersion = messageDic[kMessageVersion] as? String
         if (messageVersion == null || msgTs == null || userId == null) {
             callWarningPrint("fail to parse message: $message")
             return
@@ -1102,7 +1102,7 @@ class CallApiImpl constructor(
         //TODO: compatible other message version
         if (kCurrentMessageVersion != messageVersion)  { return }
         callPrint("on event message: $message")
-        _processRespEvent(CallAction.fromValue(messageAction), message)
+        _processRespEvent(CallAction.fromValue(messageAction), messageDic)
     }
 
     override fun debugInfo(message: String, logLevel: Int) {
@@ -1163,6 +1163,17 @@ class CallApiImpl constructor(
                 firstFrameCompletion?.invoke()
             }
         }
+    }
+
+    private fun jsonStringToMap(jsonString: String): Map<String, Any> {
+        val json = JSONObject(jsonString)
+        val map = mutableMapOf<String, Any>()
+        val keys = json.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            map[key] = json.get(key)
+        }
+        return map
     }
 
     private fun callPrint(message: String, logLevel: CallLogLevel = CallLogLevel.Normal) {

@@ -1,6 +1,7 @@
 package io.agora.onetoone
 
 import android.view.ViewGroup
+import io.agora.onetoone.signalClient.ISignalClient
 import io.agora.rtc2.RtcEngineEx
 
 open class CallConfig(
@@ -10,8 +11,8 @@ open class CallConfig(
     var userId: Int = 0,
     //rtc engine实例
     var rtcEngine: RtcEngineEx? = null,
-    //ICallMessageManager实例
-    var callMessageManager: ICallMessageManager
+    //ISignalClient实例
+    var signalClient: ISignalClient
 ){}
 
 open class PrepareConfig(
@@ -133,23 +134,6 @@ enum class CallLogLevel(val value: Int) {
     Normal(0),
     Warning(1),
     Error(2),
-}
-
-/*
- * 信息通道回调
- */
-interface ICallMessageListener {
-    fun onMessageReceive(message: Map<String, Any>)
-    fun debugInfo(message: String, logLevel: Int)
-}
-
-/*
- * CallApi 使用的信息通道接口, 可以使用自己实现的信息通道
- */
-interface ICallMessageManager {
-    fun sendMessage(userId: String, message: Map<String, Any>, completion: ((AGError?)-> Unit)?)
-    fun addListener(listener: ICallMessageListener)
-    fun removeListener(listener: ICallMessageListener)
 }
 
 interface ICallApiListener {
