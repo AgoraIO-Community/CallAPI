@@ -128,6 +128,30 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             rtmManager = createRtmManager(BuildConfig.AG_APP_ID, enterModel.currentUid.toInt())
             // rtm login
             rtmManager?.login(prepareConfig.rtmToken) {}
+            // 监听 rtm manager 事件
+            rtmManager?.addListener(object : ICallRtmManagerListener {
+                override fun onConnected() {
+                    Toasty.normal(this@LivingActivity, "rtm已连接", Toast.LENGTH_SHORT).show()
+                }
+
+                override fun onDisconnected() {
+                    Toasty.normal(this@LivingActivity, "rtm已断开", Toast.LENGTH_SHORT).show()
+                }
+
+                override fun onConnectionLost() {
+                    // 表示rtm超时断连了，需要重新登录，这里模拟了3s重新登录
+                    Toasty.normal(this@LivingActivity, "rtm连接错误，需要重新登录", Toast.LENGTH_SHORT).show()
+                    mViewBinding.root.postDelayed({
+                        rtmManager?.logout()
+                        rtmManager?.login(prepareConfig.rtmToken) {}
+                    }, 3000)
+                }
+
+                override fun onTokenPrivilegeWillExpire(channelName: String) {
+                    // 重新获取token
+                    tokenPrivilegeWillExpire()
+                }
+            })
         } else {
             emClient = createEasemobSignalClient(this, BuildConfig.IM_APP_KEY, enterModel.currentUid.toInt())
         }
