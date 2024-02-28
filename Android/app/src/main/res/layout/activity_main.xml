@@ -14,7 +14,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="30dp"
         android:gravity="center_vertical"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -23,14 +23,28 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:checked="true"
-            android:text="秀转场1V1"
+            android:text="RTM秀转场1V1"
             android:textColor="@color/white" />
 
         <androidx.appcompat.widget.AppCompatRadioButton
             android:id="@+id/btnOneToOne"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="纯1V1"
+            android:text="RTM纯1V1"
+            android:textColor="@color/white" />
+
+        <androidx.appcompat.widget.AppCompatRadioButton
+            android:id="@+id/btnHyShow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="环信秀转场1V1"
+            android:textColor="@color/white"/>
+
+        <androidx.appcompat.widget.AppCompatRadioButton
+            android:id="@+id/btnHyOneToOne"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="环信纯1V1"
             android:textColor="@color/white" />
     </RadioGroup>
 

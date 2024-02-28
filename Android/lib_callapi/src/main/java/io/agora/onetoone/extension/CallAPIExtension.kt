@@ -13,5 +13,5 @@ fun PrepareConfig.cloneConfig(): PrepareConfig {
 }
 
 fun CallConfig.cloneConfig(): CallConfig {
-    return CallConfig(appId, userId, rtcEngine, callMessageManager)
+    return CallConfig(appId, userId, rtcEngine, signalClient)
 }
