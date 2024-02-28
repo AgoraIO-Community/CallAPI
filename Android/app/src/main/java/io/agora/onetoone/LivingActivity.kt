@@ -409,6 +409,10 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         if (!checkConnectionAndNotify()) return
         publishMedia(false)
         api.call(enterModel.showUserId.toInt()) { error ->
+            // call 失败立刻挂断
+            if (error != null && mCallState == CallStateType.Calling) {
+                api.cancelCall {  }
+            }
         }
     }
 
@@ -462,7 +466,12 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
                     connectedUserId = fromUserId
                     // 检查信令通道链接状态
                     if (!checkConnectionAndNotify()) return
-                    api.accept(remoteUserId = fromUserId) {}
+                    api.accept(remoteUserId = fromUserId) { err ->
+                        if (err != null) {
+                            //如果接受消息出错，则发起拒绝，回到初始状态
+                            api.reject(fromUserId, err.msg) {}
+                        }
+                    }
                 } else if (enterModel.currentUid.toIntOrNull() == fromUserId) {
                     connectedUserId = toUserId
                     callDialog = AlertDialog.Builder(this)

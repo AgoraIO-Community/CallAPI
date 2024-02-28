@@ -314,6 +314,10 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         }
         SPUtil.putString(kTargetUserId, roomId)
         api.call(targetUserId) { error ->
+            // call 失败立刻挂断
+            if (error != null && mCallState == CallStateType.Calling) {
+                api.cancelCall {  }
+            }
         }
     }
 
@@ -359,6 +363,10 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
                             // 检查信令通道链接状态
                             if (!checkConnectionAndNotify()) return@setPositiveButton
                             api.accept(fromUserId) { err ->
+                                if (err != null) {
+                                    //如果接受消息出错，则发起拒绝，回到初始状态
+                                    api.reject(fromUserId, err.msg) {}
+                                }
                             }
                         }.setNegativeButton("拒绝") { p0, p1 ->
                             // 检查信令通道链接状态
