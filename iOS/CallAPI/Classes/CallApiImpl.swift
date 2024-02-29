@@ -880,6 +880,7 @@ extension CallApiImpl {
             _notifyEvent(event: .onCalling)
         }
         
+        // join操作需要在calling抛出之后执行，因为秀场转1v1等场景，需要通知外部先关闭外部采集，否则内部推流会失败导致对端看不到画面
         if calleeJoinRTCPolicy == .calling {
             _joinRTCAsBroadcaster(roomId: fromRoomId)
         }
