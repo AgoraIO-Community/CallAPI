@@ -54,6 +54,7 @@ class CallEasemobSignalClient(
             // 登录成功回调
             override fun onSuccess() {
                 Log.d(TAG, "login success")
+                isConnected = true
                 EMClient.getInstance().chatManager().loadAllConversations()
                 EMClient.getInstance().groupManager().loadAllGroups()
             }
