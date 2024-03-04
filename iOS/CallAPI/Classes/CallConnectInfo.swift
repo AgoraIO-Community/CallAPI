@@ -39,6 +39,9 @@ class CallConnectInfo {
     /// 本地是否已经同意
     var isLocalAccepted: Bool = false
     
+    //远端是否已经同意
+    var isRemoteAccepted: Bool = false
+    
     //呼叫开始的时间
     private(set) var callTs: Int? {
         didSet {
@@ -64,16 +67,27 @@ class CallConnectInfo {
         isRetrieveFirstFrame = false
         startRetrieveFirstFrame = nil
         isLocalAccepted = false
+        isRemoteAccepted = false
         callConnectedTs = 0
     }
     
-    func set(userId: UInt, 
-             roomId: String, 
+    func set(userId: UInt? = nil,
+             roomId: String? = nil,
              callId: String? = nil,
-             isLocalAccepted: Bool = false) {
-        self.callingUserId = userId
-        self.callingRoomId = roomId
-        self.isLocalAccepted = isLocalAccepted
+             isRemoteAccepted: Bool? = nil,
+             isLocalAccepted: Bool? = nil) {
+        if let userId = userId {
+            self.callingUserId = userId
+        }
+        if let roomId = roomId {
+            self.callingRoomId = roomId
+        }
+        if let isRemoteAccepted = isRemoteAccepted {
+            self.isRemoteAccepted = isRemoteAccepted
+        }
+        if let isLocalAccepted = isLocalAccepted {
+            self.isLocalAccepted = isLocalAccepted
+        }
         if let callId = callId {
             self.callId = callId
         }
@@ -83,5 +97,9 @@ class CallConnectInfo {
         if startRetrieveFirstFrame == nil {
             self.startRetrieveFirstFrame = Date()
         }
+    }
+    
+    func isDoubleCheckAcceptSuccess() -> Bool {
+        return isLocalAccepted && isRemoteAccepted
     }
 }
