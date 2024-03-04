@@ -30,6 +30,8 @@ public let kPublisher = "publisher"    //状态触发的用户uid，目前可以
 public let kRejectReason = "rejectReason"
 public let kRejectReasonCallBusy = "The user is currently busy"
 
+//主叫呼叫后是否需要再次确认
+public let kRecheckCallerAcceptStatus = "recheckCallerAcceptStatus"
 
 public let kHangupReason = "hangupReason"
 
@@ -197,6 +199,7 @@ extension CallApiImpl {
         var message: [String: Any] = _messageDic(action: .call)
         message[kRemoteUserId] = remoteUserId
         message[kFromRoomId] = fromRoomId
+//        message[kRecheckCallerAcceptStatus] = 0
         return message
     }
     
@@ -837,6 +840,9 @@ extension CallApiImpl {
         let fromRoomId = message[kFromRoomId] as? String ?? ""
         let fromUserId = message[kFromUserId] as? UInt ?? 0
         let callId = message[kCallId] as? String ?? ""
+        //如果isRetryAccept == true，表示需要再次等待对端accept后才可进入connecting
+        let isRetryAccept = message[kRecheckCallerAcceptStatus] as? Int == 1 ? true : false
+        let isRemoteAccepted = isRetryAccept == false ? true : false
         
         var enableNotify: Bool = true
         var autoAccept = false//prepareConfig?.autoAccept ?? false
@@ -859,12 +865,17 @@ extension CallApiImpl {
             }
         }
         
-        connectInfo.set(userId: fromUserId, roomId: fromRoomId, callId: callId)
+        connectInfo.set(userId: fromUserId, 
+                        roomId: fromRoomId,
+                        callId: callId,
+                        isRemoteAccepted: isRemoteAccepted,
+                        isLocalAccepted: false)
         if enableNotify {
             _updateAndNotifyState(state: .calling, stateReason: .none, eventInfo: message)
             _notifyEvent(event: .onCalling)
         }
         
+        // join操作需要在calling抛出之后执行，因为秀场转1v1等场景，需要通知外部先关闭外部采集，否则内部推流会因采集失败导致对端看不到画面
         if calleeJoinRTCPolicy == .calling {
             _joinRTCAsBroadcaster(roomId: fromRoomId)
         }
@@ -902,11 +913,13 @@ extension CallApiImpl {
     //收到接受消息
     fileprivate func _onAccept(message: [String: Any]) {
         //需要是calling状态，并且来自呼叫的用户的请求
-        guard state == .calling, _isCallingUser(message: message) else { return }
+        guard _isCallingUser(message: message), state == .calling else { return }
+        
+        connectInfo.set(isRemoteAccepted: true)
 //        let elapsed = _getTimeInMs() - (connectInfo.callTs ?? 0)
         //TODO: 如果已经connected
         //并且是isLocalAccepted（发起呼叫或者已经accept过了），否则认为本地没有同意
-        if connectInfo.isLocalAccepted {
+        if connectInfo.isDoubleCheckAcceptSuccess() {
             _updateAndNotifyState(state: .connecting, stateReason: .remoteAccepted, eventInfo: message)
         }
         _notifyEvent(event: .remoteAccepted)
@@ -1023,7 +1036,10 @@ extension CallApiImpl: CallApiProtocol {
         }
         
         //发送呼叫消息
-        connectInfo.set(userId: remoteUserId, roomId: fromRoomId, callId: UUID().uuidString, isLocalAccepted: true)
+        connectInfo.set(userId: remoteUserId, 
+                        roomId: fromRoomId,
+                        callId: UUID().uuidString,
+                        isLocalAccepted: true)
         //ensure that the report log contains a call
         _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)")
         
@@ -1080,7 +1096,9 @@ extension CallApiImpl: CallApiProtocol {
             self._notifySendMessageErrorEvent(error: error, reason: "accept fail: ")
         }
         
-        _updateAndNotifyState(state: .connecting, stateReason: .localAccepted, eventInfo: message)
+        if connectInfo.isDoubleCheckAcceptSuccess() {
+            _updateAndNotifyState(state: .connecting, stateReason: .localAccepted, eventInfo: message)
+        }
         _notifyEvent(event: .localAccepted)
         
         if calleeJoinRTCPolicy == .accepted {
@@ -1268,5 +1286,44 @@ extension CallApiImpl {
 
     func callProfilePrint(_ message: String) {
         callPrint("[Profile]\(message)")
+    }
+}
+
+//mock match
+extension CallApiImpl {
+    public func mockCall(userAId: UInt, userBId: UInt, fromRoomId: String) {
+        let callId = UUID().uuidString
+        if true {
+            // call A
+            var dic: [String: Any] = [:]
+            dic["message_action"] = 0
+            dic["message_version"] = "1.0"
+            dic["message_timestamp"] = _getTimeInMs()
+            dic["fromUserId"] = userBId
+            dic["callId"] = callId
+            dic["remoteUserId"] = userAId
+            dic["fromRoomId"] = fromRoomId
+            dic["fromRoomId"] = fromRoomId
+            dic["recheckCallerAcceptStatus"] = 1
+            messageManager?.sendMessage(userId: "\(userAId)", message: dic) { err in
+            }
+        }
+        
+        
+        if true {
+            // call B
+            var dic: [String: Any] = [:]
+            dic["message_action"] = 0
+            dic["message_version"] = "1.0"
+            dic["message_timestamp"] = _getTimeInMs()
+            dic["fromUserId"] = userAId
+            dic["callId"] = callId
+            dic["remoteUserId"] = userBId
+            dic["fromRoomId"] = fromRoomId
+            dic["fromRoomId"] = fromRoomId
+            dic["recheckCallerAcceptStatus"] = 1
+            messageManager?.sendMessage(userId: "\(userBId)", message: dic) { err in
+            }
+        }
     }
 }
