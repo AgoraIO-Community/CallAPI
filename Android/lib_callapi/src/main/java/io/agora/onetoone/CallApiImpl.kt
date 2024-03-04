@@ -81,6 +81,8 @@ class CallApiImpl constructor(
 
     private var tempRemoteCanvasView = TextureView(context)
     private var tempLocalCanvasView = TextureView(context)
+    // 默认的加入rtc时机
+    private var defaultCalleeJoinRTCTiming = CalleeJoinRTCTiming.Calling
 
     /// 当前状态
     private var state: CallStateType = CallStateType.Idle
@@ -196,6 +198,28 @@ class CallApiImpl constructor(
             Log.e(TAG, "getNtpTimeInMs ntpWallTimeInMs is zero!!!!!!!!!!")
             System.currentTimeMillis()
         }
+    }
+
+    private fun _canJoinRTC(joinTiming: CalleeJoinRTCTiming): Boolean {
+        var emptyCount = 0
+        delegates.forEach {
+            val isEnable: Boolean? = it.canJoinRTC(joinTiming)
+            if (isEnable != null) {
+                if (isEnable) {
+                    return true
+                }
+            } else {
+                emptyCount += 1
+            }
+        }
+
+        // 如果一个协议都没有实现，使用默认值
+        if (emptyCount == delegates.size && defaultCalleeJoinRTCTiming == joinTiming) {
+            callPrint("join rtc strategy callback not found, use default")
+            return true
+        }
+
+        return false
     }
 
     private fun _notifyCallConnected() {
@@ -802,7 +826,7 @@ class CallApiImpl constructor(
             _updateAndNotifyState(CallStateType.Calling, CallStateReason.None, eventInfo = message)
             _notifyEvent(CallEvent.OnCalling)
         }
-        if(prepareConfig?.calleeJoinRTCStrategy == CalleeJoinRTCStrategy.Calling) {
+        if(_canJoinRTC(CalleeJoinRTCTiming.Calling)) {
             _joinRTCAsBroadcaster(fromRoomId)
         }
 
@@ -1029,12 +1053,12 @@ class CallApiImpl constructor(
                 _notifySendMessageErrorEvent(err, "accept fail: ")
             }
         }
-        _updateAndNotifyState(CallStateType.Connecting, CallStateReason.LocalAccepted, eventInfo = message)
-        _notifyEvent(CallEvent.LocalAccepted)
 
-        if (prepareConfig?.calleeJoinRTCStrategy == CalleeJoinRTCStrategy.Accepted) {
+        if (_canJoinRTC(CalleeJoinRTCTiming.Accepted)) {
             _joinRTCAsBroadcaster(roomId)
         }
+        _updateAndNotifyState(CallStateType.Connecting, CallStateReason.LocalAccepted, eventInfo = message)
+        _notifyEvent(CallEvent.LocalAccepted)
     }
 
     //拒绝

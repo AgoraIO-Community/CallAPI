@@ -22,15 +22,14 @@ open class PrepareConfig(
     var localView: ViewGroup? = null,             // 显示本地流的画布
     var remoteView: ViewGroup? = null,            // 显示远端流的画布
     var autoJoinRTC: Boolean = false,             // 是否自动登录RTC
-    var calleeJoinRTCStrategy: CalleeJoinRTCStrategy = CalleeJoinRTCStrategy.Calling, //当自己在通话中作为被叫方时加入Rtc频道的策略
     var callTimeoutMillisecond: Long = 15000L,    // 呼叫超时时间，单位毫秒，如果传0内部将不做超时逻辑
     var userExtension: Map<String, Any>? = null   // [可选]用户扩展字段，收到对端消息而改变状态(例如calling/connecting)时可以通过kFromUserExtension字段获取
 ) {}
 
 /*
- * 被叫呼叫中加入RTC的策略
+ * 被叫呼叫中加入RTC的时机
  */
-enum class CalleeJoinRTCStrategy(val value: Int) {
+enum class CalleeJoinRTCTiming(val value: Int) {
     Calling(0),      //在收到呼叫时即加入频道并推送视频流，被叫时费用较高但出图更快
     Accepted(1)      //在收到呼叫后，主动发起接受后才加入频道并推送视频流，被叫时费用较低但出图较慢
 }
@@ -202,6 +201,13 @@ interface ICallApiListener {
                         currentUserId: Int,
                         timestamp: Long,
                         duration: Long) {}
+
+    /**
+     * 根据目前时间点是否可以加入Rtc
+     * @param joinTiming 当前加入需要加入频道的时机
+     * @return true: 可以加入 false: 不可以加入
+     */
+    fun canJoinRTC(joinTiming: CalleeJoinRTCTiming) : Boolean?
 
     /**
      * token快要过期了(需要外部获取新token调用renewToken更新)
