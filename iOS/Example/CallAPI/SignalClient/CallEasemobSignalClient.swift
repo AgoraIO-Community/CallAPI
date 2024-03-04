@@ -92,6 +92,7 @@ extension CallEasemobSignalClient {
         let body = EMTextMessageBody(text: message)
         callMessagePrint("_sendMessage to '\(userId)', message: \(message)")
         let emMessage = EMChatMessage(conversationID: userId, from: self.userId, to: userId, body: body, ext: nil)
+        emMessage.deliverOnlineOnly = true
         let date = Date()
         EMClient.shared().chatManager?.send(emMessage, progress: nil, completion: {[weak self] msg, err in
             guard let self = self else {return}
