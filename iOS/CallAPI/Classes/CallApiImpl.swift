@@ -52,14 +52,6 @@ enum CallAction: UInt {
     case hangup = 4
 }
 
-/// 被叫呼叫中加入RTC的策略
-enum CalleeJoinRTCPolicy: Int {
-    case calling    //在接到呼叫时即加入频道并推送音视频流，被叫时费用较高但出图更快
-    case accepted   //在点击接受后才加入频道并推送音视频流，被叫时费用较低但出图较慢
-}
-
-let calleeJoinRTCPolicy: CalleeJoinRTCPolicy = .calling
-
 public class CallApiImpl: NSObject {
     private let delegates:NSHashTable<CallApiListenerProtocol> = NSHashTable<CallApiListenerProtocol>.weakObjects()
     private let rtcProxy: CallAgoraExProxy = CallAgoraExProxy()
@@ -865,7 +857,7 @@ extension CallApiImpl {
             _notifyEvent(event: .onCalling)
         }
         
-        if calleeJoinRTCPolicy == .calling {
+        if prepareConfig?.calleeJoinRTCStrategy == .calling {
             _joinRTCAsBroadcaster(roomId: fromRoomId)
         }
         
@@ -1080,12 +1072,14 @@ extension CallApiImpl: CallApiProtocol {
             self._notifySendMessageErrorEvent(error: error, reason: "accept fail: ")
         }
         
+        if prepareConfig?.calleeJoinRTCStrategy == .accepted {
+            //join需要在connecting之前执行，否则connecting时订阅的音频流会无效
+            _joinRTCAsBroadcaster(roomId: roomId)
+        }
+        
         _updateAndNotifyState(state: .connecting, stateReason: .localAccepted, eventInfo: message)
         _notifyEvent(event: .localAccepted)
         
-        if calleeJoinRTCPolicy == .accepted {
-            _joinRTCAsBroadcaster(roomId: roomId)
-        }
     }
     
     //拒绝
@@ -1257,7 +1251,7 @@ extension CallApiImpl {
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
         let timeString = formatter.string(from: Date())
         for element in delegates.allObjects {
-            (element as? CallApiListenerProtocol)?.callDebugInfo?(message: "\(timeString) \(message)", logLevel: logLevel)
+            element.callDebugInfo?(message: "\(timeString) \(message)", logLevel: logLevel)
         }
 //        #endif
     }
