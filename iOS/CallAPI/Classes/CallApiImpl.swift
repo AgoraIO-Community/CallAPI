@@ -52,14 +52,6 @@ enum CallAction: UInt {
     case hangup = 4
 }
 
-/// 被叫呼叫中加入RTC的策略
-enum CalleeJoinRTCPolicy: Int {
-    case calling    //在接到呼叫时即加入频道并推送音视频流，被叫时费用较高但出图更快
-    case accepted   //在点击接受后才加入频道并推送音视频流，被叫时费用较低但出图较慢
-}
-
-let calleeJoinRTCPolicy: CalleeJoinRTCPolicy = .calling
-
 public class CallApiImpl: NSObject {
     private let delegates:NSHashTable<CallApiListenerProtocol> = NSHashTable<CallApiListenerProtocol>.weakObjects()
     private let rtcProxy: CallAgoraExProxy = CallAgoraExProxy()
@@ -881,7 +873,7 @@ extension CallApiImpl {
         }
         
         // join操作需要在calling抛出之后执行，因为秀场转1v1等场景，需要通知外部先关闭外部采集，否则内部推流会失败导致对端看不到画面
-        if calleeJoinRTCPolicy == .calling {
+        if prepareConfig?.calleeJoinRTCStrategy == .calling {
             _joinRTCAsBroadcaster(roomId: fromRoomId)
         }
         
@@ -1096,7 +1088,7 @@ extension CallApiImpl: CallApiProtocol {
             self._notifySendMessageErrorEvent(error: error, reason: "accept fail: ")
         }
         
-        if calleeJoinRTCPolicy == .accepted {
+        if prepareConfig?.calleeJoinRTCStrategy == .accepted {
             /*
              因为connecting会autosubscribeAudio=true，这里join时是会设置成false，
              因此如果需要调用该方法，必须在状态机变成connecting之前调用
