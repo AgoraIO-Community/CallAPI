@@ -52,6 +52,10 @@ enum CallAction: UInt {
     case hangup = 4
 }
 
+//默认的加入rtc时机
+let defaultCalleeJoinRTCTiming: CalleeJoinRTCTiming = .calling
+
+
 public class CallApiImpl: NSObject {
     private let delegates:NSHashTable<CallApiListenerProtocol> = NSHashTable<CallApiListenerProtocol>.weakObjects()
     private let rtcProxy: CallAgoraExProxy = CallAgoraExProxy()
@@ -218,6 +222,27 @@ extension CallApiImpl {
         return localNtpTime
     }
     
+    private func _canJoinRTC(joinTiming: CalleeJoinRTCTiming) -> Bool {
+        var emptyCount: Int = 0
+        for element in delegates.allObjects {
+            if let isEnable = element.canJoinRTC?(joinTiming: joinTiming) {
+                if isEnable {
+                    return true
+                }
+            } else {
+                emptyCount += 1
+            }
+        }
+        
+        //如果一个协议都没有实现，使用默认值
+        if emptyCount == delegates.count, defaultCalleeJoinRTCTiming == joinTiming {
+            callPrint("join rtc strategy callback not found, use default")
+            return true
+        }
+        
+        return false
+    }
+
     private func _notifyCallConnected() {
         guard let config = config else { return }
         let ntpTime = getNtpTimeInMs()
@@ -857,7 +882,7 @@ extension CallApiImpl {
             _notifyEvent(event: .onCalling)
         }
         
-        if prepareConfig?.calleeJoinRTCStrategy == .calling {
+        if _canJoinRTC(joinTiming: .calling) {
             _joinRTCAsBroadcaster(roomId: fromRoomId)
         }
         
@@ -1072,7 +1097,7 @@ extension CallApiImpl: CallApiProtocol {
             self._notifySendMessageErrorEvent(error: error, reason: "accept fail: ")
         }
         
-        if prepareConfig?.calleeJoinRTCStrategy == .accepted {
+        if _canJoinRTC(joinTiming: .accepted){
             //join需要在connecting之前执行，否则connecting时订阅的音频流会无效
             _joinRTCAsBroadcaster(roomId: roomId)
         }
