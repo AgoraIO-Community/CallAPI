@@ -436,7 +436,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
     }
 
     override fun canJoinRtcOnCalling(): Boolean? {
-        return false
+        return true
     }
 
     override fun tokenPrivilegeWillExpire() {

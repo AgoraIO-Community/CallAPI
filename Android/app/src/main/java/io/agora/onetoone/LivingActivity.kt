@@ -520,7 +520,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
     }
 
     override fun canJoinRtcOnCalling(): Boolean? {
-        return false
+        return true
     }
 
     override fun tokenPrivilegeWillExpire() {
