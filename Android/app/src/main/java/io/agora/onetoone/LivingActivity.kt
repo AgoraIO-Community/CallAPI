@@ -131,16 +131,23 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             // 监听 rtm manager 事件
             rtmManager?.addListener(object : ICallRtmManagerListener {
                 override fun onConnected() {
-                    Toasty.normal(this@LivingActivity, "rtm已连接", Toast.LENGTH_SHORT).show()
+                    mViewBinding.root.post {
+                        Toasty.normal(this@LivingActivity, "rtm已连接", Toast.LENGTH_SHORT).show()
+                    }
                 }
 
                 override fun onDisconnected() {
-                    Toasty.normal(this@LivingActivity, "rtm已断开", Toast.LENGTH_SHORT).show()
+                    mViewBinding.root.post {
+                        Toasty.normal(this@LivingActivity, "rtm已断开", Toast.LENGTH_SHORT).show()
+                    }
                 }
 
                 override fun onConnectionLost() {
                     // 表示rtm超时断连了，需要重新登录，这里模拟了3s重新登录
-                    Toasty.normal(this@LivingActivity, "rtm连接错误，需要重新登录", Toast.LENGTH_SHORT).show()
+                    mViewBinding.root.post {
+                        Toasty.normal(this@LivingActivity, "rtm连接错误，需要重新登录", Toast.LENGTH_SHORT)
+                            .show()
+                    }
                     mViewBinding.root.postDelayed({
                         rtmManager?.logout()
                         rtmManager?.login(prepareConfig.rtmToken) {}
@@ -518,6 +525,9 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
                     }
                     CallStateReason.CallingTimeout -> {
                         Toasty.normal(this, "无应答", Toast.LENGTH_SHORT).show()
+                    }
+                    CallStateReason.RemoteCallBusy -> {
+                        Toasty.normal(this, "用户正忙", Toast.LENGTH_SHORT).show()
                     }
                     else -> {}
                 }

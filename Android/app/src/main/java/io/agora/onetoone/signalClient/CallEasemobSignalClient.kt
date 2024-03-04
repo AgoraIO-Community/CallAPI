@@ -46,7 +46,7 @@ class CallEasemobSignalClient(
 
         } catch (e: HyphenateException) {
             //失败
-            Log.e(TAG, "createAccount failed: ${e.message}")
+            Log.e(TAG, "createAccount failed: ${e.message}, code: ${e.errorCode}")
         }
 
         //成功
@@ -141,12 +141,16 @@ class CallEasemobSignalClient(
 
     // ---------------- EMConnectionListener ----------------
     override fun onConnected() {
-        Toasty.normal(context, "环信已连接", Toast.LENGTH_SHORT).show()
+        runOnUiThread {
+            Toasty.normal(context, "环信已连接", Toast.LENGTH_SHORT).show()
+        }
         isConnected = true
     }
 
     override fun onDisconnected(errorCode: Int) {
-        Toasty.normal(context, "环信已断开", Toast.LENGTH_SHORT).show()
+        runOnUiThread {
+            Toasty.normal(context, "环信已断开", Toast.LENGTH_SHORT).show()
+        }
         isConnected = false
     }
 
