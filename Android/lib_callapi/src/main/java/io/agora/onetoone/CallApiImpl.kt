@@ -33,6 +33,13 @@ enum class CallAction(val value: Int) {
     }
 }
 
+/*
+ * 被叫呼叫中加入RTC的时机
+ */
+enum class CalleeJoinRTCTiming(val value: Int) {
+    Calling(0),      //在收到呼叫时即加入频道并推送视频流，被叫时费用较高但出图更快
+    Accepted(1)      //在收到呼叫后，主动发起接受后才加入频道并推送视频流，被叫时费用较低但出图较慢
+}
 
 class CallApiImpl constructor(
     context: Context
@@ -200,10 +207,10 @@ class CallApiImpl constructor(
         }
     }
 
-    private fun _canJoinRTC(joinTiming: CalleeJoinRTCTiming): Boolean {
+    private fun _canJoinRtcOnCalling(): Boolean {
         var emptyCount = 0
         delegates.forEach {
-            val isEnable: Boolean? = it.canJoinRTC(joinTiming)
+            val isEnable: Boolean? = it.canJoinRtcOnCalling()
             if (isEnable != null) {
                 if (isEnable) {
                     return true
@@ -214,7 +221,7 @@ class CallApiImpl constructor(
         }
 
         // 如果一个协议都没有实现，使用默认值
-        if (emptyCount == delegates.size && defaultCalleeJoinRTCTiming == joinTiming) {
+        if (emptyCount == delegates.size) {
             callPrint("join rtc strategy callback not found, use default")
             return true
         }
@@ -826,7 +833,8 @@ class CallApiImpl constructor(
             _updateAndNotifyState(CallStateType.Calling, CallStateReason.None, eventInfo = message)
             _notifyEvent(CallEvent.OnCalling)
         }
-        if(_canJoinRTC(CalleeJoinRTCTiming.Calling)) {
+        defaultCalleeJoinRTCTiming = if (_canJoinRtcOnCalling()) CalleeJoinRTCTiming.Calling else CalleeJoinRTCTiming.Accepted
+        if(defaultCalleeJoinRTCTiming == CalleeJoinRTCTiming.Calling) {
             _joinRTCAsBroadcaster(fromRoomId)
         }
 
@@ -1054,7 +1062,7 @@ class CallApiImpl constructor(
             }
         }
 
-        if (_canJoinRTC(CalleeJoinRTCTiming.Accepted)) {
+        if (defaultCalleeJoinRTCTiming == CalleeJoinRTCTiming.Accepted) {
             _joinRTCAsBroadcaster(roomId)
         }
         _updateAndNotifyState(CallStateType.Connecting, CallStateReason.LocalAccepted, eventInfo = message)

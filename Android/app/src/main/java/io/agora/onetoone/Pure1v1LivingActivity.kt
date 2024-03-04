@@ -435,8 +435,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         }
     }
 
-    override fun canJoinRTC(joinTiming: CalleeJoinRTCTiming): Boolean? {
-        if (joinTiming == CalleeJoinRTCTiming.Calling) return true
+    override fun canJoinRtcOnCalling(): Boolean? {
         return false
     }
 
