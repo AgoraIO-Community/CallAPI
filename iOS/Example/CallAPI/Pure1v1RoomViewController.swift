@@ -325,9 +325,7 @@ extension Pure1v1RoomViewController: AgoraRtcEngineDelegate {
 
 
 extension Pure1v1RoomViewController:CallApiListenerProtocol {
-//    func canJoinRTC(joinTiming: CalleeJoinRTCTiming) -> Bool {
-//        if joinTiming == .calling { return true }
-//        
+//    func canJoinRtcOnCalling() -> Bool {
 //        return false
 //    }
     

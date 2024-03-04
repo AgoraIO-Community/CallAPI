@@ -53,8 +53,13 @@ enum CallAction: UInt {
 }
 
 //默认的加入rtc时机
-let defaultCalleeJoinRTCTiming: CalleeJoinRTCTiming = .calling
+var defaultCalleeJoinRTCTiming: CalleeJoinRTCTiming = .calling
 
+/// 被叫呼叫中加入RTC的时机
+@objc public enum CalleeJoinRTCTiming: Int {
+    case calling    //在收到呼叫时即加入频道并推送视频流，被叫时费用较高但出图更快
+    case accepted   //在收到呼叫后，主动发起接受后才加入频道并推送视频流，被叫时费用较低但出图较慢
+}
 
 public class CallApiImpl: NSObject {
     private let delegates:NSHashTable<CallApiListenerProtocol> = NSHashTable<CallApiListenerProtocol>.weakObjects()
@@ -222,10 +227,10 @@ extension CallApiImpl {
         return localNtpTime
     }
     
-    private func _canJoinRTC(joinTiming: CalleeJoinRTCTiming) -> Bool {
+    private func _canJoinRtcOnCalling() -> Bool {
         var emptyCount: Int = 0
         for element in delegates.allObjects {
-            if let isEnable = element.canJoinRTC?(joinTiming: joinTiming) {
+            if let isEnable = element.canJoinRtcOnCalling?() {
                 if isEnable {
                     return true
                 }
@@ -235,7 +240,7 @@ extension CallApiImpl {
         }
         
         //如果一个协议都没有实现，使用默认值
-        if emptyCount == delegates.count, defaultCalleeJoinRTCTiming == joinTiming {
+        if emptyCount == delegates.count {
             callPrint("join rtc strategy callback not found, use default")
             return true
         }
@@ -882,7 +887,8 @@ extension CallApiImpl {
             _notifyEvent(event: .onCalling)
         }
         
-        if _canJoinRTC(joinTiming: .calling) {
+        defaultCalleeJoinRTCTiming = _canJoinRtcOnCalling() ? .calling : .accepted
+        if defaultCalleeJoinRTCTiming == .calling {
             _joinRTCAsBroadcaster(roomId: fromRoomId)
         }
         
@@ -1097,7 +1103,7 @@ extension CallApiImpl: CallApiProtocol {
             self._notifySendMessageErrorEvent(error: error, reason: "accept fail: ")
         }
         
-        if _canJoinRTC(joinTiming: .accepted){
+        if defaultCalleeJoinRTCTiming == .accepted{
             //join需要在connecting之前执行，否则connecting时订阅的音频流会无效
             _joinRTCAsBroadcaster(roomId: roomId)
         }
