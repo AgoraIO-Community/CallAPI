@@ -288,6 +288,7 @@ extension Pure1v1RoomViewController {
             self.rtcEngine.delegate = nil
             self.rtcEngine.leaveChannel()
             AgoraRtcEngineKit.destroy()
+            self.rtmManager?.delegate = nil
             self.rtmManager?.logout()
             self.rtmClient?.logout()
             self.rtmClient?.destroy()
