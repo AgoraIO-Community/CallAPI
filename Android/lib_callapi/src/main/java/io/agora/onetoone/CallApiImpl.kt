@@ -33,20 +33,12 @@ enum class CallAction(val value: Int) {
     }
 }
 
-/*
- * 被叫呼叫中加入RTC的策略
- */
-enum class CalleeJoinRTCPolicy(val value: Int) {
-    Calling(0),      //在接到呼叫时即加入频道并推送音视频流，被叫时费用较高但出图更快
-    Accepted(1)      //在点击接受后才加入频道并推送音视频流，被叫时费用较低但出图较慢
-}
 
 class CallApiImpl constructor(
     context: Context
 ): ICallApi, RtmEventListener, CallMessageListener, IRtcEngineEventHandler() {
 
     companion object {
-        val calleeJoinRTCPolicy = CalleeJoinRTCPolicy.Calling
         const val kReportCategory = "2_Android_1.0.0"
         const val kPublisher = "publisher"
         const val kCostTimeMap = "costTimeMap"    //呼叫时的耗时信息，会在connected时抛出分步耗时
@@ -810,7 +802,7 @@ class CallApiImpl constructor(
             _updateAndNotifyState(CallStateType.Calling, CallStateReason.None, eventInfo = message)
             _notifyEvent(CallEvent.OnCalling)
         }
-        if(calleeJoinRTCPolicy == CalleeJoinRTCPolicy.Calling) {
+        if(prepareConfig?.calleeJoinRTCStrategy == CalleeJoinRTCStrategy.Calling) {
             _joinRTCAsBroadcaster(fromRoomId)
         }
 
@@ -1040,7 +1032,7 @@ class CallApiImpl constructor(
         _updateAndNotifyState(CallStateType.Connecting, CallStateReason.LocalAccepted, eventInfo = message)
         _notifyEvent(CallEvent.LocalAccepted)
 
-        if (calleeJoinRTCPolicy == CalleeJoinRTCPolicy.Accepted) {
+        if (prepareConfig?.calleeJoinRTCStrategy == CalleeJoinRTCStrategy.Accepted) {
             _joinRTCAsBroadcaster(roomId)
         }
     }
