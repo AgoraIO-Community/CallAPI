@@ -33,20 +33,12 @@ enum class CallAction(val value: Int) {
     }
 }
 
-/*
- * 被叫呼叫中加入RTC的策略
- */
-enum class CalleeJoinRTCPolicy(val value: Int) {
-    Calling(0),      //在接到呼叫时即加入频道并推送音视频流，被叫时费用较高但出图更快
-    Accepted(1)      //在点击接受后才加入频道并推送音视频流，被叫时费用较低但出图较慢
-}
 
 class CallApiImpl constructor(
     context: Context
 ): ICallApi, RtmEventListener, CallMessageListener, IRtcEngineEventHandler() {
 
     companion object {
-        val calleeJoinRTCPolicy = CalleeJoinRTCPolicy.Calling
         const val kReportCategory = "2_Android_1.0.0"
         const val kPublisher = "publisher"
         const val kCostTimeMap = "costTimeMap"    //呼叫时的耗时信息，会在connected时抛出分步耗时
@@ -89,6 +81,8 @@ class CallApiImpl constructor(
 
     private var tempRemoteCanvasView = TextureView(context)
     private var tempLocalCanvasView = TextureView(context)
+    // 默认的加入rtc时机
+    private var defaultCalleeJoinRTCTiming = CalleeJoinRTCTiming.Calling
 
     /// 当前状态
     private var state: CallStateType = CallStateType.Idle
@@ -204,6 +198,28 @@ class CallApiImpl constructor(
             Log.e(TAG, "getNtpTimeInMs ntpWallTimeInMs is zero!!!!!!!!!!")
             System.currentTimeMillis()
         }
+    }
+
+    private fun _canJoinRTC(joinTiming: CalleeJoinRTCTiming): Boolean {
+        var emptyCount = 0
+        delegates.forEach {
+            val isEnable: Boolean? = it.canJoinRTC(joinTiming)
+            if (isEnable != null) {
+                if (isEnable) {
+                    return true
+                }
+            } else {
+                emptyCount += 1
+            }
+        }
+
+        // 如果一个协议都没有实现，使用默认值
+        if (emptyCount == delegates.size && defaultCalleeJoinRTCTiming == joinTiming) {
+            callPrint("join rtc strategy callback not found, use default")
+            return true
+        }
+
+        return false
     }
 
     private fun _notifyCallConnected() {
@@ -810,7 +826,7 @@ class CallApiImpl constructor(
             _updateAndNotifyState(CallStateType.Calling, CallStateReason.None, eventInfo = message)
             _notifyEvent(CallEvent.OnCalling)
         }
-        if(calleeJoinRTCPolicy == CalleeJoinRTCPolicy.Calling) {
+        if(_canJoinRTC(CalleeJoinRTCTiming.Calling)) {
             _joinRTCAsBroadcaster(fromRoomId)
         }
 
@@ -1037,12 +1053,12 @@ class CallApiImpl constructor(
                 _notifySendMessageErrorEvent(err, "accept fail: ")
             }
         }
-        _updateAndNotifyState(CallStateType.Connecting, CallStateReason.LocalAccepted, eventInfo = message)
-        _notifyEvent(CallEvent.LocalAccepted)
 
-        if (calleeJoinRTCPolicy == CalleeJoinRTCPolicy.Accepted) {
+        if (_canJoinRTC(CalleeJoinRTCTiming.Accepted)) {
             _joinRTCAsBroadcaster(roomId)
         }
+        _updateAndNotifyState(CallStateType.Connecting, CallStateReason.LocalAccepted, eventInfo = message)
+        _notifyEvent(CallEvent.LocalAccepted)
     }
 
     //拒绝

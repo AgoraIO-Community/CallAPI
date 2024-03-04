@@ -52,13 +52,9 @@ enum CallAction: UInt {
     case hangup = 4
 }
 
-/// 被叫呼叫中加入RTC的策略
-enum CalleeJoinRTCPolicy: Int {
-    case calling    //在接到呼叫时即加入频道并推送音视频流，被叫时费用较高但出图更快
-    case accepted   //在点击接受后才加入频道并推送音视频流，被叫时费用较低但出图较慢
-}
+//默认的加入rtc时机
+let defaultCalleeJoinRTCTiming: CalleeJoinRTCTiming = .calling
 
-let calleeJoinRTCPolicy: CalleeJoinRTCPolicy = .calling
 
 public class CallApiImpl: NSObject {
     private let delegates:NSHashTable<CallApiListenerProtocol> = NSHashTable<CallApiListenerProtocol>.weakObjects()
@@ -226,6 +222,27 @@ extension CallApiImpl {
         return localNtpTime
     }
     
+    private func _canJoinRTC(joinTiming: CalleeJoinRTCTiming) -> Bool {
+        var emptyCount: Int = 0
+        for element in delegates.allObjects {
+            if let isEnable = element.canJoinRTC?(joinTiming: joinTiming) {
+                if isEnable {
+                    return true
+                }
+            } else {
+                emptyCount += 1
+            }
+        }
+        
+        //如果一个协议都没有实现，使用默认值
+        if emptyCount == delegates.count, defaultCalleeJoinRTCTiming == joinTiming {
+            callPrint("join rtc strategy callback not found, use default")
+            return true
+        }
+        
+        return false
+    }
+
     private func _notifyCallConnected() {
         guard let config = config else { return }
         let ntpTime = getNtpTimeInMs()
@@ -865,7 +882,7 @@ extension CallApiImpl {
             _notifyEvent(event: .onCalling)
         }
         
-        if calleeJoinRTCPolicy == .calling {
+        if _canJoinRTC(joinTiming: .calling) {
             _joinRTCAsBroadcaster(roomId: fromRoomId)
         }
         
@@ -1080,12 +1097,14 @@ extension CallApiImpl: CallApiProtocol {
             self._notifySendMessageErrorEvent(error: error, reason: "accept fail: ")
         }
         
+        if _canJoinRTC(joinTiming: .accepted){
+            //join需要在connecting之前执行，否则connecting时订阅的音频流会无效
+            _joinRTCAsBroadcaster(roomId: roomId)
+        }
+        
         _updateAndNotifyState(state: .connecting, stateReason: .localAccepted, eventInfo: message)
         _notifyEvent(event: .localAccepted)
         
-        if calleeJoinRTCPolicy == .accepted {
-            _joinRTCAsBroadcaster(roomId: roomId)
-        }
     }
     
     //拒绝
@@ -1257,7 +1276,7 @@ extension CallApiImpl {
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
         let timeString = formatter.string(from: Date())
         for element in delegates.allObjects {
-            (element as? CallApiListenerProtocol)?.callDebugInfo?(message: "\(timeString) \(message)", logLevel: logLevel)
+            element.callDebugInfo?(message: "\(timeString) \(message)", logLevel: logLevel)
         }
 //        #endif
     }

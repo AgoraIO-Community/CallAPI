@@ -519,6 +519,11 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         }
     }
 
+    override fun canJoinRTC(joinTiming: CalleeJoinRTCTiming): Boolean? {
+        if (joinTiming == CalleeJoinRTCTiming.Calling) return true
+        return false
+    }
+
     override fun tokenPrivilegeWillExpire() {
         var rtcTokenTemp = ""
         var rtmTokenTemp = ""
