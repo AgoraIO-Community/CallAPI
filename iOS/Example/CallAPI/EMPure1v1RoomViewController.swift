@@ -439,8 +439,8 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
         }
     }
     
-    @objc func onCallEventChanged(with event: CallEvent) {
-        NSLog("onCallEventChanged: \(event.rawValue)")
+    @objc func onCallEventChanged(with event: CallEvent, eventReason: String?) {
+        NSLog("onCallEventChanged: \(event.rawValue), eventReason: \(eventReason ?? "")")
         switch event {
         case .remoteLeave:
             hangupAction()
