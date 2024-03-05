@@ -428,7 +428,7 @@ extension ShowTo1v1RoomViewController: AgoraRtcEngineDelegate {
 
 
 extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
-//    func canJoinRtcOnCalling() -> Bool {
+//    func canJoinRtcOnCalling(eventInfo: [String: Any]) -> Bool {
 //        return false
 //    }
     

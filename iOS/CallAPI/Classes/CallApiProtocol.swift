@@ -174,9 +174,10 @@ import AgoraRtcKit
                                            timestamp: UInt64,
                                            duration: UInt64)
     
-    /// 当呼叫时判断是否可以加入Rtc
+    /// 当收到呼叫时判断是否可以加入Rtc
+    /// - Parameter eventInfo: 收到呼叫时的扩展信息
     /// - Returns: true: 可以加入 false: 不可以加入
-    @objc optional func canJoinRtcOnCalling() -> Bool
+    @objc optional func canJoinRtcOnCalling(eventInfo: [String: Any]) -> Bool
     
     /// token即将要过期(需要外部获取新token调用renewToken更新)
     @objc optional func tokenPrivilegeWillExpire()

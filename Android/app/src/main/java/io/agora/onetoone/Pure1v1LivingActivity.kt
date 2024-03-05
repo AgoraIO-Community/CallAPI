@@ -496,7 +496,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         }
     }
 
-    override fun canJoinRtcOnCalling(): Boolean? {
+    override fun canJoinRtcOnCalling(eventInfo: Map<String, Any>): Boolean? {
         return true
     }
 

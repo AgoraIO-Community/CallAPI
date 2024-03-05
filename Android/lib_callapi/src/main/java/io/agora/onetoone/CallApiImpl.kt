@@ -204,10 +204,10 @@ class CallApiImpl constructor(
         }
     }
 
-    private fun _canJoinRtcOnCalling(): Boolean {
+    private fun _canJoinRtcOnCalling(eventInfo: Map<String, Any>): Boolean {
         var emptyCount = 0
         delegates.forEach {
-            val isEnable: Boolean? = it.canJoinRtcOnCalling()
+            val isEnable: Boolean? = it.canJoinRtcOnCalling(eventInfo)
             if (isEnable != null) {
                 if (isEnable) {
                     return true
@@ -830,11 +830,12 @@ class CallApiImpl constructor(
         }
 
         connectInfo.set(fromUserId, fromRoomId, callId)
+        defaultCalleeJoinRTCTiming = if (_canJoinRtcOnCalling(eventInfo = message)) CalleeJoinRTCTiming.Calling else CalleeJoinRTCTiming.Accepted
         if (enableNotify) {
             _updateAndNotifyState(CallStateType.Calling, CallStateReason.None, eventInfo = message)
             _notifyEvent(CallEvent.OnCalling)
         }
-        defaultCalleeJoinRTCTiming = if (_canJoinRtcOnCalling()) CalleeJoinRTCTiming.Calling else CalleeJoinRTCTiming.Accepted
+        callPrint("[calling]defaultCalleeJoinRTCTiming: ${defaultCalleeJoinRTCTiming.value}")
         if(defaultCalleeJoinRTCTiming == CalleeJoinRTCTiming.Calling) {
             _joinRTCAsBroadcaster(fromRoomId)
         }
@@ -1061,6 +1062,7 @@ class CallApiImpl constructor(
             }
         }
 
+        callPrint("[calling]defaultCalleeJoinRTCTiming: ${defaultCalleeJoinRTCTiming.value}")
         if (defaultCalleeJoinRTCTiming == CalleeJoinRTCTiming.Accepted) {
             _joinRTCAsBroadcaster(roomId)
         }

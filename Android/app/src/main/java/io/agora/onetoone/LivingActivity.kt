@@ -305,7 +305,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             val videoCanvas = VideoCanvas(canvasView)
             videoCanvas.uid = uid
             videoCanvas.renderMode = VideoCanvas.RENDER_MODE_HIDDEN
-            videoCanvas.mirrorMode = Constants.VIDEO_MIRROR_MODE_AUTO
+            videoCanvas.mirrorMode = Constants.VIDEO_MIRROR_MODE_DISABLED
 
             rtcEngine.enableAudio()
             rtcEngine.enableVideo()
@@ -588,7 +588,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         }
     }
 
-    override fun canJoinRtcOnCalling(): Boolean? {
+    override fun canJoinRtcOnCalling(eventInfo: Map<String, Any>): Boolean? {
         return true
     }
 
