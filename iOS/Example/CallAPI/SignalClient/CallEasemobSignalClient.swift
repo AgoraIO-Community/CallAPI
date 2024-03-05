@@ -107,7 +107,7 @@ extension CallEasemobSignalClient {
         let emMessage = EMChatMessage(conversationID: userId, from: self.userId, to: userId, body: body, ext: nil)
         emMessage.deliverOnlineOnly = true
         let date = Date()
-        //TODO: 环信不在线不会返回错误，如果需要判断对方不在线，需要额外处理
+        //TODO: bu环信不在线不会返回错误，如果需要判断对方不在线，需要额外处理
         EMClient.shared().chatManager?.send(emMessage, progress: nil, completion: {[weak self] msg, err in
             guard let self = self else {return}
             if let err = err {
