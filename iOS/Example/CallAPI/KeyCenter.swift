@@ -37,6 +37,11 @@ struct KeyCenter {
      */
     static let Certificate: String? = <#Your Certificate#>
     
-    
+    /**
+     环信APPKEY
+     在环信即时通讯云控制台创建应用时填入的应用名称。
+     如需使用环信自定义心灵场景，需要设置该参数，如只需要体验默认的Rtm信令，可以填写 ""。
+     详见获取环信即时通讯IM的信息(http://docs-im-beta.easemob.com/product/enable_and_configure_IM.html#%E8%8E%B7%E5%8F%96%E7%8E%AF%E4%BF%A1%E5%8D%B3%E6%97%B6%E9%80%9A%E8%AE%AF-im-%E7%9A%84%E4%BF%A1%E6%81%AF)。
+     */
     static var IMAppKey: String = <#Your EaseMob AppKey#>
 }

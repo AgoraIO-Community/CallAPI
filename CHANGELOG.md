@@ -2,14 +2,17 @@
 
 ## [2.0.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.0.0)
 
+- 新增自定义信令功能，支持使用非 Rtm 来发送消息。
+- 优化 Demo 层的异常处理。
+
 ## [1.1.1](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.1)
 
 - 新增 canJoinRTC 方法，用于外部控制加入 RTC 的时机。
 
 ## [1.1.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.0)
 
-- 增加通话开始/结束的回调
-- onCallEventChanged 回调方法增加 eventReason 参数
+- 增加通话开始/结束的回调。
+- onCallEventChanged 回调方法增加 eventReason 参数。
 
 ## [1.0.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.0.0)
 
