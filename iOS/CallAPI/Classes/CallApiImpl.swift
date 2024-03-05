@@ -522,7 +522,7 @@ extension CallApiImpl {
         
         canvas.view = canvasView
         canvas.uid = uid
-        canvas.mirrorMode = .auto
+        canvas.mirrorMode = .disabled
         engine.setDefaultAudioRouteToSpeakerphone(true)
         engine.setupLocalVideo(canvas)
         let ret = engine.startPreview()
