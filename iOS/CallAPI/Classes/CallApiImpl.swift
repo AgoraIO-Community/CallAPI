@@ -57,8 +57,8 @@ var defaultCalleeJoinRTCTiming: CalleeJoinRTCTiming = .calling
 
 /// 被叫呼叫中加入RTC的时机
 @objc public enum CalleeJoinRTCTiming: Int {
-    case calling    //在收到呼叫时即加入频道并推送视频流，被叫时费用较高但出图更快
-    case accepted   //在收到呼叫后，主动发起接受后才加入频道并推送视频流，被叫时费用较低但出图较慢
+    case calling = 0    //在收到呼叫时即加入频道并推送视频流，被叫时费用较高但出图更快
+    case accepted       //在收到呼叫后，主动发起接受后才加入频道并推送视频流，被叫时费用较低但出图较慢
 }
 
 public class CallApiImpl: NSObject {
@@ -227,10 +227,10 @@ extension CallApiImpl {
         return localNtpTime
     }
     
-    private func _canJoinRtcOnCalling() -> Bool {
+    private func _canJoinRtcOnCalling(eventInfo: [String: Any]) -> Bool {
         var emptyCount: Int = 0
         for element in delegates.allObjects {
-            if let isEnable = element.canJoinRtcOnCalling?() {
+            if let isEnable = element.canJoinRtcOnCalling?(eventInfo: eventInfo) {
                 if isEnable {
                     return true
                 }
@@ -522,7 +522,7 @@ extension CallApiImpl {
         
         canvas.view = canvasView
         canvas.uid = uid
-        canvas.mirrorMode = .auto
+        canvas.mirrorMode = .disabled
         engine.setDefaultAudioRouteToSpeakerphone(true)
         engine.setupLocalVideo(canvas)
         let ret = engine.startPreview()
@@ -882,12 +882,15 @@ extension CallApiImpl {
         }
         
         connectInfo.set(userId: fromUserId, roomId: fromRoomId, callId: callId)
+        
+        defaultCalleeJoinRTCTiming = _canJoinRtcOnCalling(eventInfo: message) ? .calling : .accepted
+        
         if enableNotify {
             _updateAndNotifyState(state: .calling, stateReason: .none, eventInfo: message)
             _notifyEvent(event: .onCalling)
         }
         
-        defaultCalleeJoinRTCTiming = _canJoinRtcOnCalling() ? .calling : .accepted
+        callPrint("[calling]defaultCalleeJoinRTCTiming: \(defaultCalleeJoinRTCTiming.rawValue)")
         if defaultCalleeJoinRTCTiming == .calling {
             _joinRTCAsBroadcaster(roomId: fromRoomId)
         }
@@ -1103,6 +1106,7 @@ extension CallApiImpl: CallApiProtocol {
             self._notifySendMessageErrorEvent(error: error, reason: "accept fail: ")
         }
         
+        callPrint("[accepted]defaultCalleeJoinRTCTiming: \(defaultCalleeJoinRTCTiming.rawValue)")
         if defaultCalleeJoinRTCTiming == .accepted{
             //join需要在connecting之前执行，否则connecting时订阅的音频流会无效
             _joinRTCAsBroadcaster(roomId: roomId)
