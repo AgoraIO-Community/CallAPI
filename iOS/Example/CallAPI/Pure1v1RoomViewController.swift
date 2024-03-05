@@ -123,6 +123,14 @@ class Pure1v1RoomViewController: UIViewController {
         return btn
     }()
     
+    private lazy var mockButton: UIButton = {
+        let btn = UIButton()
+        btn.backgroundColor = .blue
+        btn.addTarget(self, action: #selector(mockAction), for: .touchUpInside)
+        btn.setTitle("mock", for: .normal)
+        return btn
+    }()
+    
     private lazy var hangupButton: UIButton = {
         let btn = UIButton()
         btn.addTarget(self, action: #selector(hangupAction), for: .touchUpInside)
@@ -202,6 +210,13 @@ class Pure1v1RoomViewController: UIViewController {
         leftView.frame = CGRect(x: 0, y: 50, width: view.frame.width / 2, height: view.frame.height / 2)
         rightView.frame = CGRect(x: view.frame.width / 2, y: 50, width: view.frame.width / 2, height: view.frame.height / 2)
         
+        
+        view.addSubview(mockButton)
+        
+        mockButton.frame = CGRect(x: view.frame.width - 60,
+                                  y: callButton.frame.origin.y - 45,
+                                  width: 60, height: 40)
+        
         self.callState = .idle
         //外部创建rtmClient
         rtmClient = _createRtmClient()
@@ -257,6 +272,17 @@ extension Pure1v1RoomViewController {
             self.rtmClient?.destroy()
             self.dismiss(animated: true)
         }
+    }
+    
+    @objc func mockAction() {
+        guard self.callState == .prepared else {
+            initCallApi { err in
+            }
+            AUIToast.show(text: "CallAPi初始化中")
+            return
+        }
+        
+        api.mockCall(userAId: 4111, userBId: 4222, fromRoomId: "4111")
     }
 
     @objc func callAction() {

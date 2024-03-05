@@ -1295,3 +1295,38 @@ extension CallApiImpl {
         callPrint("[Profile]\(message)")
     }
 }
+
+//mock发给a/b的消息
+extension CallApiImpl {
+    public func mockCall(userAId: UInt, userBId: UInt, fromRoomId: String) {
+        let callId = UUID().uuidString
+        if true {
+            // call A
+            var dic: [String: Any] = [:]
+            dic["message_action"] = 0
+            dic["message_version"] = "1.0"
+            dic["message_timestamp"] = _getTimeInMs()
+            dic["fromUserId"] = userBId
+            dic["callId"] = callId
+            dic["remoteUserId"] = userAId
+            dic["fromRoomId"] = fromRoomId
+            messageManager?.sendMessage(userId: "\(userAId)", message: dic) { err in
+            }
+        }
+        
+        
+        if true {
+            // call B
+            var dic: [String: Any] = [:]
+            dic["message_action"] = 0
+            dic["message_version"] = "1.0"
+            dic["message_timestamp"] = _getTimeInMs()
+            dic["fromUserId"] = userAId
+            dic["callId"] = callId
+            dic["remoteUserId"] = userBId
+            dic["fromRoomId"] = fromRoomId
+            messageManager?.sendMessage(userId: "\(userBId)", message: dic) { err in
+            }
+        }
+    }
+}
