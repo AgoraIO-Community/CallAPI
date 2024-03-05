@@ -364,6 +364,10 @@ extension Pure1v1RoomViewController: AgoraRtcEngineDelegate {
 }
 
 extension Pure1v1RoomViewController:CallApiListenerProtocol {
+//    func canJoinRtcOnCalling() -> Bool {
+//        return false
+//    }
+    
     func tokenPrivilegeWillExpire() {
         //更新token，这里rtc和rtm一起更新
         NetworkManager.shared.generateTokens(channelName: "",

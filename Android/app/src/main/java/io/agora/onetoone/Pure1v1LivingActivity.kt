@@ -496,6 +496,10 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         }
     }
 
+    override fun canJoinRtcOnCalling(): Boolean? {
+        return true
+    }
+
     override fun tokenPrivilegeWillExpire() {
         var rtcTokenTemp = ""
         var rtmTokenTemp = ""

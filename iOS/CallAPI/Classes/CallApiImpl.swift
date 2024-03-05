@@ -52,6 +52,15 @@ enum CallAction: UInt {
     case hangup = 4
 }
 
+//默认的加入rtc时机
+var defaultCalleeJoinRTCTiming: CalleeJoinRTCTiming = .calling
+
+/// 被叫呼叫中加入RTC的时机
+@objc public enum CalleeJoinRTCTiming: Int {
+    case calling    //在收到呼叫时即加入频道并推送视频流，被叫时费用较高但出图更快
+    case accepted   //在收到呼叫后，主动发起接受后才加入频道并推送视频流，被叫时费用较低但出图较慢
+}
+
 public class CallApiImpl: NSObject {
     private let delegates:NSHashTable<CallApiListenerProtocol> = NSHashTable<CallApiListenerProtocol>.weakObjects()
     private let rtcProxy: CallAgoraExProxy = CallAgoraExProxy()
@@ -219,6 +228,27 @@ extension CallApiImpl {
         return localNtpTime
     }
     
+    private func _canJoinRtcOnCalling() -> Bool {
+        var emptyCount: Int = 0
+        for element in delegates.allObjects {
+            if let isEnable = element.canJoinRtcOnCalling?() {
+                if isEnable {
+                    return true
+                }
+            } else {
+                emptyCount += 1
+            }
+        }
+        
+        //如果一个协议都没有实现，使用默认值
+        if emptyCount == delegates.count {
+            callPrint("join rtc strategy callback not found, use default")
+            return true
+        }
+        
+        return false
+    }
+
     private func _notifyCallConnected() {
         guard let config = config else { return }
         let ntpTime = getNtpTimeInMs()
@@ -872,8 +902,9 @@ extension CallApiImpl {
             _notifyEvent(event: .onCalling)
         }
         
-        // join操作需要在calling抛出之后执行，因为秀场转1v1等场景，需要通知外部先关闭外部采集，否则内部推流会失败导致对端看不到画面
-        if prepareConfig?.calleeJoinRTCStrategy == .calling {
+        defaultCalleeJoinRTCTiming = _canJoinRtcOnCalling() ? .calling : .accepted
+        if defaultCalleeJoinRTCTiming == .calling {
+            // join操作需要在calling抛出之后执行，因为秀场转1v1等场景，需要通知外部先关闭外部采集，否则内部推流会失败导致对端看不到画面
             _joinRTCAsBroadcaster(roomId: fromRoomId)
         }
         
@@ -1088,7 +1119,7 @@ extension CallApiImpl: CallApiProtocol {
             self._notifySendMessageErrorEvent(error: error, reason: "accept fail: ")
         }
         
-        if prepareConfig?.calleeJoinRTCStrategy == .accepted {
+        if defaultCalleeJoinRTCTiming == .accepted {
             /*
              因为connecting会autosubscribeAudio=true，这里join时是会设置成false，
              因此如果需要调用该方法，必须在状态机变成connecting之前调用

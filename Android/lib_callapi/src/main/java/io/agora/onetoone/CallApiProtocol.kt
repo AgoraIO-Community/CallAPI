@@ -16,7 +16,7 @@ open class CallConfig(
 ){}
 
 open class PrepareConfig(
-    var roomId: String = "",                      // 频道名(主叫需要设置为1v1的频道，被叫可设置为自己的广播频道)
+    var roomId: String = "",                      // 自己的Rtc频道名，用于呼叫对端用户时让对端用户进入加入这个RTC频道
     var rtcToken: String = "",                    // rtc token，需要使用万能token，token创建的时候channel name为空字符串
     var rtmToken: String = "",                    // rtm token
     var localView: ViewGroup? = null,             // 显示本地流的画布
@@ -193,6 +193,12 @@ interface ICallApiListener {
                         currentUserId: Int,
                         timestamp: Long,
                         duration: Long) {}
+
+    /**
+     * 当呼叫时判断是否可以加入Rtc
+     * @return true: 可以加入 false: 不可以加入
+     */
+    fun canJoinRtcOnCalling() : Boolean?
 
     /**
      * token快要过期了(需要外部获取新token调用renewToken更新)

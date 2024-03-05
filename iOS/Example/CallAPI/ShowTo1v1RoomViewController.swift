@@ -428,6 +428,10 @@ extension ShowTo1v1RoomViewController: AgoraRtcEngineDelegate {
 
 
 extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
+//    func canJoinRtcOnCalling() -> Bool {
+//        return false
+//    }
+    
     func tokenPrivilegeWillExpire() {
         NetworkManager.shared.generateTokens(channelName: "",
                                              uid: "\(currentUid)",

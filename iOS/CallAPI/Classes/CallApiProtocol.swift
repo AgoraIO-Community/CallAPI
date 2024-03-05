@@ -23,15 +23,8 @@ import AgoraRtcKit
     public var localView: UIView!                       //显示本地流的画布
     public var remoteView: UIView!                      //显示远端流的画布
     public var autoJoinRTC: Bool = false                //是否在不呼叫的情况下提前加入自己的RTC频道，该设置可以加快呼叫的出图速度
-    public var calleeJoinRTCStrategy: CalleeJoinRTCStrategy = .calling  //当自己在通话中作为被叫方时加入Rtc频道的策略
     public var callTimeoutMillisecond: UInt64 = 15000   //呼叫超时时间，单位毫秒，0表示内部不处理超时
     public var userExtension: [String: Any]?            //[可选]用户扩展字段，收到对端消息而改变状态(例如calling/connecting)时可以通过kFromUserExtension字段获取
-}
-
-/// 被叫呼叫中加入RTC的策略
-@objc public enum CalleeJoinRTCStrategy: Int {
-    case calling    //在收到呼叫时即加入频道并推送视频流，被叫时费用较高但出图更快
-    case accepted   //在收到呼叫后，主动发起接受后才加入频道并推送视频流，被叫时费用较低但出图较慢
 }
 
 /// 呼叫状态
@@ -180,6 +173,10 @@ import AgoraRtcKit
                                            currentUserId: UInt,
                                            timestamp: UInt64,
                                            duration: UInt64)
+    
+    /// 当呼叫时判断是否可以加入Rtc
+    /// - Returns: true: 可以加入 false: 不可以加入
+    @objc optional func canJoinRtcOnCalling() -> Bool
     
     /// token即将要过期(需要外部获取新token调用renewToken更新)
     @objc optional func tokenPrivilegeWillExpire()
