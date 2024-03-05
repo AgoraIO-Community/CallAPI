@@ -1,5 +1,6 @@
 
 # CallAPI Example
+
 本文档主要介绍如何快速跑通 CallAPI示例工程
 
 - [CallAPI Example](#callapi-example)
@@ -8,7 +9,7 @@
   - [3. 项目介绍](#3-项目介绍)
     - [3.1 概述](#31-概述)
     - [3.2 角色介绍](#32-角色介绍)
-    - [3.3 核心功能：](#33-核心功能)
+    - [3.3 核心功能](#33-核心功能)
     - [3.4 玩法说明](#34-玩法说明)
   - [4. 快速集成](#4-快速集成)
     - [4.1 把CallApi集成进自己的项目里](#41-把callapi集成进自己的项目里)
@@ -84,7 +85,7 @@
   - 被叫
     > 是接收呼叫请求并被邀请进行通话的一方。被叫方在收到主叫方的呼叫邀请后可以接受或拒绝呼叫，如果接受呼叫，则与主叫方建立起视频通话连接。
 
-### 3.3 核心功能：
+### 3.3 核心功能
   - **呼叫**：主叫发起呼叫。
   - **取消呼叫**：主叫发起呼叫后可以在通话成功前发起取消呼叫来中断当前的呼叫。
   - **接受呼叫**：被叫在接收到主叫的呼叫请求后可以接受当次呼叫。
@@ -270,9 +271,9 @@
 
 - 场景调用CallAPI的时序图
   - 1v1场景
-   <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_pure1v1.zh.png" width="500px"><br><br>
+   <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/200/sequence_pure1v1.zh.png" width="500px"><br><br>
   - 秀场转1v1
-    <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_showto1v1.zh.png" width="500px"><br><br>
+    <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/200/sequence_showto1v1.zh.png" width="500px"><br><br>
 
 ## 5. 进阶集成
 - 使用外部初始化的RTM。
@@ -568,7 +569,7 @@
       - 3.2.2 开始订阅远端音频流。
     - 3.3 当收到主叫方的首帧后，即可确认连接成功。此时，您可以将之前创建的临时画布添加到可视化视图中，从而完成视频渲染的过程。
   - 4.时序图
-      <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_solution_1v1.zh.png" width="500px"><br><br>
+      <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/200/sequence_solution_1v1.zh.png" width="500px"><br><br>
   
 #### 7.1.2 提升消息送达率
   - 增加消息回执(如果信令通道有则忽略)

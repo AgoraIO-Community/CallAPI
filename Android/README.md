@@ -1,6 +1,24 @@
 # CallAPI Example
 
 本文档主要介绍如何快速跑通 CallAPI 示例工程
+- [CallAPI Example](#callapi-example)
+  - [1. 环境准备](#1-环境准备)
+  - [2. 运行示例](#2-运行示例)
+  - [3. 项目介绍](#3-项目介绍)
+    - [3.1 概述](#31-概述)
+    - [3.2 角色介绍](#32-角色介绍)
+    - [3.3 核心功能：](#33-核心功能)
+    - [3.4 玩法说明](#34-玩法说明)
+  - [4. 快速集成](#4-快速集成)
+  - [5. 进阶集成](#5-进阶集成)
+  - [6. API说明](#6-api说明)
+    - [CallApiListenerProtocol](#callapilistenerprotocol)
+    - [CallApiProtocol](#callapiprotocol)
+  - [7. 实现原理](#7-实现原理)
+    - [7.1 优化呼叫性能和可靠性](#71-优化呼叫性能和可靠性)
+      - [7.1.1 加快出图速度](#711-加快出图速度)
+      - [7.1.2 提升消息送达率](#712-提升消息送达率)
+    - [7.2 影响通话速度的指标](#72-影响通话速度的指标)
 
 ## 1. 环境准备
 - <mark>最低兼容 Android 7.0</mark>（SDK API Level 24）
@@ -167,9 +185,9 @@ AG_APP_CERTIFICATE=
 
 - 场景调用 CallAPI 的时序图
   - 1v1场景
-    <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_pure1v1.zh.png" width="500px"><br><br>
+    <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/200/sequence_pure1v1.zh.png" width="500px"><br><br>
   - 秀场转1v1
-    <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_showto1v1.zh.png" width="500px"><br><br>
+    <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/2yi00/sequence_showto1v1.zh.png" width="500px"><br><br>
 
 ## 5. 进阶集成
 - 使用外部初始化的 RTM。
@@ -400,7 +418,7 @@ AG_APP_CERTIFICATE=
     - 3.2.2 开始订阅远端音频流。
   - 3.3 当收到主叫方的首帧后，即可确认连接成功。此时，您可以将之前创建的临时画布添加到可视化视图中，从而完成视频渲染的过程。
 - 4.时序图
-  <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_solution_1v1.zh.png" width="500px"><br><br>
+  <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/200/sequence_solution_1v1.zh.png" width="500px"><br><br>
 
 #### 7.1.2 提升消息送达率
 - 增加消息回执(如果信令通道有则忽略)
