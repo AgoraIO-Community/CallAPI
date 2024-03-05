@@ -9,8 +9,19 @@ import Foundation
 import HyphenateChat
 import CallAPI
 
+/// CallRtmManager回调协议
+public protocol ICallEasemobSignalClientListener: NSObjectProtocol {
+    
+    /// rtm连接成功
+    func onConnected()
+    
+    /// rtm连接断开
+    func onDisconnected()
+}
+
 public class CallEasemobSignalClient: CallBaseSignalClient {
     public var isConnected: Bool = false
+    public weak var delegate: ICallEasemobSignalClientListener? = nil
     private var appKey: String
     private var userId: String
 
@@ -151,8 +162,10 @@ extension CallEasemobSignalClient: EMClientDelegate {
         switch aConnectionState {
         case .connected:
             isConnected = true
+            self.delegate?.onConnected()
         default:
             isConnected = false
+            self.delegate?.onDisconnected()
         }
     }
 }

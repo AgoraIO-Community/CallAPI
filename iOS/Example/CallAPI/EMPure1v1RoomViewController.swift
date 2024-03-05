@@ -87,7 +87,7 @@ class EMPure1v1RoomViewController: UIViewController {
     
     private func _createSignalClient() -> CallEasemobSignalClient {
         let signalClient = CallEasemobSignalClient(appKey: KeyCenter.IMAppKey, userId: "\(currentUid)")
-        
+        signalClient.delegate = self
         return signalClient
     }
     
@@ -258,6 +258,7 @@ extension EMPure1v1RoomViewController {
             self.rtcEngine.delegate = nil
             self.rtcEngine.leaveChannel()
             AgoraRtcEngineKit.destroy()
+            self.signalClient.delegate = nil
             self.signalClient.logout()
             self.dismiss(animated: true)
         }
@@ -464,5 +465,17 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
         default:
             print("[CallApi][Error]\(message)")
         }
+    }
+}
+
+extension EMPure1v1RoomViewController: ICallEasemobSignalClientListener {
+    func onConnected() {
+        NSLog("onConnected")
+        AUIToast.show(text: "环信已连接")
+    }
+    
+    func onDisconnected() {
+        NSLog("onDisconnected")
+        AUIToast.show(text: "环信未连接")
     }
 }

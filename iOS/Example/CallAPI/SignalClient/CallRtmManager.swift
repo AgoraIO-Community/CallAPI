@@ -23,7 +23,7 @@ func callMessagePrint(_ message: String) {
     NSLog(message)
 }
 
-/// <#Description#>
+/// CallRtmManager回调协议
 public protocol ICallRtmManagerListener: NSObjectProtocol {
     
     /// rtm连接成功
