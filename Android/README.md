@@ -274,15 +274,20 @@ IM_APP_KEY=
   ```
   **`注意：如果通过外部传入 rtmClient，则需要外部维持登陆状态`**
 
-- 修改被叫推流策略以节省费用。
-  - 修改[CallApiImpl.kt](lib_callapi/src/main/java/io/agora/onetoone/CallApiImpl.kt)中对应代码(OnCall->Accept)，从收到呼叫即推流和收流改为接受后再推流和收流，以保证在接受呼叫之后才推流。
+- 切换被叫的推流收流时机以节省费用。
+  - 在CallApi里被叫的默认的推流时机有两种
+    - [**默认**]收到呼叫即推送音视频流和收视频流
+    - 接受后再推送音视频流和收视频流
+  - 通过 `CallApiListenerProtocol` 的可选回调方法 `canJoinRtcOnCalling` 来实现切换
+    - 如果 **返回true** 或 **不实现该回调方法**，则使用默认策略 `收到呼叫即推送音视频流和收视频流`
+    - 如果 **返回false**，则使用策略 `接受后再推送音视频流和收视频流`
     ```kotlin
-      enum class CalleeJoinRTCTiming(val value: Int) {
-        Calling(0),      //在接到呼叫时即加入频道并推送音视频流，被叫时费用较高但出图更快
-        Accepted(1)      //在收到呼叫后，主动发起接受后才加入频道并推送视频流，被叫时费用较低但出图较慢
-      }
-      //val calleeJoinRTCType = CalleeJoinRTCType.OnCall
-      val calleeJoinRTCType = CalleeJoinRTCType.Accept
+      /**
+        * 当呼叫时判断是否可以加入Rtc
+        * @param eventInfo 收到呼叫时的扩展信息
+        * @return true: 可以加入 false: 不可以加入
+        */
+      fun canJoinRtcOnCalling(eventInfo: Map<String, Any>) : Boolean?
     ```
 - 外部有额外采集推送音视频流的操作
   -  由于 CallApi 内部会在通话时开启、结束通话时关闭采集音视频，因此如果在结束通话后外部需要手动开启音视频采集，例如当 onCallStateChanged 返回`(state: prepared)`时，可以开启采集。
@@ -305,8 +310,8 @@ IM_APP_KEY=
   - 通过 CallAPI 内部的日志上报，可以在声网后台查询到当次通话的各个节点耗时，请确保已经[开通声网自定义数据上报和分析服务](#custom-report)。
 
 - 自定义信令消息
-  - CallApi默认使用的是RTM的信令管理，CallApi通过[CallRtmSignalClient](lib_callapi/src/main/java/io/agora/onetoone/SignalClient/CallRtmSignalClient)来进行发送和接收消息
-  - 要实现一个自定义信令管理类，首先需要在对应管理类里实现[ISignalClient](lib_callapi/src/main/java/io/agora/onetoone/SignalClient/ISignalClient.kt)协议，声网已经基于环信实现了一个自定义信令管理类[CallEasemobSignalClient](app/src/main/io/agora/onetoone/signalClient/CallEasemobSignalClient.kt)，您可以参考该实现，重新实现基于其他平台的信令管理类
+  - CallApi 默认使用的是 RTM 的信令管理，CallApi 通过 [CallRtmSignalClient](lib_callapi/src/main/java/io/agora/onetoone/signalClient/CallRtmSignalClient) 来进行发送和接收消息
+  - 要实现一个自定义信令管理类，首先需要在对应管理类里实现 [ISignalClient](lib_callapi/src/main/java/io/agora/onetoone/signalClient/ISignalClient.kt) 协议，声网已经基于环信实现了一个自定义信令管理类 [CallEasemobSignalClient](app/src/main/io/agora/onetoone/signalClient/CallEasemobSignalClient.kt)，您可以参考该实现，重新实现基于其他平台的信令管理类
   - 该信令管理类需要维持信令的登录注销等，并且需要自行维护信令的异常处理，保证CallApi在调用时处于可用状态
   - 通过如下方式使用自定义信令管理类，例如使用Demo里实现的CallEasemobSignalClient
     ```kotlin
@@ -322,6 +327,17 @@ IM_APP_KEY=
       }
     }
     ```
+  - 需要监听通话频道的Rtc回调
+    - CallApi里使用的 `joinChannelEx` 方式加入Rtc频道，因此不可以使用 `rtcEngine.addHandler` 方式，需要通过 `rtcEngine.addHandlerEx` 并指定对应的频道来添加 handler
+      ```kotlin
+      /*
+      roomId: 当前Rtc通话频道id
+      currentUid: 当前用户uid
+      */
+      val connection = RtcConnection(roomId, currentUid)
+      rtcEngine.addHandlerEx(this, connection)
+      ```
+      当前Rtc通话频道id可以通过 `onCallStateChanged` 为 `calling` 时从`evenInfo` 里解析获取
 
 ## 6. API说明
 ### CallApiListenerProtocol
