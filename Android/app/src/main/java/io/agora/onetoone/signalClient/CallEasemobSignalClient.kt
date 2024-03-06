@@ -17,6 +17,8 @@ import es.dmoral.toasty.Toasty
 import io.agora.onetoone.AGError
 import io.agora.rtm.PublishOptions
 import io.agora.rtm.RtmConstants
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
 
 fun createEasemobSignalClient(context: Context, appKey: String, userId: Int) = CallEasemobSignalClient(context, appKey, userId)
 
@@ -39,33 +41,35 @@ class CallEasemobSignalClient(
         EMClient.getInstance().chatManager().addMessageListener(this)
         EMClient.getInstance().addConnectionListener(this)
 
-        // 注册
-        try {
-            // 同步方法，会阻塞当前线程。
-            EMClient.getInstance().createAccount(userId.toString(), userId.toString())
+        Thread {
+            // 注册
+            try {
+                // 同步方法，会阻塞当前线程。
+                EMClient.getInstance().createAccount(userId.toString(), userId.toString())
 
-        } catch (e: HyphenateException) {
-            //失败
-            Log.e(TAG, "createAccount failed: ${e.message}, code: ${e.errorCode}")
-        }
-
-        //成功
-        EMClient.getInstance().login(userId.toString(), userId.toString(), object : EMCallBack {
-            // 登录成功回调
-            override fun onSuccess() {
-                Log.d(TAG, "login success")
-                isConnected = true
-                EMClient.getInstance().chatManager().loadAllConversations()
-                EMClient.getInstance().groupManager().loadAllGroups()
+            } catch (e: HyphenateException) {
+                //失败
+                Log.e(TAG, "createAccount failed: ${e.message}, code: ${e.errorCode}")
             }
 
-            // 登录失败回调，包含错误信息
-            override fun onError(code: Int, error: String) {
-                Log.e(TAG, "login failed, code:$code, msg:$error")
-            }
+            // 登陆
+            EMClient.getInstance().login(userId.toString(), userId.toString(), object : EMCallBack {
+                // 登录成功回调
+                override fun onSuccess() {
+                    Log.d(TAG, "login success")
+                    isConnected = true
+                    EMClient.getInstance().chatManager().loadAllConversations()
+                    EMClient.getInstance().groupManager().loadAllGroups()
+                }
 
-            override fun onProgress(i: Int, s: String) {}
-        })
+                // 登录失败回调，包含错误信息
+                override fun onError(code: Int, error: String) {
+                    Log.e(TAG, "login failed, code:$code, msg:$error")
+                }
+
+                override fun onProgress(i: Int, s: String) {}
+            })
+        }.start()
     }
 
     var isConnected: Boolean = false
@@ -102,6 +106,7 @@ class CallEasemobSignalClient(
         val msg = EMMessage.createTextSendMessage(message, userId)
         // 会话类型：单聊为 EMMessage.ChatType.Chat
         msg.chatType = EMMessage.ChatType.Chat
+        msg.deliverOnlineOnly(true)
         // 发送消息时可以设置 `EMCallBack` 的实例，获得消息发送的状态。可以在该回调中更新消息的显示状态。例如消息发送失败后的提示等等。
         msg.setMessageStatusCallback(object : EMCallBack {
             override fun onSuccess() {

@@ -108,6 +108,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
 
         rtcEngine = _createRtcEngine()
         setupView()
+        mCallState = CallStateType.Idle
         updateCallState(CallStateType.Idle)
 
         // 初始化
@@ -187,40 +188,41 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
     }
 
     private fun updateCallState(state: CallStateType) {
-        mCallState = state
-        when(mCallState) {
-            CallStateType.Calling ->{
-                publishMedia(false)
-                setupCanvas(null)
-                mViewBinding.vRight.alpha = 1f
-                mViewBinding.vCenter.removeView(mCenterCanvas)
-                mViewBinding.btnHangUp.isVisible = false
-                mViewBinding.btnCall.isVisible = false
-            }
-            CallStateType.Prepared,
-            CallStateType.Idle,
-            CallStateType.Failed -> {
-                rtcEngine.enableLocalAudio(true)
-                rtcEngine.enableLocalVideo(true)
-                publishMedia(true)
-                if (mViewBinding.vCenter.indexOfChild(mCenterCanvas) == -1) {
-                    mViewBinding.vCenter.addView(mCenterCanvas)
+        runOnUiThread {
+            when (mCallState) {
+                CallStateType.Calling -> {
+                    publishMedia(false)
+                    setupCanvas(null)
+                    mViewBinding.vRight.alpha = 1f
+                    mViewBinding.vCenter.removeView(mCenterCanvas)
+                    mViewBinding.btnHangUp.isVisible = false
+                    mViewBinding.btnCall.isVisible = false
                 }
-                setupCanvas(mCenterCanvas)
-                mCenterCanvas.isVisible = true
-                mViewBinding.vLeft.alpha = 0f
-                mViewBinding.vRight.alpha = 0f
-                mViewBinding.btnCall.isVisible = !enterModel.isBrodCaster
-                mViewBinding.btnHangUp.isVisible = false
+                CallStateType.Prepared,
+                CallStateType.Idle,
+                CallStateType.Failed -> {
+                    rtcEngine.enableLocalAudio(true)
+                    rtcEngine.enableLocalVideo(true)
+                    publishMedia(true)
+                    if (mViewBinding.vCenter.indexOfChild(mCenterCanvas) == -1) {
+                        mViewBinding.vCenter.addView(mCenterCanvas)
+                    }
+                    setupCanvas(mCenterCanvas)
+                    mCenterCanvas.isVisible = true
+                    mViewBinding.vLeft.alpha = 0f
+                    mViewBinding.vRight.alpha = 0f
+                    mViewBinding.btnCall.isVisible = !enterModel.isBrodCaster
+                    mViewBinding.btnHangUp.isVisible = false
+                }
+                CallStateType.Connected -> {
+                    mViewBinding.vLeft.alpha = 1f
+                    mCenterCanvas.isVisible = false
+                    mViewBinding.vCenter.removeView(mCenterCanvas)
+                    mViewBinding.btnHangUp.isVisible = true
+                    mViewBinding.btnCall.isVisible = false
+                }
+                else -> {}
             }
-            CallStateType.Connected -> {
-                mViewBinding.vLeft.alpha = 1f
-                mCenterCanvas.isVisible = false
-                mViewBinding.vCenter.removeView(mCenterCanvas)
-                mViewBinding.btnHangUp.isVisible = true
-                mViewBinding.btnCall.isVisible = false
-            }
-            else -> {}
         }
     }
 
@@ -277,17 +279,6 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             Log.e(TAG, "RtcEngine.create() called error: $e")
         }
         return rtcEngine ?: throw RuntimeException("RtcEngine create failed!")
-    }
-
-    private fun _createRtmClient(): RtmClient {
-        val rtmConfig = RtmConfig.Builder(BuildConfig.AG_APP_ID, enterModel.currentUid).build()
-        if (rtmConfig.userId.isEmpty()) {
-            Log.d(TAG, "userId is empty")
-        }
-        if (rtmConfig.appId.isEmpty()) {
-            Log.d(TAG, "appId is empty")
-        }
-        return RtmClient.create(rtmConfig)
     }
 
     private fun setupCanvas(canvasView: TextureView?) {
