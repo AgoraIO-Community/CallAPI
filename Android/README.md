@@ -381,7 +381,17 @@ IM_APP_KEY=
                     message: String?) {}
   ```
 
-- token 即将要过期
+- 当收到呼叫时判断是否可以加入Rtc
+  ```kotlin
+  /**
+   * 当呼叫时判断是否可以加入Rtc
+   * @param eventInfo 收到呼叫时的扩展信息
+   * @return true: 可以加入 false: 不可以加入
+   */
+   fun canJoinRtcOnCalling(eventInfo: Map<String, Any>) : Boolean?
+  ```
+
+- Rtc token 即将要过期
   ```kotlin
     /** 
      * token快要过期了(需要外部获取新token调用renewToken更新)
