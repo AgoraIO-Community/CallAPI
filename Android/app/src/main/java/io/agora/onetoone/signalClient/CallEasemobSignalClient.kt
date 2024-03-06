@@ -40,7 +40,13 @@ class CallEasemobSignalClient(
         // 注册消息监听
         EMClient.getInstance().chatManager().addMessageListener(this)
         EMClient.getInstance().addConnectionListener(this)
+    }
 
+    var isConnected: Boolean = false
+
+    private val mHandler = Handler(Looper.getMainLooper())
+
+    fun login(completion: ((success: Boolean) -> Unit)?) {
         Thread {
             // 注册
             try {
@@ -60,11 +66,13 @@ class CallEasemobSignalClient(
                     isConnected = true
                     EMClient.getInstance().chatManager().loadAllConversations()
                     EMClient.getInstance().groupManager().loadAllGroups()
+                    completion?.invoke(true)
                 }
 
                 // 登录失败回调，包含错误信息
                 override fun onError(code: Int, error: String) {
                     Log.e(TAG, "login failed, code:$code, msg:$error")
+                    completion?.invoke(false)
                 }
 
                 override fun onProgress(i: Int, s: String) {}
@@ -72,9 +80,12 @@ class CallEasemobSignalClient(
         }.start()
     }
 
-    var isConnected: Boolean = false
-
-    private val mHandler = Handler(Looper.getMainLooper())
+    fun clean() {
+        isConnected = false
+        listeners.clear()
+        EMClient.getInstance().removeConnectionListener(this)
+        EMClient.getInstance().logout(false)
+    }
 
     override fun sendMessage(
         userId: String,
@@ -123,13 +134,6 @@ class CallEasemobSignalClient(
         })
         // 发送消息
         EMClient.getInstance().chatManager().sendMessage(msg)
-    }
-
-    fun clean() {
-        isConnected = false
-        listeners.clear()
-        EMClient.getInstance().removeConnectionListener(this)
-        EMClient.getInstance().logout(false)
     }
 
     // ---------------- EMMessageListener ----------------

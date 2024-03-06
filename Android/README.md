@@ -14,6 +14,8 @@
   - [6. API说明](#6-api说明)
     - [CallApiListenerProtocol](#callapilistenerprotocol)
     - [CallApiProtocol](#callapiprotocol)
+    - [ISignalClient(信令抽象协议)](#isignalclient信令抽象协议)
+    - [ISignalClientListener(信令回调协议)](#isignalclientlistener信令回调协议)
   - [7. 实现原理](#7-实现原理)
     - [7.1 优化呼叫性能和可靠性](#71-优化呼叫性能和可靠性)
       - [7.1.1 加快出图速度](#711-加快出图速度)
@@ -22,8 +24,8 @@
 
 ## 1. 环境准备
 - <mark>最低兼容 Android 7.0</mark>（SDK API Level 24）
-- Android Studio 3.5 及以上版本。
-- Android 7.0 及以上的手机设备。
+- Android Studio 3.5 及以上版本
+- Android 7.0 及以上的手机设备
 
 ## 2. 运行示例
 
@@ -50,12 +52,14 @@
   > <br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config3.jpg" width="500px">
 
 - <a id="custom-report">开通声网自定义数据上报和分析服务</a>
+  
   > 该服务当前处于免费内测期，如需试用该服务，请联系 sales@agora.io
-
-- 在项目根目录找到 [gradle.properties](gradle.properties)，填入声网的 AppId 和 Certificate
+  
+- 在项目根目录找到 [gradle.properties](gradle.properties)，填入声网的 AppId 和 Certificate 以及环信 AppKey(如果不需要体验环信自定义信令流程，IMAppKey 可以设置为`""`)
 ```
 AG_APP_ID=
 AG_APP_CERTIFICATE=
+IM_APP_KEY=
 ```
 - 在 Android Studio 顶部工具栏中，单击“File”->选择“Sync Project With Gradle File”，等待 Gradle 同步完成，即可运行项目并进行调试
 
@@ -65,8 +69,10 @@ AG_APP_CERTIFICATE=
 
 ### 3.2 角色介绍
 - 主叫
+  
   > 是发起呼叫并邀请对方进行通话的一方。主叫方主动发起呼叫请求，建立起视频通话连接，并发送邀请给被叫方。
 - 被叫
+  
   > 是接收呼叫请求并被邀请进行通话的一方。被叫方在收到主叫方的呼叫邀请后可以接受或拒绝呼叫，如果接受呼叫，则与主叫方建立起视频通话连接。
 
 ### 3.3 核心功能：
@@ -78,12 +84,14 @@ AG_APP_CERTIFICATE=
 
 ### 3.4 玩法说明
 - 1v1场景
+  
   > 通常在陌生人社交场景，用户可以根据照片和个人简介筛选到目标感兴趣其他用户，或者通过地理位置、标签随机匹配的方式，2位用户进行1v1私密视频通话的场景玩法。通话中，默认1v1双方用户均开启摄像头和麦克风，双向发送接收音视频流。
 - 秀场转1v1场景
+  
   > 主播在直播过程中，用户可以付费发起1v1视频通话。在通话接通后，主播的原直播间不关闭但不推流，主播转场到1v1与付费用户进行视频通话；当1v1视频通话结束后，主播转场回原直播间继续直播的场景玩法。
 
 ## 4. 快速集成
-
+### 4.1 把CallApi集成进自己的项目里
 - 拷贝 [lib_callapi/src/main/java/io/agora/onetoone](lib_callapi/src/main/java/io/agora/onetoone) 到自己的工程中
 
 - 请确保项目中使用正确的声网 SDK 依赖，保证和 CallApi 的依赖不冲突:
@@ -91,24 +99,73 @@ AG_APP_CERTIFICATE=
   - 'io.agora.rtc:agora-special-full:4.1.1.17'
 
 - 在 Android Studio 顶部工具栏中，单击“File”->选择“Sync Project With Gradle File”，CallAPI 代码即可集成进项目里。
+
+### 4.2 结构图
+<img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/200/class_structure_v2.0.0_1.png" width="500px"><br>
+- RtmClient: 声网实时消息SDK。
+- CallRtmManager: Rtm的管理类，负责处理Rtm的登录、注销、Token续期、网络状态变化通知等操作。
+- CallRtmSignalClient: 基于Rtm的消息收发类，用于发送经 CallApi 编码后的消息。该Client接收到消息后将同步到 CallApi 进行解码。
+- CallApiImpl: 面向声网1v1场景的API，负责管理Rtc和信令消息的收发等功能。
+
+### 4.3 使用CallApi实现一个通话流程
 - 初始化设置。
-  - 创建 CallAPI 实例。
+  - 初始化RtmManager
     ```kotlin
-      val api = CallApiImpl(this)
+      val rtmManager = createRtmManager(BuildConfig.AG_APP_ID, enterModel.currentUid.toInt())
     ```
-  - 初始化 CallApi。
+  - 初始化信令
     ```kotlin
-        //初始化config
+    val signalClient = createRtmSignalClient(rtmManager.getRtmClient())
+    ```
+  - 初始化 CallApi
+    ```kotlin
+       val api = CallApiImpl(this)
+       //初始化config
        val config = CallConfig(
            appId = BuildConfig.AG_APP_ID,
            userId = enterModel.currentUid.toInt(),
            rtcEngine = rtcEngine,
-           rtmClient = rtmClient, //如果有则传，否则为null
+           signalClient = signalClient,
        )
        api.initialize(config)
     ```
-  - 设置回调。
-    - 设置监听。
+- 设置回调
+  - 设置RtmManager的回调
+    - 设置监听
+      ```kotlin
+        rtmManager?.addListener(object : ICallRtmManagerListener {
+          override fun onConnected() {
+            mViewBinding.root.post {
+              Toasty.normal(this@LivingActivity, "rtm已连接", Toast.LENGTH_SHORT).show()
+            }
+          }
+      
+          override fun onDisconnected() {
+            mViewBinding.root.post {
+              Toasty.normal(this@LivingActivity, "rtm已断开", Toast.LENGTH_SHORT).show()
+            }
+          }
+      
+          override fun onConnectionLost() {
+            // 表示rtm超时断连了，需要重新登录，这里模拟了3s重新登录
+            mViewBinding.root.post {
+              Toasty.normal(this@LivingActivity, "rtm连接错误，需要重新登录", Toast.LENGTH_SHORT)
+              .show()
+            }
+            mViewBinding.root.postDelayed({
+              rtmManager?.logout()
+              rtmManager?.login(prepareConfig.rtmToken) {}
+            }, 3000)
+          }
+      
+          override fun onTokenPrivilegeWillExpire(channelName: String) {
+            // 重新获取token
+            tokenPrivilegeWillExpire()
+          }
+        })
+      ```
+  - 设置CallApi的回调
+    - 设置监听
       ```kotlin
         api.addListener(this)
       ```
@@ -120,28 +177,36 @@ AG_APP_CERTIFICATE=
               eventReason: String,
               eventInfo: Map<String, Any>
         ) {}
-
+        
         override fun onCallEventChanged(event: CallEvent, eventReason: String?) {
           
         }
-      ```    
-  - 准备通话环境。
-    ```kotlin   
-      val prepareConfig = PrepareConfig()
-      prepareConfig.rtcToken = ...   //设置rtc token(万能token)
-      prepareConfig.rtmToken = ...   //设置rtm token
-      prepareConfig.roomId = enterModel.currentUid
-      prepareConfig.localView = mViewBinding.vRight
-      prepareConfig.remoteView = mViewBinding.vLeft
-      prepareConfig.autoJoinRTC = false  //如果期望立即加入自己的RTC呼叫频道，则需要设置为true
-      api.prepareForCall(prepareConfig: prepareConfig) { err ->
-          //成功即可以开始进行呼叫
+      ```
+- RtmManager登录
+  ```kotlin 
+  rtmManager?.login(prepareConfig.rtmToken) { err ->
+      if (err == null) {
+          //登录成功，可以开始准备通话环境
       }
-    ```
-    > **注意1：rtcToken必须使用`万能token`，否则接听呼叫会看不到远端音视频**
-    
+  }
+  ```
+- 准备通话环境。
+  ```kotlin   
+    val prepareConfig = PrepareConfig()
+    prepareConfig.rtcToken = ...   //设置rtc token(万能token)
+    prepareConfig.roomId = enterModel.currentUid
+    prepareConfig.localView = mViewBinding.vRight
+    prepareConfig.remoteView = mViewBinding.vLeft
+    prepareConfig.autoJoinRTC = false  //如果期望立即加入自己的RTC呼叫频道，则需要设置为true
+    api.prepareForCall(prepareConfig: prepareConfig) { err ->
+        //成功即可以开始进行呼叫
+    }
+  ```
+  > **注意1：rtcToken必须使用`万能token`，否则接听呼叫会看不到远端音视频**
 
-    > **注意2：每次发起呼叫前推荐都调用prepareForCall更新roomId，保证通话的安全性**    
+  > **注意2：主叫发起呼叫后，被叫会获取到主叫在准备通话环境中设置的 roomId，从而加入对应的 RTC 频道进行通话。通话结束后，如果主叫不更新 roomId 就发起新的呼叫，可能会有一定的安全风险。<br> 
+  以用户 A、B、C 为例，主叫 A 向用户 B 发起呼叫后，B 就获取了 A 的 RTC 频道名（roomId）。呼叫结束后，如果 A 不更新 roomId 就向用户 C 发起呼叫，用户 B 可以通过技术手段使用之前的 roomId 和通配 Token 加入用户 A 的频道进行盗流。<br>
+  因此为确保通话安全，我们建议在每次发起呼叫前，都调用 prepareForCall 方法更新 roomId，以保证每次通话使用不同的 RTC 频道，进而确保通话的私密性。**
 - 呼叫
   - 如果是主叫，调用 call 方法呼叫远端用户。
     ```kotlin
@@ -197,11 +262,7 @@ AG_APP_CERTIFICATE=
     //如果外部创建了rtmClient，需要保证是已经登录的状态之后在进行后续设置
     rtmClient?.login(token, object: ResultCallback<Void?> {
         override fun onSuccess(p0: Void?) {
-            //登录成功即可进行CallApi的初始化
-            val config = CallConfig()
-            config.rtmClient = rtmClient 
-            //...
-            api.initialize(config) 
+            //登录成功即可初始化 CallRtmManager、CallRtmSignalClient、CallApi
         }
         override fun onFailure(p0: ErrorInfo?) {
             Log.e(TAG, "login error = ${p0.toString()}") 
@@ -213,6 +274,10 @@ AG_APP_CERTIFICATE=
 - 修改被叫推流策略以节省费用。
   - 修改[CallApiImpl.kt](lib_callapi/src/main/java/io/agora/onetoone/CallApiImpl.kt)中对应代码(OnCall->Accept)，从收到呼叫即推流和收流改为接受后再推流和收流，以保证在接受呼叫之后才推流。
     ```kotlin
+      enum class CalleeJoinRTCTiming(val value: Int) {
+        Calling(0),      //在接到呼叫时即加入频道并推送音视频流，被叫时费用较高但出图更快
+        Accepted(1)      //在收到呼叫后，主动发起接受后才加入频道并推送视频流，被叫时费用较低但出图较慢
+      }
       //val calleeJoinRTCType = CalleeJoinRTCType.OnCall
       val calleeJoinRTCType = CalleeJoinRTCType.Accept
     ```
@@ -235,6 +300,25 @@ AG_APP_CERTIFICATE=
 - 通话异常定位。
   - 在双端连接过程中(state为calling/connecting/connected时)可以通过 getCallId 方法获取当次通话双端的呼叫 id。
   - 通过 CallAPI 内部的日志上报，可以在声网后台查询到当次通话的各个节点耗时，请确保已经[开通声网自定义数据上报和分析服务](#custom-report)。
+
+- 自定义信令消息
+  - CallApi默认使用的是RTM的信令管理，CallApi通过[CallRtmSignalClient](lib_callapi/src/main/java/io/agora/onetoone/SignalClient/CallRtmSignalClient)来进行发送和接收消息
+  - 要实现一个自定义信令管理类，首先需要在对应管理类里实现[ISignalClient](lib_callapi/src/main/java/io/agora/onetoone/SignalClient/ISignalClient.kt)协议，声网已经基于环信实现了一个自定义信令管理类[CallEasemobSignalClient](app/src/main/io/agora/onetoone/signalClient/CallEasemobSignalClient.kt)，您可以参考该实现，重新实现基于其他平台的信令管理类
+  - 该信令管理类需要维持信令的登录注销等，并且需要自行维护信令的异常处理，保证CallApi在调用时处于可用状态
+  - 通过如下方式使用自定义信令管理类，例如使用Demo里实现的CallEasemobSignalClient
+    ```kotlin
+    //创建信令管理类
+    val signalClient = createEasemobSignalClient(this, BuildConfig.IM_APP_KEY, enterModel.currentUid.toInt())
+    //信令登录
+    signalClient?.login {
+      if (it) {
+        // login 成功后初始化 call api
+        initCallApi(completion)
+      } else {
+        completion.invoke(false)
+      }
+    }
+    ```
 
 ## 6. API说明
 ### CallApiListenerProtocol
@@ -315,7 +399,7 @@ AG_APP_CERTIFICATE=
                         currentUserId: Int,
                         timestamp: Long,
                         duration: Long) {}
-  ```  
+  ```
 
 - 打印日志
   ```kotlin
@@ -389,7 +473,54 @@ AG_APP_CERTIFICATE=
     fun getCallId(): String
   ```
 
+### ISignalClient(信令抽象协议)
+- CallApi往信令系统发消息
+  ```kotlin
+    /**
+     * CallApi往信令系统发消息
+     * @param userId 目标用户id
+     * @param message 消息对象
+     * @param completion 完成回调
+     */
+    fun sendMessage(userId: String, message: String, completion: ((AGError?)-> Unit)?)
+  ```
+- 监听信令系统回调
+  ```kotlin
+    /**
+     * 注册信令系统回调
+     * @param listener ISignalClientListener对象
+     */
+    fun addListener(listener: ISignalClientListener)
+  ```
+- 移除信令系统回调
+  ```kotlin
+    /**
+     * 移除信令系统回调
+     * @param listener ISignalClientListener对象
+     */
+    fun removeListener(listener: ISignalClientListener)
+  ```
 
+### ISignalClientListener(信令回调协议)
+- 收到消息的回调
+  ```kotlin
+    /**
+     * 收到消息的回调
+     * @param message 消息内容
+     */
+    fun onMessageReceive(message: String)
+  ```
+
+- 信令日志回调
+  ```kotlin
+    /**
+     * 信令日志回调
+     * @param message 日志消息内容
+     * @param logLevel 日志优先级
+     */
+    fun debugInfo(message: String, logLevel: Int)
+  ```
+  
 ## 7. 实现原理
 ### 7.1 优化呼叫性能和可靠性
 #### 7.1.1 加快出图速度

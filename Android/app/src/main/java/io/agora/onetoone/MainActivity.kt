@@ -72,6 +72,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun onEnterAction() {
         val isRtm = mViewBinding.btnShow.isChecked || mViewBinding.btnOneToOne.isChecked
+
+        if (!isRtm && BuildConfig.IM_APP_KEY == "") {
+            Toasty.normal(this, "未配置IM_APP_KEY", Toast.LENGTH_LONG).show()
+        }
+
+
         val isShowMode = mViewBinding.btnShow.isChecked || mViewBinding.btnHyShow.isChecked
         val isBrodCaster = mViewBinding.btnBroadcaster.isChecked
         val currentUserId = mViewBinding.etLocalUid.text.toString()

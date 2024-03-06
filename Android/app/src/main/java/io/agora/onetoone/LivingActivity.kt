@@ -33,7 +33,7 @@ enum class CallRole(val value: Int) {
     CALLEE(0),
     CALLER(1)
 }
-class LivingActivity : AppCompatActivity(),  ICallApiListener {
+class LivingActivity : AppCompatActivity(), ICallApiListener {
 
     companion object {
 
@@ -112,7 +112,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         updateCallState(CallStateType.Idle)
 
         // 初始化
-        initCallApi {}
+        initMessageManager {}
 
         PermissionHelp(this).checkCameraAndMicPerms(
             {
@@ -123,12 +123,19 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         )
     }
 
-    private fun initCallApi(completion: ((Boolean) -> Unit)) {
+    private fun initMessageManager(completion: ((Boolean) -> Unit)) {
         if (enterModel.isRtm) {
             // 使用RtmManager管理RTM
             rtmManager = createRtmManager(BuildConfig.AG_APP_ID, enterModel.currentUid.toInt())
             // rtm login
-            rtmManager?.login(prepareConfig.rtmToken) {}
+            rtmManager?.login(prepareConfig.rtmToken) {
+                if (it == null) {
+                    // login 成功后初始化 call api
+                    initCallApi(completion)
+                } else {
+                    completion.invoke(false)
+                }
+            }
             // 监听 rtm manager 事件
             rtmManager?.addListener(object : ICallRtmManagerListener {
                 override fun onConnected() {
@@ -162,8 +169,18 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             })
         } else {
             emClient = createEasemobSignalClient(this, BuildConfig.IM_APP_KEY, enterModel.currentUid.toInt())
+            emClient?.login {
+                if (it) {
+                    // login 成功后初始化 call api
+                    initCallApi(completion)
+                } else {
+                    completion.invoke(false)
+                }
+            }
         }
+    }
 
+    private fun initCallApi(completion: ((Boolean) -> Unit)) {
         val config = CallConfig(
             appId = BuildConfig.AG_APP_ID,
             userId = enterModel.currentUid.toInt(),
@@ -189,7 +206,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
 
     private fun updateCallState(state: CallStateType) {
         runOnUiThread {
-            when (mCallState) {
+            when (state) {
                 CallStateType.Calling -> {
                     publishMedia(false)
                     setupCanvas(null)
@@ -449,6 +466,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             return
         }
         Log.d(TAG, "onCallStateChanged state: ${state.value}, stateReason: ${stateReason.value}, eventReason: $eventReason, eventInfo: $eventInfo publisher: $publisher / ${enterModel.currentUid}")
+        mCallState = state
         updateCallState(state)
 
         when (state) {

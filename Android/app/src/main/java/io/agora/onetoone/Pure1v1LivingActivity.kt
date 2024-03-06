@@ -104,8 +104,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         updateCallState(CallStateType.Idle)
 
         // 初始化 call api
-        initCallApi { success ->
-        }
+        initMessageManager { }
 
         PermissionHelp(this).checkCameraAndMicPerms(
             {
@@ -115,12 +114,19 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         )
     }
 
-    private fun initCallApi(completion: ((Boolean) -> Unit)) {
+    private fun initMessageManager(completion: ((Boolean) -> Unit)) {
         if (enterModel.isRtm) {
             // 使用RtmManager管理RTM
             rtmManager = createRtmManager(BuildConfig.AG_APP_ID, enterModel.currentUid.toInt())
             // rtm login
-            rtmManager?.login(prepareConfig.rtmToken) {}
+            rtmManager?.login(prepareConfig.rtmToken) {
+                if (it == null) {
+                    // login 成功后初始化 call api
+                    initCallApi(completion)
+                } else {
+                    completion.invoke(false)
+                }
+            }
             // 监听 rtm manager 事件
             rtmManager?.addListener(object : ICallRtmManagerListener {
                 override fun onConnected() {
@@ -158,12 +164,22 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
             })
         } else {
             emClient = createEasemobSignalClient(this, BuildConfig.IM_APP_KEY, enterModel.currentUid.toInt())
+            emClient?.login {
+                if (it) {
+                    // login 成功后初始化 call api
+                    initCallApi(completion)
+                } else {
+                    completion.invoke(false)
+                }
+            }
         }
+    }
 
+    private fun initCallApi(completion: ((Boolean) -> Unit)) {
         val config = CallConfig(
             appId = BuildConfig.AG_APP_ID,
             userId = enterModel.currentUid.toInt(),
-            rtcEngine = rtcEngine,
+            rtcEngine = rtcEngine as RtcEngineEx,
             signalClient = if (enterModel.isRtm) createRtmSignalClient(rtmManager!!.getRtmClient()) else emClient!!
         )
         api.initialize(config)
@@ -171,8 +187,9 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         prepareConfig.roomId = enterModel.currentUid
         prepareConfig.localView = mViewBinding.vRight
         prepareConfig.remoteView = mViewBinding.vLeft
+
         api.addListener(this)
-        api.prepareForCall(prepareConfig) { error ->
+        api.prepareForCall(prepareConfig){ error ->
             completion.invoke(error == null)
         }
     }
