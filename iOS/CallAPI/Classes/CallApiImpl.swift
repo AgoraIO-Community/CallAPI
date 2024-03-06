@@ -1020,7 +1020,7 @@ extension CallApiImpl: CallApiProtocol {
     }
     
     public func prepareForCall(prepareConfig: PrepareConfig, completion: ((NSError?) -> ())?) {
-        _reportMethod(event: "\(#function)", label: "roomId=\(prepareConfig.roomId)&autoJoinRTC=\(prepareConfig.autoJoinRTC)")
+        _reportMethod(event: "\(#function)", label: "roomId=\(prepareConfig.roomId)&autoJoinRTC=\(prepareConfig.autoJoinRTC)&callTimeoutMillisecond=\(prepareConfig.callTimeoutMillisecond)")
 //        let date = Date()
         _prepareForCall(prepareConfig: prepareConfig) { err in
             if let err = err {
