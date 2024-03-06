@@ -289,17 +289,18 @@
   ```
   **`注意：如果通过外部传入rtmClient，则需要外部维持登陆状态`**
 
-- 修改被叫推流策略以节省费用。
-  - 修改[CallApiImpl.swift](/iOS/CallAPI/Classes/CallApiImpl.swift)中对应状态(calling -> accepted)，从`收到呼叫即推流和收流`改为`接受后再推流和收流`。
+- 切换被叫的推流收流时机以节省费用。
+  - 在CallApi里被叫的默认的推流时机有两种
+    - [**默认**]收到呼叫即推送音视频流和收视频流
+    - 接受后再推送音视频流和收视频流
+  - 通过 `CallApiListenerProtocol` 的可选回调方法 `canJoinRtcOnCalling` 来实现切换
+    - 如果 **返回true** 或 **不实现该回调方法**，则使用默认策略 `收到呼叫即推送音视频流和收视频流`
+    - 如果 **返回false**，则使用策略 `接受后再推送音视频流和收视频流`
     ```swift
-      /// 被叫呼叫中加入RTC的策略
-      enum CalleeJoinRTCPolicy: Int {
-          case calling    //在接到呼叫时即加入频道并推送音视频流，被叫时费用较高但出图更快
-          case accepted   //在点击接受后才加入频道并推送音视频流，被叫时费用较低但出图较慢
-      }
-
-      //let calleeJoinRTCPolicy: CalleeJoinRTCPolicy = .calling
-      let calleeJoinRTCPolicy: CalleeJoinRTCPolicy = .accepted
+    /// 当收到呼叫时判断是否可以加入Rtc
+    /// - Parameter eventInfo: 收到呼叫时的扩展信息
+    /// - Returns: true: 可以加入 false: 不可以加入
+    @objc optional func canJoinRtcOnCalling(eventInfo: [String: Any]) -> Bool
     ```
 - 外部有额外采集推送音视频流的操作
   -  由于CallApi内部会在通话时开启、结束通话时关闭采集音视频，因此如果在结束通话后外部需要手动开启音视频采集，例如当onCallStateChanged返回`(state: prepared)`时，可以开启采集。
@@ -355,6 +356,17 @@
     pod 'CallAPI/WithoutRTM', :path => '../'
     ```
     **注意，以该裁剪方式集成的CallApi需要使用自定义信令类，CallRtmSignalClient 已经被移除**
+  - 需要监听通话频道的Rtc回调
+    - CallApi里使用的 `joinChannelEx` 方式加入Rtc频道，因此不可以使用 `rtcEngine.addDelegate` 方式，需要通过 `rtcEngine.addDelegateEx` 并指定对应的频道来添加delegate
+      ```swift
+      /*
+      roomId: 当前Rtc通话频道id
+      currentUid: 当前用户uid
+      */
+      let connection = AgoraRtcConnection(channelId: roomId, localUid: Int(currentUid))
+      rtcEngine.addDelegateEx(self, connection: connection)
+      ```
+      当前Rtc通话频道id可以通过 `onCallStateChanged` 为 `calling` 时从`evenInfo` 里解析获取
 
 ## 6. API说明
 ### CallApiListenerProtocol
