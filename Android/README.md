@@ -10,6 +10,9 @@
     - [3.3 核心功能：](#33-核心功能)
     - [3.4 玩法说明](#34-玩法说明)
   - [4. 快速集成](#4-快速集成)
+    - [4.1 把CallApi集成进自己的项目里](#41-把callapi集成进自己的项目里)
+    - [4.2 结构图](#42-结构图)
+    - [4.3 使用CallApi实现一个通话流程](#43-使用callapi实现一个通话流程)
   - [5. 进阶集成](#5-进阶集成)
   - [6. API说明](#6-api说明)
     - [CallApiListenerProtocol](#callapilistenerprotocol)
@@ -252,7 +255,7 @@ IM_APP_KEY=
   - 1v1场景
     <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/200/sequence_pure1v1.zh.png" width="500px"><br><br>
   - 秀场转1v1
-    <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/2yi00/sequence_showto1v1.zh.png" width="500px"><br><br>
+    <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/200/sequence_showto1v1.zh.png" width="500px"><br><br>
 
 ## 5. 进阶集成
 - 使用外部初始化的 RTM。
