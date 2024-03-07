@@ -507,7 +507,7 @@ extension CallApiImpl {
     
     //设置本地画面
     private func _setupLocalVideo() {
-        guard let engine = config?.rtcEngine, let localView = prepareConfig.localView else {
+        guard let engine = config?.rtcEngine, let localView = prepareConfig?.localView else {
             callWarningPrint("_setupLocalVideo fail: engine or localView empty")
             return
         }
@@ -530,7 +530,7 @@ extension CallApiImpl {
     }
     
     private func _removeLocalVideo() {
-        guard let engine = config?.rtcEngine, let localView = prepareConfig.localView else {
+        guard let engine = config?.rtcEngine, let localView = prepareConfig?.localView else {
             callWarningPrint("_removeLocalVideo fail: engine or localView is empty")
             return
         }
