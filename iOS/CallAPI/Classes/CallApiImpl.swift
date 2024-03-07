@@ -144,13 +144,6 @@ public class CallApiImpl: NSObject {
     //是否正在Prepare，目前比较粗暴直接返回错误，后续看是否需要每个closure都存下来等完成后分发
     private var isPreparing: Bool = false
     
-    //local canvas
-    private lazy var canvas: AgoraRtcVideoCanvas = {
-        let canvas = AgoraRtcVideoCanvas()
-        canvas.mirrorMode = .disabled
-        return canvas
-    }()
-    
     deinit {
         callPrint("deinit-- CallApiImpl")
         rtcProxy.removeListener(self)
@@ -513,16 +506,17 @@ extension CallApiImpl {
     }
     
     //设置本地画面
-    private func _setupLocalVideo(uid: UInt, canvasView: UIView) {
-        guard let engine = config?.rtcEngine else {
-            callWarningPrint("_setupLocalVideo fail: engine is empty")
+    private func _setupLocalVideo() {
+        guard let engine = config?.rtcEngine, let localView = prepareConfig.localView else {
+            callWarningPrint("_setupLocalVideo fail: engine or localView empty")
             return
         }
         config?.rtcEngine.addDelegate(self.localFrameProxy)
         
-        canvas.view = canvasView
-        canvas.uid = uid
+        let canvas = AgoraRtcVideoCanvas()
         canvas.mirrorMode = .disabled
+        canvas.setupMode = .add
+        canvas.view = localView
         engine.setDefaultAudioRouteToSpeakerphone(true)
         engine.setupLocalVideo(canvas)
         let ret = engine.startPreview()
@@ -533,6 +527,17 @@ extension CallApiImpl {
                               errorCode: Int(ret),
                               message: nil)
         }
+    }
+    
+    private func _removeLocalVideo() {
+        guard let engine = config?.rtcEngine, let localView = prepareConfig.localView else {
+            callWarningPrint("_removeLocalVideo fail: engine or localView is empty")
+            return
+        }
+        let canvas = AgoraRtcVideoCanvas()
+        canvas.setupMode = .remove
+        canvas.view = localView
+        engine.setupLocalVideo(canvas)
     }
     
     /// 判断当前加入的RTC频道和传入的房间id是否一致
@@ -707,7 +712,7 @@ extension CallApiImpl {
             callWarningPrint("leave RTC channel failed, not joined the channel")
             return
         }
-        
+        _removeLocalVideo()
         config?.rtcEngine.stopPreview()
         let ret = config?.rtcEngine.leaveChannelEx(rtcConnection)
         callPrint("leave RTC channel[\(ret ?? -1)]")
@@ -716,10 +721,7 @@ extension CallApiImpl {
     
     /// 设置画布
     private func setupCanvas() {
-        guard let config = self.config, let prepareConfig = prepareConfig else {
-            return
-        }
-        _setupLocalVideo(uid: config.userId, canvasView: prepareConfig.localView)
+        _setupLocalVideo()
         guard let callingUserId = connectInfo.callingUserId else {
             callWarningPrint("join rtc fail: callingUserId == nil")
             return
