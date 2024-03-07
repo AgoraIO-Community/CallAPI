@@ -693,7 +693,7 @@ class CallApiImpl constructor(
             return
         }
         _removeLocalVideo()
-        config?.rtcEngine?.stopCameraCapture(Constants.VideoSourceType.VIDEO_SOURCE_CAMERA_PRIMARY)
+//        config?.rtcEngine?.stopCameraCapture(Constants.VideoSourceType.VIDEO_SOURCE_CAMERA_PRIMARY)
         config?.rtcEngine?.stopPreview()
         val ret = config?.rtcEngine?.leaveChannelEx(connection)
         callPrint("leave RTC channel[${ret ?: -1}]")
