@@ -507,24 +507,33 @@ class CallApiImpl constructor(
         callPrint("_setupRemoteVideo ret: $ret, channelId: ${connection.channelId}, uid: $uid")
     }
 
-    private fun _setupLocalVideo(uid: Int, view: TextureView) {
+    private fun _setupLocalVideo() {
         val engine = config?.rtcEngine ?: run {
             callWarningPrint("_setupLocalVideo fail: engine is empty")
             return
         }
         config?.rtcEngine?.addHandler(localFrameProxy)
 
-        val videoCanvas = VideoCanvas(view)
-        videoCanvas.uid = uid
+        val videoCanvas = VideoCanvas(tempLocalCanvasView)
+        videoCanvas.setupMode = VideoCanvas.VIEW_SETUP_MODE_ADD
         videoCanvas.renderMode = VideoCanvas.RENDER_MODE_HIDDEN
-        videoCanvas.mirrorMode = Constants.VIDEO_MIRROR_MODE_AUTO
-
+        videoCanvas.mirrorMode = Constants.VIDEO_MIRROR_MODE_DISABLED
         engine.setDefaultAudioRoutetoSpeakerphone(true)
         engine.setupLocalVideo(videoCanvas)
         val ret = engine.startPreview()
         if (ret != 0) {
             _notifyErrorEvent(CallErrorEvent.StartCaptureFail, CallErrorCodeType.Rtc, ret, null)
         }
+    }
+
+    private fun _removeLocalVideo() {
+        val engine = config?.rtcEngine ?: run {
+            callWarningPrint("_setupLocalVideo fail: engine is empty")
+            return
+        }
+        val canvas = VideoCanvas(tempLocalCanvasView)
+        canvas.setupMode = VideoCanvas.VIEW_SETUP_MODE_REMOVE
+        engine.setupLocalVideo(canvas)
     }
 
     /// 判断当前加入的RTC频道和传入的房间id是否一致
@@ -683,6 +692,8 @@ class CallApiImpl constructor(
             callWarningPrint("leave RTC channel failed, not joined the channel")
             return
         }
+        _removeLocalVideo()
+//        config?.rtcEngine?.stopCameraCapture(Constants.VideoSourceType.VIDEO_SOURCE_CAMERA_PRIMARY)
         config?.rtcEngine?.stopPreview()
         val ret = config?.rtcEngine?.leaveChannelEx(connection)
         callPrint("leave RTC channel[${ret ?: -1}]")
@@ -690,8 +701,7 @@ class CallApiImpl constructor(
     }
 
     private fun setupCanvas() {
-        val config = config ?: return
-        _setupLocalVideo(config.userId, tempLocalCanvasView)
+        _setupLocalVideo()
         val callingUserId = connectInfo.callingUserId ?: run {
             callWarningPrint("join rtc fail: callingUserId == nil")
             return
