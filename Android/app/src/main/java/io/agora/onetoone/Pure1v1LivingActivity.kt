@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.TextureView
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -23,6 +24,7 @@ import io.agora.onetoone.utils.PermissionHelp
 import io.agora.onetoone.utils.SPUtil
 import io.agora.rtc2.*
 import io.agora.rtc2.video.CameraCapturerConfiguration
+import io.agora.rtc2.video.VideoCanvas
 import io.agora.rtc2.video.VideoEncoderConfiguration
 import io.agora.rtm.*
 
@@ -100,6 +102,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
 
         rtcEngine = _createRtcEngine()
         setupView()
+        _setupLocalVideo(mCenterCanvas)
         updateCallState(CallStateType.Idle)
         // 外部创建RTMClient
         rtmClient = _createRtmClient()
@@ -120,7 +123,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
             override fun onSuccess(p0: Void?) {
                 _initialize(rtmClient) { success ->
                     Log.d(TAG, "_initialize: $success")
-                    completion.invoke(success)
+                    runOnUiThread { completion.invoke(success) }
                 }
             }
             override fun onFailure(p0: ErrorInfo?) {
@@ -152,6 +155,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
                 mViewBinding.vRight.alpha = 0f
                 mViewBinding.btnCall.isVisible = true
                 mViewBinding.btnHangUp.isVisible = false
+                rtcEngine.startPreview()
             }
             else -> {}
         }
@@ -209,6 +213,8 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
     }
 
     private fun setupView() {
+        mViewBinding.vCenter.addView(mCenterCanvas)
+        mViewBinding.vCenter.isVisible = true
         mViewBinding.tvCurrentId.text = "当前用户id：${enterModel.currentUid}"
         mViewBinding.etTargetUid.setText(SPUtil.getString(kTargetUserId, ""))
         mViewBinding.btnQuitChannel.setOnClickListener {
@@ -485,5 +491,15 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
             CallLogLevel.Warning -> Ov1Logger.w(TAG, message)
             CallLogLevel.Error -> Ov1Logger.e(TAG, message)
         }
+    }
+
+    private val mCenterCanvas by lazy { TextureView(this) }
+    private fun _setupLocalVideo(canvasView: TextureView?) {
+        val videoCanvas = VideoCanvas(canvasView)
+        videoCanvas.renderMode = VideoCanvas.RENDER_MODE_HIDDEN
+        videoCanvas.mirrorMode = Constants.VIDEO_MIRROR_MODE_DISABLED
+
+        rtcEngine.setDefaultAudioRoutetoSpeakerphone(true)
+        rtcEngine.setupLocalVideo(videoCanvas)
     }
 }
