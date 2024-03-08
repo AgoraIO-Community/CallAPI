@@ -37,35 +37,34 @@
 - 克隆或者直接下载项目源码
 - 申请账号和权限
   > **注意，由于Demo里包含了基于 `Rtm` 和 `环信` 的两种1v1信令呼叫场景，如果您只需要体验其中的一种呼叫场景，可以跳过另一种的申请流程**
-  - 获取声网App ID -------- [声网Agora - 文档中心 - 如何获取 App ID](https://docs.agora.io/cn/Agora%20Platform/get_appid_token?platform=All%20Platforms#%E8%8E%B7%E5%8F%96-app-id)
-    
-    > 点击创建应用。
-    > <br><img src="https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/create_app_1.jpg" width="500px">
-    > <br>选择你要创建的应用类型。 
-    > <br><img src="https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/create_app_2.jpg" width="500px">
-    > 
+  - 进入声网控制台获取 APP ID 和 APP 证书 [控制台入口](https://console.shengwang.cn/overview)
 
-  - 获取App 证书 ----- [声网Agora - 文档中心 - 获取 App 证书](https://docs.agora.io/cn/Agora%20Platform/get_appid_token?platform=All%20Platforms#%E8%8E%B7%E5%8F%96-app-%E8%AF%81%E4%B9%A6)
-    
-    > 在声网控制台的项目管理页面，找到你的项目，点击配置。
-    > <br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/1641871111769.png" width="500px">
-    > <br>点击主要证书下面的复制图标，即可获取项目的 App 证书。
-    > <br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/1637637672988.png" width="500px">
-    > 
-    
-  - 开启RTM
-    > <br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config1.jpg" width="500px">
-    > <br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config2.jpg" width="500px">
-    > <br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config3.jpg" width="500px">
-    >
+  - 点击创建项目
+
+    ![图片](https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/ent-full/sdhy_1.jpg)
+
+  - 选择项目基础配置, 鉴权机制需要选择**安全模式**
+
+    ![图片](https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/ent-full/sdhy_2.jpg)
+
+  - 在项目的功能配置中启用"实时消息 RTM"功能
+     ```json
+     注: 如果没有启动"实时消息 RTM"功能, 将无法体验项目完整功能
+     ```
+
+    ![图片](https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/ent-full/sdhy_7.jpg)
+
+  - 拿到项目 APP ID 与 APP 证书
+
+    ![图片](https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/ent-full/sdhy_3.jpg)
   - [注册环信获取AppKey](https://doc.easemob.com/product/enable_and_configure_IM.html#%E5%88%9B%E5%BB%BA%E5%BA%94%E7%94%A8)
     - 环信相关功能为Demo层的扩展功能，仅提供简单的实现消息收发，一些边缘case异常、版本升级等需要自行维护。
-    - CallApi Demo里的自定义环信信令管理使用的是username+password方式，如果需要使用更安全的token方式鉴权，需要自行实现
+    - CallApi Demo里的自定义环信信令管理使用的是 username + password 方式，如果需要使用更安全的token方式鉴权，需要自行实现
 
 - <a id="custom-report">开通声网自定义数据上报和分析服务</a>
   > 该服务当前处于免费内测期，如需试用该服务，请联系 sales@agora.io
 
-- 在项目的[KeyCenter.swift](Example/CallAPI/KeyCenter.swift) 中填入上两部获取到的声网AppId和Certificate以及环信IMAppKey(如果不需要体验环信自定义信令流程，IMAppKey可以设置为`""`)
+- 在项目的[KeyCenter.swift](Example/CallAPI/KeyCenter.swift) 中填写声网 APP ID 和 APP 证书 以及环信 App Key (如果不需要体验环信自定义信令流程，IMAppKey可以设置为`""`)
   ```swift
   static var AppId: String = <#Your AppId#>
   static var Certificate: String = <#Your Certificate#>
