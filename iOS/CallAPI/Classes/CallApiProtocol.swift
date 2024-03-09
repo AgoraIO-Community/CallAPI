@@ -224,6 +224,13 @@ import AgoraRtmKit
     ///   - completion: <#completion description#>
     func call(remoteUserId: UInt, completion: ((NSError?)->())?)
     
+    /// 发起呼叫邀请，主叫调用，通过prepareForCall设置的RTC频道号和远端用户建立RTC通话连接
+    /// - Parameters:
+    ///   - remoteUserId: 呼叫的用户id
+    ///   - callExtension: 呼叫的配置参数，会合并到PrepareConfig的userExtension里，请确保字段不冲突
+    ///   - completion: <#completion description#>
+    func call(remoteUserId: UInt, callExtension: [String: Any], completion: ((NSError?)->())?)
+    
     /// 取消正在发起的呼叫邀请，主叫调用
     /// - Parameter completion: <#completion description#>
     func cancelCall(completion: ((NSError?)->())?)

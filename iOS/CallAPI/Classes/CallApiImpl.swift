@@ -187,10 +187,15 @@ extension CallApiImpl {
         return dic
     }
     
-    private func _callMessageDic(remoteUserId: UInt, fromRoomId: String) -> [String: Any] {
+    private func _callMessageDic(remoteUserId: UInt, 
+                                 fromRoomId: String,
+                                 callExtension: [String: Any]) -> [String: Any] {
         var message: [String: Any] = _messageDic(action: .call)
         message[kRemoteUserId] = remoteUserId
         message[kFromRoomId] = fromRoomId
+        var userExtension = prepareConfig?.userExtension ?? [:]
+        userExtension.merge(callExtension) { (_, new) in new }
+        message[kFromUserExtension] = userExtension
         return message
     }
     
@@ -1033,9 +1038,9 @@ extension CallApiImpl: CallApiProtocol {
     }
     
     //呼叫
-    public func call(remoteUserId: UInt, completion: ((NSError?) -> ())?) {
+    public func call(remoteUserId: UInt, callExtension: [String: Any], completion: ((NSError?) -> ())?) {
         guard let fromRoomId = prepareConfig?.roomId else {
-            _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)")
+            _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)&callExtension=\(callExtension)")
             let reason = "call fail! config or roomId is empty"
             completion?(NSError(domain: reason, code: -1))
             callWarningPrint(reason)
@@ -1043,7 +1048,7 @@ extension CallApiImpl: CallApiProtocol {
         }
         
         guard state == .prepared else {
-            _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)")
+            _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)&callExtension=\(callExtension)")
             let reason = "call fail! state busy or not initialized"
             completion?(NSError(domain: reason, code: -1))
             callWarningPrint(reason)
@@ -1053,9 +1058,11 @@ extension CallApiImpl: CallApiProtocol {
         //发送呼叫消息
         connectInfo.set(userId: remoteUserId, roomId: fromRoomId, callId: UUID().uuidString, isLocalAccepted: true)
         //ensure that the report log contains a call
-        _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)")
+        _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)&callExtension=\(callExtension)")
         
-        let message: [String: Any] = _callMessageDic(remoteUserId: remoteUserId, fromRoomId: fromRoomId)
+        let message: [String: Any] = _callMessageDic(remoteUserId: remoteUserId, 
+                                                     fromRoomId: fromRoomId,
+                                                     callExtension: callExtension)
         messageManager?.sendMessage(userId: "\(remoteUserId)", message: message) {[weak self] err in
             guard let self = self else { return }
             completion?(err)
@@ -1071,6 +1078,11 @@ extension CallApiImpl: CallApiProtocol {
         _notifyEvent(event: .onCalling)
         
         _joinRTCAsBroadcaster(roomId: fromRoomId)
+    }
+    
+    
+    public func call(remoteUserId: UInt, completion: ((NSError?)->())?) {
+        call(remoteUserId: remoteUserId, callExtension: [:], completion: completion)
     }
     
     //取消呼叫
