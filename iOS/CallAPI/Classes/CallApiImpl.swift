@@ -90,9 +90,9 @@ public class CallApiImpl: NSObject {
         didSet {
             let prevState = oldValue
             if prevState == state { return }
-            tempRemoteCanvasView.removeFromSuperview()
             switch state {
             case .calling:
+                tempRemoteCanvasView.removeFromSuperview()
                 //开启定时器，如果超时无响应，调用no response
                 let timeooutSecond = prepareConfig?.callTimeoutMillisecond ?? 0
                 if timeooutSecond == 0 {return}
