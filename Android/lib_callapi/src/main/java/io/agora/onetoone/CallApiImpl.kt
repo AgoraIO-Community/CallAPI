@@ -97,9 +97,9 @@ class CallApiImpl constructor(
             val prevState = field
             field = value
             if (prevState == value) { return }
-            tempRemoteCanvasView.alpha = 0f
             when(value) {
                 CallStateType.Calling -> {
+                    tempRemoteCanvasView.alpha = 0f
                     // 如果prepareConfig?.callTimeoutSeconds == 0，内部不做超时
                     val timeout = prepareConfig?.callTimeoutMillisecond ?: 0L
                     if (timeout <= 0L) {
@@ -177,10 +177,13 @@ class CallApiImpl constructor(
         return map
     }
 
-    private fun _callMessageDic(remoteUserId: Int, fromRoomId: String): Map<String, Any> {
+    private fun _callMessageDic(remoteUserId: Int, fromRoomId: String, callExtension: Map<String, Any>): Map<String, Any> {
         val message = _messageDic(CallAction.Call).toMutableMap()
         message[kRemoteUserId] = remoteUserId
         message[kFromRoomId] = fromRoomId
+        val userExtension = prepareConfig?.userExtension ?: mapOf()
+        userExtension.plus(callExtension)
+        message[kFromUserExtension] = userExtension
         return message
     }
 
@@ -990,7 +993,11 @@ class CallApiImpl constructor(
         delegates.remove(listener)
     }
 
-    override fun call(remoteUserId: Int, completion: ((AGError?) -> Unit)?) {
+    override fun call(
+        remoteUserId: Int,
+        callExtension: Map<String, Any>,
+        completion: ((AGError?) -> Unit)?
+    ) {
         val fromRoomId = prepareConfig?.roomId
         val fromUserId = config?.userId
         if (fromRoomId == null || fromUserId == null) {
@@ -1008,9 +1015,9 @@ class CallApiImpl constructor(
         //发送呼叫消息
         connectInfo.set(remoteUserId, fromRoomId, UUID.randomUUID().toString(), isLocalAccepted = true)
         //ensure that the report log contains a call
-        _reportMethod("call", "remoteUserId=$remoteUserId")
+        _reportMethod("call", "remoteUserId=$remoteUserId, callExtension=$callExtension")
 
-        val message = _callMessageDic(remoteUserId, fromRoomId)
+        val message = _callMessageDic(remoteUserId, fromRoomId, callExtension)
         messageManager?.sendMessage(remoteUserId.toString(), message) { err ->
             completion?.invoke(err)
             if (err != null) {
@@ -1024,6 +1031,10 @@ class CallApiImpl constructor(
         _updateAndNotifyState(CallStateType.Calling, eventInfo = message)
         _notifyEvent(CallEvent.OnCalling)
         _joinRTCAsBroadcaster(fromRoomId)
+    }
+
+    override fun call(remoteUserId: Int, completion: ((AGError?) -> Unit)?) {
+        call(remoteUserId, mapOf(), completion)
     }
 
     override fun cancelCall(completion: ((AGError?) -> Unit)?) {

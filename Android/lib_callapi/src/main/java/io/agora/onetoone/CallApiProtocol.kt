@@ -263,6 +263,14 @@ interface ICallApi {
     fun call(remoteUserId: Int, completion: ((AGError?) -> Unit)?)
 
     /**
+     * 发起通话，主叫调用，通过prepareForCall设置的RTC频道号和远端用户建立RTC通话连接
+     * @param remoteUserId 呼叫的用户id
+     * @param callExtension 呼叫的配置参数，会合并到PrepareConfig的userExtension里，请确保字段不冲突
+     * @param completion
+     */
+    fun call(remoteUserId: Int, callExtension: Map<String, Any>, completion: ((AGError?) -> Unit)?)
+
+    /**
      * 取消正在发起的通话，主叫调用
      * @param completion
      */
