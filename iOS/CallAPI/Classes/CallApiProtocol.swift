@@ -55,25 +55,22 @@ import AgoraRtmKit
     case localCancel = 11          //本地用户取消呼叫
     case remoteCancel = 12         //远端用户取消呼叫
     case recvRemoteFirstFrame = 13 //收到远端首帧
-    case callingTimeout = 14       //呼叫超时
+    case callingTimeout = 14       //本地呼叫超时
     case cancelByCallerRecall = 15 //同样的主叫呼叫不同频道导致取消
     case rtmLost = 16              //rtm超时断连
     case remoteCallBusy = 17       //远端用户忙
+    case remoteCallingTimeout = 18 //远端呼叫超时
 }
 
 /// 呼叫事件
 @objc public enum CallEvent: UInt {
     case none = 0
     case deinitialize = 1                         //调用了deinitialize
-//    case missingReceipts = 2                      //没有收到消息回执[已废弃]
-    case callingTimeout = 3                       //呼叫超时
-//    case joinRTCFailed = 4                        //加入RTC失败[已废弃，请使用onCallErrorOccur(state: rtcOccurError)]
+    case callingTimeout = 3                       //本地呼叫超时
+    case remoteCallingTimeout = 4                 //远端呼叫超时
     case joinRTCSuccessed = 5                     //加入RTC成功
-//    case rtmSetupFailed = 6                       //设置RTM失败[已废弃，请使用onCallErrorOccur(state: rtmSetupFail)]
     case rtmSetupSuccessed = 7                    //设置RTM成功
-//    case messageFailed = 8                        //消息发送失败[已废弃，请使用onCallErrorOccur(state: sendMessageFail)]
     case stateMismatch = 9                        //状态流转异常
-//    case preparedRoomIdChanged = 10               //prepared了另一个roomId[已废弃]
     case remoteUserRecvCall = 99                  //主叫呼叫成功
     case localRejected = 100                      //本地用户拒绝
     case remoteRejected = 101                     //远端用户拒绝
@@ -89,11 +86,8 @@ import AgoraRtmKit
     case localJoin = 111                          //本地用户加入RTC频道
     case localLeave = 112                         //本地用户离开RTC频道
     case recvRemoteFirstFrame = 113               //收到远端首帧
-//    case cancelByCallerRecall = 114               //同样的主叫呼叫不同频道导致取消[已废弃]
     case rtmLost = 115                            //rtm超时断连
-//    case rtcOccurError = 116                      //rtc出现错误[已废弃，请使用onCallErrorOccur(state: rtcOccurError)]
     case remoteCallBusy = 117                     //远端用户忙
-//    case startCaptureFail = 118                   //开启采集失败[已废弃，请使用onCallErrorOccur(state: startCaptureFail)]
     case captureFirstLocalVideoFrame = 119        //采集到首帧视频帧
     case publishFirstLocalVideoFrame = 120        //推送首帧视频帧成功
 }
