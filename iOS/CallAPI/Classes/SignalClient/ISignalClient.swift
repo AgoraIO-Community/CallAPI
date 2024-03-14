@@ -24,11 +24,11 @@ import Foundation
 /// 信令抽象协议
 @objc public protocol ISignalClient: NSObjectProtocol {
     
-    /// CallApi往信令系统发消息
+    /// CallApi 通过该方法使用信令系统向指定用户发送消息
     /// - Parameters:
     ///   - userId: 目标用户id
     ///   - message: 消息对象
-    ///   - completion: 完成回调
+    ///   - completion: 发送完成的回调
     func sendMessage(userId: String,
                      message: String,
                      completion: ((NSError?)-> Void)?)
