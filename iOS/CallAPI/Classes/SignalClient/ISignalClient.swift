@@ -33,11 +33,11 @@ import Foundation
                      message: String,
                      completion: ((NSError?)-> Void)?)
     
-    /// 监听信令系统回调
-    /// - Parameter listener: <#listener description#>
+    /// 向信令系统添加一个信令监听器
+    /// - Parameter listener: 信令监听器，用于处理消息接收和日志记录
     func addListener(listener: ISignalClientListener)
     
-    /// 移除信令系统回调
-    /// - Parameter listener: <#listener description#>
+    /// 从信令系统移除指定的信令监听器
+    /// - Parameter listener: 待移除的信令监听器
     func removeListener(listener: ISignalClientListener)
 }
