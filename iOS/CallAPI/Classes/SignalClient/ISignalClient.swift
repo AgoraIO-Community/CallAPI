@@ -11,7 +11,7 @@ import Foundation
 @objc public protocol ISignalClientListener: NSObjectProtocol {
 
     /// 收到消息的回调
-    /// - Parameter message: 收到的消息
+    /// - Parameter message: 收到的消息内容
     func onMessageReceive(message: String)
     
     /// 信令日志回调
