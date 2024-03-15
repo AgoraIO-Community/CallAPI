@@ -481,7 +481,7 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
                 AUIToast.show(text: "通话结束", postion: .bottom)
             case .localRejected, .remoteRejected:
                 AUIToast.show(text: "通话被拒绝")
-            case .callingTimeout:
+            case .callingTimeout, .remoteCallingTimeout:
                 AUIToast.show(text: "无应答")
             case .remoteCallBusy:
                 AUIToast.show(text: "用户正忙")
