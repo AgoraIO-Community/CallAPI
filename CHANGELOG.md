@@ -2,6 +2,7 @@
 ## [1.1.1](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.1)
 
 - 新增 canJoinRTC 方法，用于外部控制加入 RTC 的时机。
+- 新增事件类型，当对端因为超时取消呼叫时事件通知从 callingTimeout 变更为 remoteCallingTimeout
 
 ## [1.1.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.0)
 
