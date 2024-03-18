@@ -104,11 +104,11 @@ IM_APP_KEY=
 - 在 Android Studio 顶部工具栏中，单击“File”->选择“Sync Project With Gradle File”，CallAPI 代码即可集成进项目里。
 
 ### 4.2 结构图
-<img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/200/class_structure_v2.0.0_1.png" width="500px"><br>
-- RtmClient: 声网实时消息SDK。
-- CallRtmManager: Rtm的管理类，负责处理Rtm的登录、注销、Token续期、网络状态变化通知等操作。
-- CallRtmSignalClient: 基于Rtm的消息收发类，用于发送经 CallApi 编码后的消息。该Client接收到消息后将同步到 CallApi 进行解码。
-- CallApiImpl: 面向声网1v1场景的API，负责管理Rtc和信令消息的收发等功能。
+<img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/200/class_structure_v2.0.0_2.png" width="500px"><br>
+- RtmClient: 声网实时消息 (Rtm) 实例。
+- CallRtmManager: RtmClient 的管理类，负责处理Rtm的登录、注销、Token续期、网络状态变化通知等操作，**请注意，该类提供于业务层的Rtm包装类，用于管理 Rtm 的生命周期，不包含在CallApi，您可以根据自己的需要随意修改**。
+- CallRtmSignalClient: 基于 Rtm 实现的信令管理类，用于发送经 CallApi 编码后的消息。该对象接收到消息后将同步到 CallApi 进行解码。**请注意，CallRtmSignalClient仅仅负责Rtm消息收发，不负责Rtm的状态管理，如果需要使用或者定制更多的状态管理，请使用CallRtmManager**。
+- CallApiImpl:  用于管理声网RTC和信令等功能的1v1场景API实例。
 
 ### 4.3 使用CallApi实现一个通话流程
 - 初始化设置。
@@ -258,7 +258,7 @@ IM_APP_KEY=
     <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/200/sequence_showto1v1.zh.png" width="500px"><br><br>
 
 ## 5. 进阶集成
-- 使用外部初始化的 RTM。
+- 使用已经初始化过的RTM实例(rtmClient)。
   ```kotlin
     //如果外部已经使用了rtm，可以传入rtm实例
     val rtmClient: RtmClient? = _createRtmClient()
@@ -272,7 +272,7 @@ IM_APP_KEY=
         }
     })
   ```
-  **`注意：如果通过外部传入 rtmClient，则需要外部维持登陆状态`**
+  **`注意：如果是自己创建的rtmClient，则需要自行维持登录状态，或者通过RtmManager的login方法进行登录`**
 
 - 切换被叫的推流收流时机以节省费用。
   - 在CallApi里被叫的默认的推流时机有两种
@@ -289,7 +289,7 @@ IM_APP_KEY=
         */
       fun canJoinRtcOnCalling(eventInfo: Map<String, Any>) : Boolean?
     ```
-- 外部有额外采集推送音视频流的操作
+- 需要手动开启和关闭音视频流的推送
   -  由于 CallApi 内部会在通话时开启、结束通话时关闭采集音视频，因此如果在结束通话后外部需要手动开启音视频采集，例如当 onCallStateChanged 返回`(state: prepared)`时，可以开启采集。
      ```kotlin
        rtcEngine.enableLocalAudio(true)
