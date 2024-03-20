@@ -35,7 +35,9 @@ public protocol ICallRtmManagerListener: NSObjectProtocol {
     /// rtm中断，需要重新login
     func onConnectionLost()
     
-    ///token即将过期，需要renew token
+    
+    /// token即将过期，需要renew token
+    /// - Parameter channelName: 即将过期的频道名
     func onTokenPrivilegeWillExpire(channelName: String)
 }
 
@@ -55,6 +57,12 @@ public class CallRtmManager: NSObject {
         self.rtmClient.removeDelegate(self)
     }
     
+    
+    /// 初始化
+    /// - Parameters:
+    ///   - appId: 声网AppId
+    ///   - userId: 用户id
+    ///   - rtmClient: [可选]声网实时消息(Rtm)实例，传空则CallRtmManager内部自行创建
     public required init(appId: String, userId: String, rtmClient: AgoraRtmClientKit? = nil) {
         if let rtmClient = rtmClient {
             //如果外部传入rtmclient，默认登陆成功
@@ -74,10 +82,18 @@ public class CallRtmManager: NSObject {
         callMessagePrint("init-- CallMessageManager ")
     }
     
+    
+    /// 获取到rtm实例，使用该方法获取到后传递给CallRtmSignalClient
+    /// - Returns: rtm实例对象
     public func getRtmClient() -> AgoraRtmClientKit {
         return rtmClient
     }
     
+    
+    /// rtm登录
+    /// - Parameters:
+    ///   - rtmToken: rtm token
+    ///   - completion: 完成回调
     public func login(rtmToken: String, completion: @escaping ((NSError?) -> ())) {
         callMessagePrint("initialize")
         if rtmToken.isEmpty, isExternalRtmClient == false {
@@ -99,6 +115,8 @@ public class CallRtmManager: NSObject {
         }
     }
     
+    
+    /// 登出
     public func logout() {
         if isExternalRtmClient == false {
             rtmClient.logout()
