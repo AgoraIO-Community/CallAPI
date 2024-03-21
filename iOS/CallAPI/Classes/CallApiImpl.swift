@@ -8,7 +8,7 @@
 import Foundation
 import AgoraRtcKit
 
-let kReportCategory = "2_iOS_1.0.0"
+let kReportCategory = "2_iOS_2.0.0"
 
 let kMessageId: String = "messageId"     //发送的消息id
 
