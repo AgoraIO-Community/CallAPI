@@ -3,6 +3,7 @@
 ## [2.0.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.0.0)
 
 - 新增自定义信令功能，支持使用非 Rtm 来发送消息。
+- 优化事件上报
 - 优化 Demo 层的异常处理。
 
 ## [1.1.1](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.1)
