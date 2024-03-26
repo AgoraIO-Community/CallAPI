@@ -1,5 +1,10 @@
 # Change Log
 
+## [2.1.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.1.0)
+
+- 新增语音通话功能
+- 呼叫时支持发送自定义扩展信息
+
 ## [2.0.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.0.0)
 
 - 新增自定义信令功能，支持使用非 Rtm 来发送消息。
