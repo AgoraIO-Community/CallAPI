@@ -16,15 +16,20 @@ import AgoraRtcKit
     public var signalClient: ISignalClient!                //信令通道对象实例
 }
 
-//TODO: 如何不设置万能token
 @objc public class PrepareConfig: NSObject {
     public var roomId: String = ""                      //自己的Rtc频道名，用于呼叫对端用户时让对端用户加入这个RTC频道
     public var rtcToken: String = ""                    //rtc token，需要使用万能token，token创建的时候channel name为空字符串
     public var localView: UIView!                       //显示本地流的画布
     public var remoteView: UIView!                      //显示远端流的画布
-    public var autoJoinRTC: Bool = false                //是否在不呼叫的情况下提前加入自己的RTC频道，该设置可以加快呼叫的出图速度
     public var callTimeoutMillisecond: UInt64 = 15000   //呼叫超时时间，单位毫秒，0表示内部不处理超时
     public var userExtension: [String: Any]?            //[可选]用户扩展字段，收到对端消息而改变状态(例如calling/connecting)时可以通过kFromUserExtension字段获取
+}
+
+
+/// 呼叫类型
+@objc public enum CallType: UInt {
+    case video = 0
+    case audio
 }
 
 /// 呼叫状态
@@ -85,13 +90,14 @@ import AgoraRtcKit
     case remoteCancel = 110                       //远端用户取消呼叫
     case localJoin = 111                          //本地用户加入RTC频道
     case localLeave = 112                         //本地用户离开RTC频道
-    case recvRemoteFirstFrame = 113               //收到远端首帧
+    case recvRemoteFirstFrame = 113               //收到远端首帧(视频呼叫为视频帧首帧，音频呼叫为音频帧首帧)
 //    case cancelByCallerRecall = 114               //同样的主叫呼叫不同频道导致取消[已废弃]
 //    case rtmLost = 115                            //rtm超时断连[2.0.0废弃，请从信令管理中实现中处理相关的异常]
 //    case rtcOccurError = 116                      //rtc出现错误[已废弃，请使用onCallErrorOccur(state: rtcOccurError)]
     case remoteCallBusy = 117                     //远端用户忙
     case captureFirstLocalVideoFrame = 119        //采集到首帧视频帧
     case publishFirstLocalVideoFrame = 120        //推送首帧视频帧成功
+    case publishFirstLocalAudioFrame = 130        //推送首帧音频帧成功[2.1.0开始支持]
 }
 
 /// 呼叫错误事件
@@ -214,11 +220,24 @@ import AgoraRtcKit
     /// - Parameter listener: <#listener description#>
     func removeListener(listener: CallApiListenerProtocol)
     
-    /// 发起呼叫邀请，主叫调用，通过prepareForCall设置的RTC频道号和远端用户建立RTC通话连接
+    /// 发起呼叫邀请，主叫调用，通过prepareForCall设置的RTC频道号和远端用户建立RTC通话连接，默认视频呼叫
     /// - Parameters:
     ///   - remoteUserId: 呼叫的用户id
     ///   - completion: <#completion description#>
     func call(remoteUserId: UInt, completion: ((NSError?)->())?)
+    
+    
+    /// 发起呼叫邀请，主叫调用，通过prepareForCall设置的RTC频道号和远端用户建立RTC通话连接
+    /// - Parameters:
+    ///   - remoteUserId: 呼叫的用户id
+    ///   - callType: 呼叫类型： 0: 视频呼叫， 1: 音频呼叫
+    ///   - callExtension: 呼叫需要扩展的字段，收到对端消息而改变状态(例如calling/connecting)时可以通过kFromUserExtension字段获取
+    ///   - completion: <#completion description#>
+    func call(remoteUserId: UInt, 
+              callType: CallType,
+              callExtension: [String: Any], 
+              completion: ((NSError?)->())?)
+    
     
     /// 取消正在发起的呼叫邀请，主叫调用
     /// - Parameter completion: <#completion description#>

@@ -24,6 +24,10 @@ class CallConnectInfo {
     /// 是否获取到对端视频首帧
     var isRetrieveFirstFrame: Bool = false
     
+    
+    /// 呼叫类型
+    var callType: CallType = .video
+    
     /// 呼叫的session id
     var callId: String = ""
     
@@ -67,10 +71,14 @@ class CallConnectInfo {
         callConnectedTs = 0
     }
     
-    func set(userId: UInt, 
-             roomId: String, 
+    func set(callType: CallType? = nil,
+             userId: UInt,
+             roomId: String,
              callId: String? = nil,
              isLocalAccepted: Bool = false) {
+        if let callType = callType {
+            self.callType = callType
+        }
         self.callingUserId = userId
         self.callingRoomId = roomId
         self.isLocalAccepted = isLocalAccepted
