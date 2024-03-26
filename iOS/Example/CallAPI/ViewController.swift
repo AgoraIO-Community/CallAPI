@@ -254,6 +254,19 @@ class ViewController: UIViewController {
         return tf
     }()
     
+    private lazy var autoJointRTCLabel: UILabel = {
+        let label = UILabel()
+        label.text = "提前加入RTC频道"
+        label.textColor = .black
+        return label
+    }()
+    
+    private lazy var autoJoinRTCSwitch: UISwitch = {
+        let uiSwitch = UISwitch()
+        uiSwitch.addTarget(self, action: #selector(onAutoJoinAction), for: .touchUpInside)
+        uiSwitch.isOn = isAutoJoinRTC
+        return uiSwitch
+    }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -276,6 +289,9 @@ class ViewController: UIViewController {
         view.addSubview(dimensionsLabel)
         view.addSubview(dimensionsWTf)
         view.addSubview(dimensionsHTf)
+        
+        view.addSubview(autoJointRTCLabel)
+        view.addSubview(autoJoinRTCSwitch)
         
         view.addSubview(enterButton1)
         view.addSubview(enterButton2)
@@ -322,6 +338,16 @@ class ViewController: UIViewController {
         dimensionsLabel.frame = CGRect(x: 10, y: topEdge, width: dimensionsLabel.frame.width, height: 40)
         dimensionsWTf.frame = CGRect(x: dimensionsLabel.frame.size.width + dimensionsLabel.frame.origin.x + 10, y: topEdge, width: 80, height: 40)
         dimensionsHTf.frame = CGRect(x: dimensionsWTf.frame.size.width + dimensionsWTf.frame.origin.x + 10, y: topEdge, width: 80, height: 40)
+        
+        autoJointRTCLabel.sizeToFit()
+        autoJointRTCLabel.frame = CGRect(x: 10,
+                                         y: dimensionsLabel.frame.origin.y + dimensionsLabel.frame.height + 10,
+                                         width: autoJointRTCLabel.frame.width,
+                                         height: 40)
+        autoJoinRTCSwitch.frame = CGRect(x: autoJointRTCLabel.frame.origin.x + autoJointRTCLabel.frame.width + 10,
+                                         y: autoJointRTCLabel.frame.origin.y,
+                                         width: 60,
+                                         height: 40)
     }
     
     @objc func currentUserChanged() {
@@ -353,6 +379,10 @@ class ViewController: UIViewController {
         dimW = Int(dimensionsWTf.text ?? "") ?? 0
     }
     
+    @objc func onAutoJoinAction() {
+        self.isAutoJoinRTC = autoJoinRTCSwitch.isOn
+    }
+    
     @objc func tapView() {
         view.endEditing(true)
     }
@@ -374,6 +404,7 @@ class ViewController: UIViewController {
         view.isUserInteractionEnabled = false
         
         let prepareConfig = PrepareConfig()
+        prepareConfig.autoJoinRTC = autoJoinRTCSwitch.isOn
         SVProgressHUD.show()
         NetworkManager.shared.generateTokens(channelName: "",
                                              uid: "\(currentUserId)",
@@ -426,6 +457,8 @@ class ViewController: UIViewController {
         view.isUserInteractionEnabled = false
         
         let prepareConfig = PrepareConfig()
+//        prepareConfig.autoAccept = autoAcceptSwitch.isOn
+        prepareConfig.autoJoinRTC = autoJoinRTCSwitch.isOn
         SVProgressHUD.show()
         NetworkManager.shared.generateTokens(channelName: "",
                                              uid: "\(currentUserId)",

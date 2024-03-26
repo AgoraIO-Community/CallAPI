@@ -305,35 +305,11 @@ extension Pure1v1RoomViewController {
             AUIToast.show(text: "CallAPi初始化中")
             return
         }
-        let remoteUserId = targetUserId
-        
-        let alertController = UIAlertController(title: "呼叫", message: "请选择呼叫类型", preferredStyle: .actionSheet)
-        // 添加操作按钮
-        let action1 = UIAlertAction(title: "视频呼叫", style: .default) {[weak self] _ in
-            self?.api.call(remoteUserId: remoteUserId) { error in
-                guard let _ = error, self?.callState == .calling else {return}
-                self?.api.cancelCall(completion: { err in
-                })
-            }
-        }
-        alertController.addAction(action1)
-
-        let action2 = UIAlertAction(title: "音频呼叫", style: .default) {[weak self] _ in
-            self?.api.call(remoteUserId: remoteUserId, 
-                           callType: .audio,
-                           callExtension: ["test_call": 111],
-                           completion: { error in
-                guard let _ = error, self?.callState == .calling else {return}
-                self?.api.cancelCall(completion: { err in
-                })
+        api.call(remoteUserId: targetUserId) {[weak self] error in
+            guard let _ = error, self?.callState == .calling else {return}
+            self?.api.cancelCall(completion: { err in
             })
         }
-        alertController.addAction(action2)
-
-        // 添加取消按钮
-        let cancelAction = UIAlertAction(title: "取消", style: .cancel, handler: nil)
-        alertController.addAction(cancelAction)
-        present(alertController, animated: true)
     }
     
     @objc func hangupAction() {
