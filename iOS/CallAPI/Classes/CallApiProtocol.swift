@@ -220,7 +220,7 @@ import AgoraRtcKit
     /// - Parameter listener: <#listener description#>
     func removeListener(listener: CallApiListenerProtocol)
     
-    /// 发起呼叫邀请，主叫调用，通过prepareForCall设置的RTC频道号和远端用户建立RTC通话连接，默认视频呼叫
+    /// 发起呼叫邀请(为视频呼叫)，主叫调用，通过prepareForCall设置的RTC频道号和远端用户建立RTC通话连接
     /// - Parameters:
     ///   - remoteUserId: 呼叫的用户id
     ///   - completion: <#completion description#>
