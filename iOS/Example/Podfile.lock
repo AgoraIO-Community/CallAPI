@@ -1,21 +1,32 @@
 PODS:
-  - AgoraRtcEngine_Special_iOS (4.1.1.17)
+  - AgoraRtcEngine_Special_iOS (4.1.1.26)
   - AgoraRtm_iOS (2.1.8)
-  - CallAPI (0.3.0):
-    - AgoraRtcEngine_Special_iOS (= 4.1.1.17)
+  - CallAPI (1.1.1):
+    - AgoraRtcEngine_Special_iOS (= 4.1.1.26)
+    - CallAPI/All (= 1.1.1)
+  - CallAPI/All (1.1.1):
+    - AgoraRtcEngine_Special_iOS (= 4.1.1.26)
     - AgoraRtm_iOS (= 2.1.8)
+  - HyphenateChat (4.4.1)
+  - SVProgressHUD (2.3.1):
+    - SVProgressHUD/Core (= 2.3.1)
+  - SVProgressHUD/Core (2.3.1)
   - YYCategories (1.0.4):
     - YYCategories/no-arc (= 1.0.4)
   - YYCategories/no-arc (1.0.4)
 
 DEPENDENCIES:
   - CallAPI (from `../`)
+  - HyphenateChat
+  - SVProgressHUD
   - YYCategories
 
 SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
     - AgoraRtcEngine_Special_iOS
     - AgoraRtm_iOS
+    - HyphenateChat
+    - SVProgressHUD
     - YYCategories
 
 EXTERNAL SOURCES:
@@ -23,11 +34,13 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
-  AgoraRtcEngine_Special_iOS: 5b3106aad2d76959393cc6497affe83dbdc926a0
+  AgoraRtcEngine_Special_iOS: 62ac62b0caddac27ab3c2e26ed7a2e5d9c7739a5
   AgoraRtm_iOS: 9fb76b5f71900d012aaed6c033e235d6fd201ed9
-  CallAPI: 698b2c4681e162d560f5a2328dc02956b82987ca
+  CallAPI: 282f429831134f4931648e904ead7af2e6aa4545
+  HyphenateChat: 35ec35c5529cf780571313c5a4abfe76f0b8db13
+  SVProgressHUD: 4837c74bdfe2e51e8821c397825996a8d7de6e22
   YYCategories: 6bcd4314c6661a561410dce4a793379ebd306abd
 
-PODFILE CHECKSUM: 001572e2b62fba2a376de5284b36202d3cebc8fd
+PODFILE CHECKSUM: 9dc9dbbe6798e155aa3f31950e6c196cfaf4d4e4
 
 COCOAPODS: 1.12.1
