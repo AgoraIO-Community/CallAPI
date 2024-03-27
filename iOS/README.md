@@ -666,7 +666,7 @@
       - 3.3.1 此时，您可以将之前创建的临时画布添加到可视化视图中，从而完成视频渲染的过程。
       - 3.3.2 解除远端用户静音。
   - 4.时序图
-      <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/200/sequence_solution_1v1.zh.png" width="500px"><br><br>
+      <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/210/sequence_solution_1v1.zh.png" width="500px"><br><br>
   
 #### 7.1.2 提升消息送达率
   - 增加消息回执(如果信令通道有则忽略)
