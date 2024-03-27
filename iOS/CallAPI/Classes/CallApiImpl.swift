@@ -685,7 +685,7 @@ extension CallApiImpl {
         config?.rtcEngine.removeDelegate(self)
         config?.rtcEngine.removeDelegateEx(self, connection: rtcConnection)
         let ret = config?.rtcEngine.leaveChannelEx(rtcConnection)
-        callPrint("leave RTC channel[\(ret ?? -1)]")
+        callPrint("leave RTC channel[\(rtcConnection.channelId)]: \(ret ?? -1)")
         self.rtcConnection = nil
     }
     
@@ -980,6 +980,7 @@ extension CallApiImpl: CallApiProtocol {
             //日志上报优化
 //            rtcEngine.setParameters("{\"rtc.qos_for_test_purpose\": true}")
             rtcEngine.setParameters("{\"rtc.direct_send_custom_event\": true}")
+            rtcEngine.setParameters("{\"rtc.log_external_input\": true}")
             optimize1v1Video(engine: rtcEngine)
         }
     }
@@ -1005,13 +1006,13 @@ extension CallApiImpl: CallApiProtocol {
     }
     
     public func renewToken(with rtcToken: String) {
-        _reportMethod(event: "\(#function)", label: "rtcToken=\(rtcToken)")
+        _reportMethod(event: "\(#function)")
         guard let roomId = prepareConfig?.roomId else {
             callWarningPrint("renewToken failed, roomid missmatch")
             return
         }
         self.prepareConfig?.rtcToken = rtcToken
-        callPrint("renewToken with roomId[\(roomId)]")
+//        callPrint("renewToken with roomId[\(roomId)]")
         guard let connection = rtcConnection else {
             return
         }
@@ -1243,6 +1244,8 @@ extension CallApiImpl: AgoraRtcEngineDelegate {
     }
     
     public func rtcEngine(_ engine: AgoraRtcEngineKit, firstRemoteAudioFrameOfUid uid: UInt, elapsed: Int) {
+        guard connectInfo.callType == .audio else { return }
+        
         let channelId = prepareConfig?.roomId ?? ""
         guard uid == connectInfo.callingUserId else {return}
         callPrint("firstRemoteAudioFrameOfUid: \(channelId) uid: \(uid)")
@@ -1271,6 +1274,7 @@ extension CallApiImpl {
         for element in delegates.allObjects {
             element.callDebugInfo?(message: "\(timeString) \(message)", logLevel: logLevel)
         }
+        config?.rtcEngine?.writeLog(.info, content: "[CallApi]\(message)")
 //        #endif
     }
     
