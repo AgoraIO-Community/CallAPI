@@ -123,7 +123,7 @@ class MainActivity : AppCompatActivity() {
         enterModel.frameRate = mViewBinding.etFps.text.toString()
 
         enterModel.autoAccept = mViewBinding.cbAutoAccept.isChecked
-        enterModel.autoJoinRTC = mViewBinding.cbJoinRTC.isChecked
+//        enterModel.autoJoinRTC = mViewBinding.cbJoinRTC.isChecked
 
         val runnable = Runnable {
             if (isShowMode) {
