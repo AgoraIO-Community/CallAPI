@@ -19,6 +19,9 @@ class CallConnectInfo {
     // 是否获取到对端视频首帧
     var isRetrieveFirstFrame: Boolean = false
 
+    // 呼叫类型
+    var callType: CallType = CallType.Video
+
     // 呼叫的session id
     var callId: String = ""
 
@@ -78,7 +81,10 @@ class CallConnectInfo {
         callConnectedTs = 0
     }
 
-    fun set(userId: Int, roomId: String, callId: String? = null, isLocalAccepted: Boolean = false) {
+    fun set(callType: CallType? = null, userId: Int, roomId: String, callId: String? = null, isLocalAccepted: Boolean = false) {
+        if (callType != null) {
+            this.callType = callType
+        }
         this.callingUserId = userId
         this.callingRoomId = roomId
         this.isLocalAccepted = isLocalAccepted

@@ -67,6 +67,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
     private var mCallState = CallStateType.Idle
 
     private var callDialog: AlertDialog? = null
+    private var callTypeDialog: AlertDialog ?= null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,11 +98,10 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         prepareConfig = PrepareConfig()
         prepareConfig.rtcToken = enterModel.rtcToken
         prepareConfig.rtmToken = enterModel.rtmToken
-        prepareConfig.autoJoinRTC = enterModel.autoJoinRTC
 
         rtcEngine = _createRtcEngine()
         setupView()
-        updateCallState(CallStateType.Idle)
+        updateCallState(CallStateType.Idle, null)
 
         // 初始化 call api
         initMessageManager { }
@@ -199,11 +199,19 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         closeAction()
     }
 
-    private fun updateCallState(state: CallStateType) {
+    private fun updateCallState(state: CallStateType, stateReason: CallStateReason?) {
         mCallState = state
         when(mCallState) {
             CallStateType.Calling ->{
+                if (stateReason == CallStateReason.LocalVideoCall || stateReason == CallStateReason.RemoteVideoCall) {
+                    mViewBinding.vRight.isVisible = true
+                    mViewBinding.vLeft.isVisible = true
+                } else if (stateReason == CallStateReason.LocalAudioCall || stateReason == CallStateReason.RemoteAudioCall) {
+                    mViewBinding.vRight.isVisible = false
+                    mViewBinding.vLeft.isVisible = false
+                }
                 mViewBinding.vRight.alpha = 1f
+
                 mViewBinding.btnCall.isVisible = false
                 mViewBinding.btnHangUp.isVisible = false
             }
@@ -344,12 +352,27 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
             return
         }
         SPUtil.putString(kTargetUserId, roomId)
-        api.call(targetUserId) { error ->
-            // call 失败立刻挂断
-            if (error != null && mCallState == CallStateType.Calling) {
-                api.cancelCall {  }
-            }
-        }
+
+        callTypeDialog = AlertDialog.Builder(this)
+            .setTitle("通话类型选择")
+            .setMessage("选择音频或视频通话")
+            .setPositiveButton("音频") { p0, p1 ->
+                api.call(targetUserId, CallType.Audio, mapOf("key1" to "value1", "key2" to "value2")) { error ->
+                    // call 失败立刻挂断
+                    if (error != null && mCallState == CallStateType.Calling) {
+                        api.cancelCall {  }
+                    }
+                }
+            }.setNegativeButton("视频") { p0, p1 ->
+                api.call(targetUserId) { error ->
+                    // call 失败立刻挂断
+                    if (error != null && mCallState == CallStateType.Calling) {
+                        api.cancelCall {  }
+                    }
+                }
+            }.create()
+        callTypeDialog?.setCancelable(false)
+        callTypeDialog?.show()
     }
 
     private fun hangupAction() {
@@ -370,101 +393,111 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         eventReason: String,
         eventInfo: Map<String, Any>
     ) {
-        val publisher = eventInfo.getOrDefault(CallApiImpl.kPublisher, enterModel.currentUid)
-        if (publisher != enterModel.currentUid) {return}
-        updateCallState(state)
+        Log.d(TAG, "onCallStateChanged state: ${state.value}, stateReason: ${stateReason.value}, eventReason: $eventReason, eventInfo: $eventInfo")
+        runOnUiThread {
+            val publisher = eventInfo.getOrDefault(CallApiImpl.kPublisher, enterModel.currentUid)
+            if (publisher != enterModel.currentUid) {
+                return@runOnUiThread
+            }
+            updateCallState(state, stateReason)
 
-        when (state) {
-            CallStateType.Calling -> {
-                val fromUserId = eventInfo[kFromUserId] as? Int ?: 0
-                val toUserId = eventInfo[kRemoteUserId] as? Int ?: 0
+            when (state) {
+                CallStateType.Calling -> {
+                    val fromUserId = eventInfo[kFromUserId] as? Int ?: 0
+                    val toUserId = eventInfo[kRemoteUserId] as? Int ?: 0
 
-                if (connectedUserId != null && connectedUserId != fromUserId) {
-                    api.reject(fromUserId, "already calling") {
+                    if (connectedUserId != null && connectedUserId != fromUserId) {
+                        api.reject(fromUserId, "already calling") {
+                        }
+                        return@runOnUiThread
                     }
-                    return
-                }
-                // 触发状态的用户是自己才处理
-                if (enterModel.currentUid.toIntOrNull() == toUserId) {
-                    connectedUserId = fromUserId
-                    callDialog = AlertDialog.Builder(this)
-                        .setTitle("提示")
-                        .setMessage("用户 $fromUserId 邀请您1对1通话")
-                        .setPositiveButton("同意") { p0, p1 ->
-                            // 检查信令通道链接状态
-                            if (!checkConnectionAndNotify()) return@setPositiveButton
-                            api.accept(fromUserId) { err ->
-                                if (err != null) {
-                                    //如果接受消息出错，则发起拒绝，回到初始状态
-                                    api.reject(fromUserId, err.msg) {}
+                    // 触发状态的用户是自己才处理
+                    if (enterModel.currentUid.toIntOrNull() == toUserId) {
+                        connectedUserId = fromUserId
+                        callDialog = AlertDialog.Builder(this)
+                            .setTitle("提示")
+                            .setMessage("用户 $fromUserId 邀请您1对1通话")
+                            .setPositiveButton("同意") { p0, p1 ->
+                                // 检查信令通道链接状态
+                                if (!checkConnectionAndNotify()) return@setPositiveButton
+                                api.accept(fromUserId) { err ->
+                                    if (err != null) {
+                                        //如果接受消息出错，则发起拒绝，回到初始状态
+                                        api.reject(fromUserId, err.msg) {}
+                                    }
                                 }
-                            }
-                        }.setNegativeButton("拒绝") { p0, p1 ->
-                            // 检查信令通道链接状态
-                            if (!checkConnectionAndNotify()) return@setNegativeButton
-                            api.reject(fromUserId, "reject by user") { err ->
-                            }
-                        }.create()
-                    callDialog?.setCancelable(false)
-                    callDialog?.show()
-                } else if (enterModel.currentUid.toIntOrNull() == fromUserId) {
-                    connectedUserId = toUserId
-                    callDialog = AlertDialog.Builder(this)
-                        .setTitle("提示")
-                        .setMessage("呼叫用户 $toUserId 中")
-                        .setNegativeButton("取消") { p0, p1 ->
-                            // 检查信令通道链接状态
-                            if (!checkConnectionAndNotify()) return@setNegativeButton
-                            api.cancelCall { err ->
-                            }
-                        }.create()
-                    callDialog?.setCancelable(false)
-                    callDialog?.show()
+                            }.setNegativeButton("拒绝") { p0, p1 ->
+                                // 检查信令通道链接状态
+                                if (!checkConnectionAndNotify()) return@setNegativeButton
+                                api.reject(fromUserId, "reject by user") { err ->
+                                }
+                            }.create()
+                        callDialog?.setCancelable(false)
+                        callDialog?.show()
+                    } else if (enterModel.currentUid.toIntOrNull() == fromUserId) {
+                        connectedUserId = toUserId
+                        callDialog = AlertDialog.Builder(this)
+                            .setTitle("提示")
+                            .setMessage("呼叫用户 $toUserId 中")
+                            .setNegativeButton("取消") { p0, p1 ->
+                                // 检查信令通道链接状态
+                                if (!checkConnectionAndNotify()) return@setNegativeButton
+                                api.cancelCall { err ->
+                                }
+                            }.create()
+                        callDialog?.setCancelable(false)
+                        callDialog?.show()
+                    }
                 }
-            }
-            CallStateType.Connected -> {
-                Toasty.normal(this, "通话开始${eventInfo.getOrDefault(CallApiImpl.kCostTimeMap, "")}", Toast.LENGTH_LONG).show()
-                callDialog?.dismiss()
-                callDialog = null
+                CallStateType.Connected -> {
+                    Toasty.normal(
+                        this,
+                        "通话开始${eventInfo.getOrDefault(CallApiImpl.kCostTimeMap, "")}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    callDialog?.dismiss()
+                    callDialog = null
 
-                videoEncoderConfig?.let { config ->
-                    rtcEngine.setVideoEncoderConfiguration(config)
-                    val cameraConfig = CameraCapturerConfiguration(CameraCapturerConfiguration.CAMERA_DIRECTION.CAMERA_FRONT)
-                    cameraConfig.captureFormat.width = config.dimensions.width
-                    cameraConfig.captureFormat.height = config.dimensions.height
-                    cameraConfig.captureFormat.fps = config.frameRate
-                    rtcEngine.setCameraCapturerConfiguration(cameraConfig)
+                    videoEncoderConfig?.let { config ->
+                        rtcEngine.setVideoEncoderConfiguration(config)
+                        val cameraConfig =
+                            CameraCapturerConfiguration(CameraCapturerConfiguration.CAMERA_DIRECTION.CAMERA_FRONT)
+                        cameraConfig.captureFormat.width = config.dimensions.width
+                        cameraConfig.captureFormat.height = config.dimensions.height
+                        cameraConfig.captureFormat.fps = config.frameRate
+                        rtcEngine.setCameraCapturerConfiguration(cameraConfig)
+                    }
                 }
-            }
-            CallStateType.Prepared -> {
-                when (stateReason) {
-                    CallStateReason.LocalHangup, CallStateReason.RemoteHangup -> {
-                        Toasty.normal(this, "通话结束", Toast.LENGTH_SHORT).show()
+                CallStateType.Prepared -> {
+                    when (stateReason) {
+                        CallStateReason.LocalHangup, CallStateReason.RemoteHangup -> {
+                            Toasty.normal(this, "通话结束", Toast.LENGTH_SHORT).show()
+                        }
+                        CallStateReason.LocalRejected,
+                        CallStateReason.RemoteRejected -> {
+                            Toasty.normal(this, "通话被拒绝", Toast.LENGTH_SHORT).show()
+                        }
+                        CallStateReason.CallingTimeout -> {
+                            Toasty.normal(this, "无应答", Toast.LENGTH_SHORT).show()
+                        }
+                        CallStateReason.RemoteCallBusy -> {
+                            Toasty.normal(this, "用户正忙", Toast.LENGTH_SHORT).show()
+                        }
+                        else -> {}
                     }
-                    CallStateReason.LocalRejected,
-                    CallStateReason.RemoteRejected -> {
-                        Toasty.normal(this, "通话被拒绝", Toast.LENGTH_SHORT).show()
-                    }
-                    CallStateReason.CallingTimeout -> {
-                        Toasty.normal(this, "无应答", Toast.LENGTH_SHORT).show()
-                    }
-                    CallStateReason.RemoteCallBusy -> {
-                        Toasty.normal(this, "用户正忙", Toast.LENGTH_SHORT).show()
-                    }
-                    else -> {}
+                    callDialog?.dismiss()
+                    callDialog = null
+                    connectedUserId = null
                 }
-                callDialog?.dismiss()
-                callDialog = null
-                connectedUserId = null
+                CallStateType.Failed -> {
+                    Toasty.normal(this, eventReason, Toast.LENGTH_LONG).show()
+                    callDialog?.dismiss()
+                    callDialog = null
+                    connectedUserId = null
+                    closeAction()
+                }
+                else -> {}
             }
-            CallStateType.Failed -> {
-                Toasty.normal(this, eventReason, Toast.LENGTH_LONG).show()
-                callDialog?.dismiss()
-                callDialog = null
-                connectedUserId = null
-                closeAction()
-            }
-            else -> {}
         }
     }
 
