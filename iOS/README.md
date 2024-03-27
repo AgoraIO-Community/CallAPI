@@ -20,7 +20,6 @@
       - [4.3.3 RtmManager登录](#433-rtmmanager登录)
       - [4.3.4 准备通话环境。](#434-准备通话环境)
       - [4.3.5 （主叫）发起呼叫](#435-主叫发起呼叫)
-        - [4.3.5.1 发起视频呼叫](#4351-发起视频呼叫)
         - [4.3.5.2 取消呼叫](#4352-取消呼叫)
       - [4.3.6 （被叫）收到呼叫时的处理](#436-被叫收到呼叫时的处理)
         - [4.3.6.1 同意呼叫](#4361-同意呼叫)
@@ -255,8 +254,7 @@
     以用户 A、B、C 为例，主叫 A 向用户 B 发起呼叫后，B 就获取了 A 的 RTC 频道名（roomId）。呼叫结束后，如果 A 不更新 roomId 就向用户 C 发起呼叫，用户 B 可以通过技术手段使用之前的 roomId 和通配 Token 加入用户 A 的频道进行盗流。<br>
     因此为确保通话安全，我们建议在每次发起呼叫前，都调用 prepareForCall 方法更新 roomId，以保证每次通话使用不同的 RTC 频道，进而确保通话的私密性。**
 #### 4.3.5 （主叫）发起呼叫
-##### 4.3.5.1 发起视频呼叫
-  - 如果是主叫，发起视频呼叫可以使用两个 `call` 方法
+  - 发起视频呼叫可以使用两个 `call` 方法来发起视频呼叫
     - 调用默认呼叫方法，该方法默认为视频模式呼叫
       ```swift
       api.call(remoteUserId: remoteUserId) { err in
@@ -270,6 +268,14 @@
 
       }
       ```
+  - 调用呼叫类型为audio的 `call` 方法来发起音频呼叫
+    ```swift
+    api.call(remoteUserId: remoteUserId,
+                           callType: .audio,
+                           callExtension: [:]) { error in
+
+    }
+    ```
   - 发起呼叫后，主叫和被叫都会收到onCallStateChanged会返回`(state: .calling)`，变更成呼叫状态，根据主叫或者被叫，stateReason值分别会是 `localVideoCall(本地发起视频呼叫)`、`localAudioCall(本地发起音频呼叫)`、`remoteVideoCall(远端发起视频呼叫)`、`remoteAudioCall(远端发起音频呼叫)`。
     > **`注意: 由于声网RTC只支持同时推送一路视频流，因此收到"calling"状态时需要把外部开启的音视频推流关闭，否则呼叫会出现异常`**
       ```swift
@@ -288,6 +294,7 @@
           }
       }
       ```
+
 ##### 4.3.5.2 取消呼叫
   - 通过 `cancelCall` 方法来取消当前发起的呼叫，
     ```swift
