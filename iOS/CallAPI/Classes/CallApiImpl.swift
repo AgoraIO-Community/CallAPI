@@ -61,8 +61,6 @@ var defaultCalleeJoinRTCTiming: CalleeJoinRTCTiming = .calling
 
 public class CallApiImpl: NSObject {
     private let delegates:NSHashTable<CallApiListenerProtocol> = NSHashTable<CallApiListenerProtocol>.weakObjects()
-    private let rtcProxy: CallAgoraExProxy = CallAgoraExProxy()
-    private lazy var localFrameProxy: CallLocalFirstFrameProxy = CallLocalFirstFrameProxy(delegate: self)
     private var config: CallConfig? {
         didSet {
             oldValue?.signalClient.removeListener(listener: self)
@@ -141,13 +139,11 @@ public class CallApiImpl: NSObject {
     
     deinit {
         callPrint("deinit-- CallApiImpl")
-        rtcProxy.removeListener(self)
     }
     
     public override init() {
         super.init()
         callPrint("init-- CallApiImpl")
-        addRTCListener(listener: self)
     }
     
     //获取ntp时间
@@ -419,7 +415,7 @@ extension CallApiImpl {
     }
     
     private func _prepareForCall(prepareConfig: PrepareConfig, completion: ((NSError?) -> ())?) {
-        guard let config = self.config else {
+        guard let _ = self.config else {
             let reason = "config is Empty"
             callWarningPrint(reason)
             completion?(NSError(domain: reason, code: -1))
@@ -485,7 +481,7 @@ extension CallApiImpl {
             callWarningPrint("_setupLocalVideo fail: engine or localView empty")
             return
         }
-        config?.rtcEngine.addDelegate(self.localFrameProxy)
+        config?.rtcEngine.addDelegate(self)
         
         let canvas = AgoraRtcVideoCanvas()
         canvas.mirrorMode = .disabled
@@ -617,7 +613,7 @@ extension CallApiImpl {
         mediaOptions.autoSubscribeVideo = false
         let ret = config.rtcEngine.joinChannelEx(byToken: rtcToken,
                                                  connection: connection,
-                                                 delegate: rtcProxy,
+                                                 delegate: self,
                                                  mediaOptions: mediaOptions)
         callPrint("joinRTC channel roomId: \(roomId) uid: \(config.userId) ret = \(ret)")
         rtcConnection = connection
@@ -686,6 +682,8 @@ extension CallApiImpl {
         }
         _removeLocalVideo()
         config?.rtcEngine.stopPreview()
+        config?.rtcEngine.removeDelegate(self)
+        config?.rtcEngine.removeDelegateEx(self, connection: rtcConnection)
         let ret = config?.rtcEngine.leaveChannelEx(rtcConnection)
         callPrint("leave RTC channel[\(ret ?? -1)]")
         self.rtcConnection = nil
@@ -1142,16 +1140,6 @@ extension CallApiImpl: CallApiProtocol {
         _updateAndNotifyState(state: .prepared, stateReason: .localHangup, eventInfo: message)
         _notifyEvent(event: .localHangup)
     }
-    
-    private func addRTCListener(listener: AgoraRtcEngineDelegate) {
-        _reportMethod(event: "\(#function)")
-        rtcProxy.addListener(listener)
-    }
-    
-    private func removeRTCListener(listener: AgoraRtcEngineDelegate) {
-        _reportMethod(event: "\(#function)")
-        rtcProxy.removeListener(listener)
-    }
 }
 
 //MARK: CallMessageDelegate
@@ -1246,7 +1234,7 @@ extension CallApiImpl: AgoraRtcEngineDelegate {
     
     public func rtcEngine(_ engine: AgoraRtcEngineKit, firstLocalVideoFrameWith size: CGSize, elapsed: Int, sourceType: AgoraVideoSourceType) {
         _notifyEvent(event: .captureFirstLocalVideoFrame, reasonString: "elapsed: \(elapsed)ms")
-        config?.rtcEngine.removeDelegate(self.localFrameProxy)
+        config?.rtcEngine.removeDelegate(self)
     }
     
     public func rtcEngine(_ engine: AgoraRtcEngineKit, 
