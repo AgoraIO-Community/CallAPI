@@ -102,7 +102,6 @@ class LivingActivity : AppCompatActivity(), ICallApiListener {
         prepareConfig = PrepareConfig()
         prepareConfig.rtcToken = enterModel.rtcToken
         prepareConfig.rtmToken = enterModel.rtmToken
-        prepareConfig.autoJoinRTC = enterModel.autoJoinRTC
 
         role = if (enterModel.isBrodCaster) CallRole.CALLEE else CallRole.CALLER
 

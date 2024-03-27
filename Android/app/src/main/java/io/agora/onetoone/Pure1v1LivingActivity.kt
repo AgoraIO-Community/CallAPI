@@ -67,6 +67,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
     private var mCallState = CallStateType.Idle
 
     private var callDialog: AlertDialog? = null
+    private var callTypeDialog: AlertDialog ?= null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,11 +98,10 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         prepareConfig = PrepareConfig()
         prepareConfig.rtcToken = enterModel.rtcToken
         prepareConfig.rtmToken = enterModel.rtmToken
-        prepareConfig.autoJoinRTC = enterModel.autoJoinRTC
 
         rtcEngine = _createRtcEngine()
         setupView()
-        updateCallState(CallStateType.Idle)
+        updateCallState(CallStateType.Idle, null)
 
         // 初始化 call api
         initMessageManager { }
@@ -199,11 +199,19 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         closeAction()
     }
 
-    private fun updateCallState(state: CallStateType) {
+    private fun updateCallState(state: CallStateType, stateReason: CallStateReason?) {
         mCallState = state
         when(mCallState) {
             CallStateType.Calling ->{
+                if (stateReason == CallStateReason.LocalVideoCall || stateReason == CallStateReason.RemoteVideoCall) {
+                    mViewBinding.vRight.isVisible = true
+                    mViewBinding.vLeft.isVisible = true
+                } else if (stateReason == CallStateReason.LocalAudioCall || stateReason == CallStateReason.RemoteAudioCall) {
+                    mViewBinding.vRight.isVisible = false
+                    mViewBinding.vLeft.isVisible = false
+                }
                 mViewBinding.vRight.alpha = 1f
+
                 mViewBinding.btnCall.isVisible = false
                 mViewBinding.btnHangUp.isVisible = false
             }
@@ -344,12 +352,27 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
             return
         }
         SPUtil.putString(kTargetUserId, roomId)
-        api.call(targetUserId) { error ->
-            // call 失败立刻挂断
-            if (error != null && mCallState == CallStateType.Calling) {
-                api.cancelCall {  }
-            }
-        }
+
+        callTypeDialog = AlertDialog.Builder(this)
+            .setTitle("通话类型选择")
+            .setMessage("选择音频或视频通话")
+            .setPositiveButton("音频") { p0, p1 ->
+                api.call(targetUserId, CallType.Audio, mapOf("key1" to "value1", "key2" to "value2")) { error ->
+                    // call 失败立刻挂断
+                    if (error != null && mCallState == CallStateType.Calling) {
+                        api.cancelCall {  }
+                    }
+                }
+            }.setNegativeButton("视频") { p0, p1 ->
+                api.call(targetUserId) { error ->
+                    // call 失败立刻挂断
+                    if (error != null && mCallState == CallStateType.Calling) {
+                        api.cancelCall {  }
+                    }
+                }
+            }.create()
+        callTypeDialog?.setCancelable(false)
+        callTypeDialog?.show()
     }
 
     private fun hangupAction() {
@@ -372,7 +395,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
     ) {
         val publisher = eventInfo.getOrDefault(CallApiImpl.kPublisher, enterModel.currentUid)
         if (publisher != enterModel.currentUid) {return}
-        updateCallState(state)
+        updateCallState(state, stateReason)
 
         when (state) {
             CallStateType.Calling -> {
