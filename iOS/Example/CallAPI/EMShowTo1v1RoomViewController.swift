@@ -337,9 +337,8 @@ extension EMShowTo1v1RoomViewController {
         // 添加操作按钮
         let action1 = UIAlertAction(title: "视频呼叫", style: .default) {[weak self] _ in
             self?.api.call(remoteUserId: remoteUserId) { error in
-                guard let _ = error, self?.callState == .calling else {return}
-                self?.api.cancelCall(completion: { err in
-                })
+                guard let _ = error, self?.callState == .calling else { return }
+                self?.api.cancelCall { err in }
             }
         }
         alertController.addAction(action1)
@@ -347,12 +346,10 @@ extension EMShowTo1v1RoomViewController {
         let action2 = UIAlertAction(title: "音频呼叫", style: .default) {[weak self] _ in
             self?.api.call(remoteUserId: remoteUserId,
                            callType: .audio,
-                           callExtension: ["test_call": 111],
-                           completion: { error in
-                guard let _ = error, self?.callState == .calling else {return}
-                self?.api.cancelCall(completion: { err in
-                })
-            })
+                           callExtension: ["test_call": 111]) { error in
+                guard let _ = error, self?.callState == .calling else { return }
+                self?.api.cancelCall { err in }
+            }
         }
         alertController.addAction(action2)
 

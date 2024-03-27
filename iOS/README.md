@@ -15,7 +15,28 @@
     - [4.1 把CallApi集成进自己的项目里](#41-把callapi集成进自己的项目里)
     - [4.2 结构图](#42-结构图)
     - [4.3 使用CallApi实现一个通话流程](#43-使用callapi实现一个通话流程)
+      - [4.3.1 初始化。](#431-初始化)
+      - [4.3.2 设置回调](#432-设置回调)
+      - [4.3.3 RtmManager登录](#433-rtmmanager登录)
+      - [4.3.4 准备通话环境。](#434-准备通话环境)
+      - [4.3.5 （主叫）发起呼叫](#435-主叫发起呼叫)
+        - [4.3.5.1 发起视频呼叫](#4351-发起视频呼叫)
+        - [4.3.5.2 取消呼叫](#4352-取消呼叫)
+      - [4.3.6 （被叫）收到呼叫时的处理](#436-被叫收到呼叫时的处理)
+        - [4.3.6.1 同意呼叫](#4361-同意呼叫)
+        - [4.3.6.2 拒绝呼叫](#4362-拒绝呼叫)
+        - [4.3.6.3 未作出回应（同意或拒绝）](#4363-未作出回应同意或拒绝)
+      - [4.3.7 （主叫或被叫）通话中时](#437-主叫或被叫通话中时)
+        - [4.3.7.1 结束呼叫，可以调用挂断函数](#4371-结束呼叫可以调用挂断函数)
+      - [4.3.8 释放通话缓存](#438-释放通话缓存)
   - [5. 进阶集成](#5-进阶集成)
+    - [5.1 使用已经初始化过的RTM实例(rtmClient)。](#51-使用已经初始化过的rtm实例rtmclient)
+    - [5.2 切换被叫的推流收流时机以节省费用。](#52-切换被叫的推流收流时机以节省费用)
+    - [5.3 需要手动开启和关闭音视频流的推送](#53-需要手动开启和关闭音视频流的推送)
+    - [5.4 消息中携带自定义数据结构](#54-消息中携带自定义数据结构)
+    - [5.5 通话异常定位。](#55-通话异常定位)
+    - [5.6 自定义信令消息](#56-自定义信令消息)
+    - [5.7 需要监听通话频道的Rtc回调](#57-需要监听通话频道的rtc回调)
   - [6. API说明](#6-api说明)
     - [CallApiListenerProtocol](#callapilistenerprotocol)
     - [CallApiProtocol](#callapiprotocol)
@@ -131,7 +152,7 @@
 - CallApiImpl:  用于管理声网RTC和信令等功能的1v1场景API实例。
   
 ### 4.3 使用CallApi实现一个通话流程
-- 初始化。
+#### 4.3.1 初始化。
   - 初始化RtmManager
     ```swift
     let rtmManager = CallRtmManager(appId: KeyCenter.AppId,
@@ -153,7 +174,7 @@
     config.signalClient = signalClient 
     api.initialize(config: config) 
     ```
-- 设置回调
+#### 4.3.2 设置回调
   - 设置RtmManager的回调
     - 设置监听
       ```swift
@@ -207,14 +228,14 @@
 
       ...
       ```
-- RtmManager登录
+#### 4.3.3 RtmManager登录
   ```swift 
   rtmManager?.login(rtmToken: rtmToken, completion: { err in
       if let _ = err { return }
       //登录成功，可以开始准备通话环境
   })
   ```
-- 准备通话环境。
+#### 4.3.4 准备通话环境。
     ```swift   
     let prepareConfig = PrepareConfig()
     prepareConfig.rtcToken = ...   // 设置rtc token(万能token)
@@ -233,13 +254,23 @@
     > **注意2：主叫发起呼叫后，被叫会获取到主叫在准备通话环境中设置的 roomId，从而加入对应的 RTC 频道进行通话。通话结束后，如果主叫不更新 roomId 就发起新的呼叫，可能会有一定的安全风险。<br>
     以用户 A、B、C 为例，主叫 A 向用户 B 发起呼叫后，B 就获取了 A 的 RTC 频道名（roomId）。呼叫结束后，如果 A 不更新 roomId 就向用户 C 发起呼叫，用户 B 可以通过技术手段使用之前的 roomId 和通配 Token 加入用户 A 的频道进行盗流。<br>
     因此为确保通话安全，我们建议在每次发起呼叫前，都调用 prepareForCall 方法更新 roomId，以保证每次通话使用不同的 RTC 频道，进而确保通话的私密性。**
-- 呼叫
-  - 如果是主叫，调用call方法呼叫远端用户。
-    ```swift
-    api.call(remoteUserId: remoteUserId) { err in
-    }
-    ```
-  - 发起呼叫后，主叫和被叫都会收到onCallStateChanged会返回`(state: .calling)`，变更成呼叫状态。
+#### 4.3.5 （主叫）发起呼叫
+##### 4.3.5.1 发起视频呼叫
+  - 如果是主叫，发起视频呼叫可以使用两个 `call` 方法
+    - 调用默认呼叫方法，该方法默认为视频模式呼叫
+      ```swift
+      api.call(remoteUserId: remoteUserId) { err in
+      }
+      ```
+    - 调用呼叫类型为video的呼叫
+      ```swift
+      api.call(remoteUserId: remoteUserId,
+                             callType: .video,
+                             callExtension: [:]) { error in
+
+      }
+      ```
+  - 发起呼叫后，主叫和被叫都会收到onCallStateChanged会返回`(state: .calling)`，变更成呼叫状态，根据主叫或者被叫，stateReason值分别会是 `localVideoCall(本地发起视频呼叫)`、`localAudioCall(本地发起音频呼叫)`、`remoteVideoCall(远端发起视频呼叫)`、`remoteAudioCall(远端发起音频呼叫)`。
     > **`注意: 由于声网RTC只支持同时推送一路视频流，因此收到"calling"状态时需要把外部开启的音视频推流关闭，否则呼叫会出现异常`**
       ```swift
       public func onCallStateChanged(with state: CallStateType,
@@ -257,19 +288,36 @@
           }
       }
       ```
-- 如果被叫方同意呼叫
-  - 通过 onCallStateChanged 会返回`连接中状态(state: .connecting)`，然后在远端画面渲染完成后，状态将变为`已连接(state: .connected)`，表示呼叫成功。这个状态变化过程反映了呼叫的建立和视频画面的渲染。
-- 如果被叫方拒绝呼叫
+##### 4.3.5.2 取消呼叫
+  - 通过 `cancelCall` 方法来取消当前发起的呼叫，
+    ```swift
+    api.cancelCall { err in 
+    }
+    ```
+  
+#### 4.3.6 （被叫）收到呼叫时的处理
+##### 4.3.6.1 同意呼叫
+  - onCallStateChanged 会返回`连接中状态(state: .connecting)`，然后在远端画面渲染完成后，状态将变为`已连接(state: .connected)`，表示呼叫成功。这个状态变化过程反映了呼叫的建立和视频画面的渲染。
+    ```swift
+    api.accept(remoteUserId: fromUserId) { err in
+    }
+    ```
+##### 4.3.6.2 拒绝呼叫
   - onCallStateChanged 会返回`(state: .prepared, stateReason: .localRejected)`(被叫)或`(state: .prepared, stateReason: .remoteRejected)`(主叫)。
-- 如果被叫方未作出回应(同意或拒绝)
+    ```swift
+      api.reject(remoteUserId: fromUserId, reason: "reject by user") { err in
+      }
+    ```
+##### 4.3.6.3 未作出回应（同意或拒绝）
   - onCallStateChanged 会返回`(state: .prepared, stateReason: .callingTimeout)`。表示呼叫超时，未能成功建立连接。
-- 如需结束呼叫，可以调用挂断函数
-  - 此时onCallStateChanged 将返回 `(state: .prepared, stateReason: .localHangup)`(本地用户)或`(state: .prepared, stateReason: .remoteHangup)`(远端用户)。这表示呼叫已经被挂断，连接已经断开。
+#### 4.3.7 （主叫或被叫）通话中时
+##### 4.3.7.1 结束呼叫，可以调用挂断函数
+  - onCallStateChanged 会返回 `(state: .prepared, stateReason: .localHangup)`(本地用户)或`(state: .prepared, stateReason: .remoteHangup)`(远端用户)。这表示呼叫已经被挂断，连接已经断开。
     ```swift
     api.hangup(remoteUserId: showUserId, reason: "hangup by user") { error in
     }
     ```
-- 释放通话缓存
+#### 4.3.8 释放通话缓存
   - 释放后需要重新initialize，此时onCallStateChanged将返回(`state: .idle)`
     ```swift
     api.deinitialize()
@@ -282,7 +330,7 @@
     <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/200/sequence_showto1v1.zh.png" width="500px"><br><br>
 
 ## 5. 进阶集成
-- 使用已经初始化过的RTM实例(rtmClient)。
+### 5.1 使用已经初始化过的RTM实例(rtmClient)。
   ```swift
     // 如果外部已经使用了rtm，可以传入rtm实例
     let rtmClient:AgoraRtmClientKit? = _createRtmClient() 
@@ -295,7 +343,7 @@
   ```
   **`注意：如果是自己创建的rtmClient，则需要自行维持登录状态，或者通过RtmManager的login方法进行登录`**
 
-- 切换被叫的推流收流时机以节省费用。
+### 5.2 切换被叫的推流收流时机以节省费用。
   - 在CallApi里被叫的默认的推流时机有两种
     - [**默认**]收到呼叫即推送音视频流和收视频流
     - 接受后再推送音视频流和收视频流
@@ -308,13 +356,13 @@
     /// - Returns: true: 可以加入 false: 不可以加入
     @objc optional func canJoinRtcOnCalling(eventInfo: [String: Any]) -> Bool
     ```
-- 需要手动开启和关闭音视频流的推送
+### 5.3 需要手动开启和关闭音视频流的推送
   -  由于CallApi内部会在通话时开启、结束通话时关闭采集音视频，因此如果在结束通话后外部需要手动开启音视频采集，例如当onCallStateChanged返回`(state: prepared)`时，可以开启采集。
      ```swift
        rtcEngine.enableLocalAudio(true)
        rtcEngine.enableLocalVideo(true)
      ```
-- 消息中携带自定义数据结构
+### 5.4 消息中携带自定义数据结构
   - 通过在`PrepareConfig`的`userExtension`属性中设置参数，您可以在发送消息给对端时（例如呼叫/取消呼叫/同意/拒绝等）附加额外的用户扩展信息。对端可以通过回调消息接收到这个`userExtension`，以便在处理消息时获取相关的附加信息
     ```swift
       public func onCallStateChanged(with state: CallStateType,
@@ -325,10 +373,10 @@
         ...          
       }
      ```
-- 通话异常定位。
+### 5.5 通话异常定位。
   - 在双端连接过程中(state为calling/connecting/connected时)可以通过 `getCallId` 方法获取当次通话双端的呼叫id。
   - 通过CalAPI内部的日志上报，可以在声网后台查询到当次通话的各个节点耗时，请确保已经[开通声网自定义数据上报和分析服务](#custom-report)。
-- 自定义信令消息
+### 5.6 自定义信令消息
   - CallApi默认使用的是RTM的信令管理，CallApi通过[CallRtmSignalClient](./CallAPI/Classes/SignalClient/CallRtmSignalClient.swift)来进行发送和接收消息
   - 要实现一个自定义信令管理类，首先需要在对应管理类里实现[ISignalClient](./CallAPI/Classes/SignalClient/ISignalClient.swift)协议，声网已经基于环信实现了一个自定义信令管理类[CallEasemobSignalClient](./Example/CallAPI/SignalClient/CallEasemobSignalClient.swift)，您可以参考该实现，重新实现基于其他平台的信令管理类
   - 该信令管理类需要维持信令的登录注销等，并且需要自行维护信令的异常处理，保证CallApi在调用时处于可用状态
@@ -362,8 +410,9 @@
     pod 'CallAPI/WithoutRTM', :path => '../'
     ```
     **注意，以该裁剪方式集成的CallApi需要使用自定义信令类，CallRtmSignalClient 已经被移除**
-  - 需要监听通话频道的Rtc回调
-    - CallApi里使用的 `joinChannelEx` 方式加入Rtc频道，因此不可以使用 `rtcEngine.addDelegate` 方式，需要通过 `rtcEngine.addDelegateEx` 并指定对应的频道来添加delegate
+    
+### 5.7 需要监听通话频道的Rtc回调
+   - CallApi里使用的 `joinChannelEx` 方式加入Rtc频道，因此不可以使用 `rtcEngine.addDelegate` 方式，需要通过 `rtcEngine.addDelegateEx` 并指定对应的频道来添加delegate
       ```swift
       /*
       roomId: 当前Rtc通话频道id
@@ -372,8 +421,9 @@
       let connection = AgoraRtcConnection(channelId: roomId, localUid: Int(currentUid))
       rtcEngine.addDelegateEx(self, connection: connection)
       ```
+    
       当前Rtc通话频道id可以通过 `onCallStateChanged` 为 `calling` 时从`evenInfo` 里解析获取
-
+      
 ## 6. API说明
 ### CallApiListenerProtocol
 - 状态响应回调，描述由于某个stateReason导致的state变化

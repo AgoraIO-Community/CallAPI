@@ -816,8 +816,10 @@ extension CallApiImpl {
             }
         }
         
-        _updateAndNotifyState(state: .calling, eventInfo: message)
-        _notifyEvent(event: .onCalling)
+        let reason: CallStateReason = callType == .video ? .localVideoCall : .localAudioCall
+        let event: CallEvent = callType == .video ? .localVideoCall : .localAudioCall
+        _updateAndNotifyState(state: .calling, stateReason: reason, eventInfo: message)
+        _notifyEvent(event: event)
         
         _joinRTCAsBroadcaster(roomId: fromRoomId)
     }
@@ -895,8 +897,10 @@ extension CallApiImpl {
         defaultCalleeJoinRTCTiming = _canJoinRtcOnCalling(eventInfo: message) ? .calling : .accepted
         
         if enableNotify {
-            _updateAndNotifyState(state: .calling, stateReason: .none, eventInfo: message)
-            _notifyEvent(event: .onCalling)
+            let reason: CallStateReason = callType == .video ? .remoteVideoCall : .remoteAudioCall
+            let event: CallEvent = callType == .video ? .remoteVideoCall : .remoteAudioCall
+            _updateAndNotifyState(state: .calling, stateReason: reason, eventInfo: message)
+            _notifyEvent(event: event)
         }
         
         callPrint("[calling]defaultCalleeJoinRTCTiming: \(defaultCalleeJoinRTCTiming.rawValue)")

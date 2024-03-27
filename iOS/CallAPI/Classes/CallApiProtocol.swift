@@ -63,6 +63,10 @@ import AgoraRtcKit
 //    case rtmLost = 16              //rtm超时断连[2.0.0废弃，请从信令管理中实现中处理相关的异常]
     case remoteCallBusy = 17       //远端用户忙
     case remoteCallingTimeout = 18 //远端呼叫超时
+    case localVideoCall = 30       //本地发起视频呼叫
+    case localAudioCall = 31       //本地发起音频呼叫
+    case remoteVideoCall = 32      //远端发起视频呼叫
+    case remoteAudioCall = 33      //远端发起音频呼叫
 }
 
 /// 呼叫事件
@@ -79,7 +83,7 @@ import AgoraRtcKit
     case remoteUserRecvCall = 99                  //主叫呼叫成功
     case localRejected = 100                      //本地用户拒绝
     case remoteRejected = 101                     //远端用户拒绝
-    case onCalling = 102                          //变成呼叫中
+//    case onCalling = 102                          //变成呼叫中[2.1.0废弃，请参考localVideoCall/localAudioCall/remoteVideoCall/remoteAudioCall]
     case remoteAccepted = 103                     //远端用户接收
     case localAccepted = 104                      //本地用户接收
     case localHangup = 105                        //本地用户挂断
@@ -98,6 +102,10 @@ import AgoraRtcKit
     case captureFirstLocalVideoFrame = 119        //采集到首帧视频帧
     case publishFirstLocalVideoFrame = 120        //推送首帧视频帧成功
     case publishFirstLocalAudioFrame = 130        //推送首帧音频帧成功[2.1.0开始支持]
+    case localVideoCall = 140                     //本地发起视频呼叫
+    case localAudioCall = 141                     //本地发起音频呼叫
+    case remoteVideoCall = 142                    //远端发起视频呼叫
+    case remoteAudioCall = 143                    //远端发起音频呼叫
 }
 
 /// 呼叫错误事件

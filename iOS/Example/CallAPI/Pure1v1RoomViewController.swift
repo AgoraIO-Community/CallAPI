@@ -312,8 +312,7 @@ extension Pure1v1RoomViewController {
         let action1 = UIAlertAction(title: "视频呼叫", style: .default) {[weak self] _ in
             self?.api.call(remoteUserId: remoteUserId) { error in
                 guard let _ = error, self?.callState == .calling else {return}
-                self?.api.cancelCall(completion: { err in
-                })
+                self?.api.cancelCall { err in }
             }
         }
         alertController.addAction(action1)
@@ -321,12 +320,10 @@ extension Pure1v1RoomViewController {
         let action2 = UIAlertAction(title: "音频呼叫", style: .default) {[weak self] _ in
             self?.api.call(remoteUserId: remoteUserId, 
                            callType: .audio,
-                           callExtension: ["test_call": 111],
-                           completion: { error in
+                           callExtension: ["test_call": 111]) { error in
                 guard let _ = error, self?.callState == .calling else {return}
-                self?.api.cancelCall(completion: { err in
-                })
-            })
+                self?.api.cancelCall { err in }
+            }
         }
         alertController.addAction(action2)
 
@@ -445,7 +442,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                 connectedUserId = fromUserId
                 AUIAlertView()
                     .isShowCloseButton(isShow: true)
-                    .title(title: "用户 \(fromUserId) 邀请您1对1通话")
+                    .title(title: "用户 \(fromUserId) 邀请您1对1\(stateReason == .remoteAudioCall ? "语音": "视频")通话")
                     .rightButton(title: "同意")
                     .leftButton(title: "拒绝")
                     .leftButtonTapClosure {[weak self] in
