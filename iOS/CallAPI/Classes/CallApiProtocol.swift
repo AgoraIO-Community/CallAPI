@@ -28,8 +28,8 @@ import AgoraRtcKit
 
 /// 呼叫类型
 @objc public enum CallType: UInt {
-    case video = 0
-    case audio
+    case video = 0    //视频呼叫
+    case audio        //音频呼叫
 }
 
 /// 呼叫状态
