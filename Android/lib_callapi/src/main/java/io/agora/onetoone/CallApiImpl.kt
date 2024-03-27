@@ -975,8 +975,8 @@ class CallApiImpl constructor(
         config.rtcEngine?.setParameters("{\"rtc.network.e2e_cc_mode\": 3}")  //(4.3.0及以后版本不需要设置此项，默认值已改为3)
 
         // 6.私有参数或配置下发设置VQC分辨率调节的灵敏度
-        config.rtcEngine?.setParameters("{\"che.video.min_holdtime_auto_resize_zoomin \": 1000}")
-        config.rtcEngine?.setParameters("{\"che.video.min_holdtime_auto_resize_zoomout \": 1000}")
+        config.rtcEngine?.setParameters("{\"che.video.min_holdtime_auto_resize_zoomin\": 1000}")
+        config.rtcEngine?.setParameters("{\"che.video.min_holdtime_auto_resize_zoomout\": 1000}")
     }
 
     override fun deinitialize(completion: (() -> Unit)) {
