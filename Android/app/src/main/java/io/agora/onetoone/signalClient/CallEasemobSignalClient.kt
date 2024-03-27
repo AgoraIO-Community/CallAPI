@@ -138,8 +138,8 @@ class CallEasemobSignalClient(
 
     // ---------------- EMMessageListener ----------------
     override fun onMessageReceived(messages: MutableList<EMMessage>?) {
-        messages?.forEach {
-            runOnUiThread {
+        runOnUiThread {
+            messages?.forEach {
                 val body = it.body as EMTextMessageBody
                 listeners.forEach {
                     it.onMessageReceive(body.message)
