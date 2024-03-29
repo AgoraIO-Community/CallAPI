@@ -23,7 +23,6 @@
 		DDE090782A24E8A700752E62 /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE090762A24E8A700752E62 /* NetworkManager.swift */; };
 		DDE090792A24E8A700752E62 /* KeyCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE090772A24E8A700752E62 /* KeyCenter.swift */; };
 		DDE4724E2B8DDF130089F0E1 /* CallEasemobSignalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE4724C2B8DDF130089F0E1 /* CallEasemobSignalClient.swift */; };
-		DDE4724F2B8DDF130089F0E1 /* CallRtmManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE4724D2B8DDF130089F0E1 /* CallRtmManager.swift */; };
 		DDEFE3C72A52D626006D6D2E /* Pure1v1RoomViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDEFE3C62A52D626006D6D2E /* Pure1v1RoomViewController.swift */; };
 /* End PBXBuildFile section */
 
@@ -52,7 +51,6 @@
 		DDE090762A24E8A700752E62 /* NetworkManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
 		DDE090772A24E8A700752E62 /* KeyCenter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeyCenter.swift; sourceTree = "<group>"; };
 		DDE4724C2B8DDF130089F0E1 /* CallEasemobSignalClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CallEasemobSignalClient.swift; sourceTree = "<group>"; };
-		DDE4724D2B8DDF130089F0E1 /* CallRtmManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CallRtmManager.swift; sourceTree = "<group>"; };
 		DDEFE3C62A52D626006D6D2E /* Pure1v1RoomViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pure1v1RoomViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -184,7 +182,6 @@
 			isa = PBXGroup;
 			children = (
 				DDE4724C2B8DDF130089F0E1 /* CallEasemobSignalClient.swift */,
-				DDE4724D2B8DDF130089F0E1 /* CallRtmManager.swift */,
 			);
 			path = SignalClient;
 			sourceTree = "<group>";
@@ -366,7 +363,6 @@
 				DD3667582A38428200969395 /* AUIAlertView.swift in Sources */,
 				DDEFE3C72A52D626006D6D2E /* Pure1v1RoomViewController.swift in Sources */,
 				607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */,
-				DDE4724F2B8DDF130089F0E1 /* CallRtmManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -503,7 +499,7 @@
 				INFOPLIST_FILE = CallAPI/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "一对一秒开";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 2.0.0;
 				MODULE_NAME = ExampleApp;
 				PRODUCT_BUNDLE_IDENTIFIER = io.agora.callapi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -525,7 +521,7 @@
 				INFOPLIST_FILE = CallAPI/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "一对一秒开";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 2.0.0;
 				MODULE_NAME = ExampleApp;
 				PRODUCT_BUNDLE_IDENTIFIER = io.agora.callapi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
