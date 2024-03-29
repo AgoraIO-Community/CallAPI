@@ -440,7 +440,7 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
                 AUIToast.show(text: "通话被拒绝")
             case .callingTimeout:
                 AUIToast.show(text: "无应答")
-            case .localCancel, .remoteCancel:
+            case .localCancelled, .remoteCancelled:
                 AUIToast.show(text: "通话被取消")
             case .remoteCallBusy:
                 AUIToast.show(text: "用户正忙")
@@ -464,7 +464,7 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
     @objc func onCallEventChanged(with event: CallEvent, eventReason: String?) {
         NSLog("onCallEventChanged: \(event.rawValue), eventReason: \(eventReason ?? "")")
         switch event {
-        case .remoteLeave:
+        case .remoteLeft:
             hangupAction()
         default:
             break

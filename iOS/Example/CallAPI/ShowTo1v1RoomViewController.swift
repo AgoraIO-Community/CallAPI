@@ -570,7 +570,7 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
     @objc func onCallEventChanged(with event: CallEvent, eventReason: String?) {
         NSLog("onCallEventChanged event: \(event.rawValue), eventReason: \(eventReason ?? "")")
         switch event {
-        case .remoteLeave:
+        case .remoteLeft:
             hangupAction()
         default:
             break

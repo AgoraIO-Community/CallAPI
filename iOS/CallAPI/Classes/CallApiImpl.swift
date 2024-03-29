@@ -320,7 +320,7 @@ extension CallApiImpl {
         } else if state == .prepared, oldState == .connected {
             switch stateReason {
                 //正常只会触发.remoteCancel, .remoteHangup，剩余的做兜底
-            case .remoteCancel, .remoteHangup, .remoteRejected, .remoteCallBusy:
+            case .remoteCancelled, .remoteHangup, .remoteRejected, .remoteCallBusy:
                 _notifyCallDisconnected(hangupUserId: connectInfo.callingUserId ?? 0)
             default:
                 //.localHangup 或 bad case
@@ -390,9 +390,9 @@ extension CallApiImpl {
         switch event {
         case .remoteUserRecvCall:
             _reportCostEvent(type: .remoteUserRecvCall)
-        case .remoteJoin:
+        case .remoteJoined:
             _reportCostEvent(type: .remoteUserJoinChannel)
-        case .localJoin:
+        case .localJoined:
             _reportCostEvent(type: .localUserJoinChannel)
         case .remoteAccepted:
             _reportCostEvent(type: .acceptCall)
@@ -630,6 +630,7 @@ extension CallApiImpl {
         if ret != 0 {
             _notifyRtcOccurErrorEvent(errorCode: Int(ret))
         }
+        _notifyEvent(event: .joinRTCStart)
     }
     
     
@@ -912,8 +913,8 @@ extension CallApiImpl {
     fileprivate func _onCancel(message: [String: Any]) {
         //如果不是来自的正在呼叫的用户的操作，不处理
         guard _isCallingUser(message: message) else { return }
-        var stateReason: CallStateReason =  .remoteCancel
-        var callEvent: CallEvent =  .remoteCancel
+        var stateReason: CallStateReason = .remoteCancelled
+        var callEvent: CallEvent = .remoteCancelled
         if let cancelCallByInternal = message[kCancelCallByInternal] as? Int, cancelCallByInternal == 1 {
             stateReason = .remoteCallingTimeout
             callEvent = .remoteCallingTimeout
@@ -1073,8 +1074,8 @@ extension CallApiImpl: CallApiProtocol {
         _reportMethod(event: "\(#function)")
         let message: [String: Any] = _cancelCallMessageDic(cancelCallByInternal: false)
         _cancelCall(message: message, completion: completion)
-        _updateAndNotifyState(state: .prepared, stateReason: .localCancel, eventInfo: message)
-        _notifyEvent(event: .localCancel)
+        _updateAndNotifyState(state: .prepared, stateReason: .localCancelled, eventInfo: message)
+        _notifyEvent(event: .localCancelled)
     }
     
     //接受
@@ -1180,13 +1181,13 @@ extension CallApiImpl: AgoraRtcEngineDelegate {
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didJoinedOfUid uid: UInt, elapsed: Int) {
         callPrint("didJoinedOfUid: \(uid) elapsed: \(elapsed)")
         guard connectInfo.callingUserId == uid/*, let config = config*/ else { return }
-        _notifyEvent(event: .remoteJoin)
+        _notifyEvent(event: .remoteJoined)
     }
     
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didOfflineOfUid uid: UInt, reason: AgoraUserOfflineReason) {
         callPrint("didOfflineOfUid: \(uid)")
         guard connectInfo.callingUserId == uid else { return }
-        _notifyEvent(event: .remoteLeave, reasonCode: "\(reason.rawValue)")
+        _notifyEvent(event: .remoteLeft, reasonCode: "\(reason.rawValue)")
     }
     
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didLeaveChannelWith stats: AgoraChannelStats) {
@@ -1196,7 +1197,7 @@ extension CallApiImpl: AgoraRtcEngineDelegate {
          这里rtcConnection = nil会导致leave之后马上join，didLeaveChannelWith会在join之后错误的置空了rtc connection
          */
 //        rtcConnection = nil
-        _notifyEvent(event: .localLeave)
+        _notifyEvent(event: .localLeft)
     }
 
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didJoinChannel channel: String, withUid uid: UInt, elapsed: Int) {
@@ -1204,7 +1205,7 @@ extension CallApiImpl: AgoraRtcEngineDelegate {
         guard uid == config?.userId ?? 0 else { return }
         joinRtcCompletion?(nil)
         joinRtcCompletion = nil
-        _notifyEvent(event: .localJoin)
+        _notifyEvent(event: .localJoined)
     }
     
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didOccurError errorCode: AgoraErrorCode) {

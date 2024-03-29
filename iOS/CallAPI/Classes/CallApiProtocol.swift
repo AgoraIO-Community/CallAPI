@@ -55,8 +55,8 @@ import AgoraRtcKit
     case localAccepted = 8         //本地用户接受
     case localHangup = 9           //本地用户挂断
     case remoteHangup = 10         //远端用户挂断
-    case localCancel = 11          //本地用户取消呼叫
-    case remoteCancel = 12         //远端用户取消呼叫
+    case localCancelled = 11        //本地用户取消呼叫
+    case remoteCancelled = 12       //远端用户取消呼叫
     case recvRemoteFirstFrame = 13 //收到远端首帧
     case callingTimeout = 14       //本地呼叫超时
     case cancelByCallerRecall = 15 //同样的主叫呼叫不同频道导致取消
@@ -80,6 +80,7 @@ import AgoraRtcKit
 //    case rtmSetupSuccessed = 7                    //设置RTM成功[2.0.0已废弃，Rtm是否成功请通过CallRtmSignalClient的login显式调用]
 //    case messageFailed = 8                        //消息发送失败[已废弃，请使用onCallErrorOccur(state: sendMessageFail)]
     case stateMismatch = 9                        //状态流转异常
+    case joinRTCStart = 10                        //本地已经加入Rtc频道，但是还未成功(调用了JoinChannelEx)
     case remoteUserRecvCall = 99                  //主叫呼叫成功
     case localRejected = 100                      //本地用户拒绝
     case remoteRejected = 101                     //远端用户拒绝
@@ -88,12 +89,12 @@ import AgoraRtcKit
     case localAccepted = 104                      //本地用户接收
     case localHangup = 105                        //本地用户挂断
     case remoteHangup = 106                       //远端用户挂断
-    case remoteJoin = 107                         //远端用户加入RTC频道
-    case remoteLeave = 108                        //远端用户离开RTC频道(eventReason请参考AgoraUserOfflineReason)
-    case localCancel = 109                        //本地用户取消呼叫
-    case remoteCancel = 110                       //远端用户取消呼叫
-    case localJoin = 111                          //本地用户加入RTC频道
-    case localLeave = 112                         //本地用户离开RTC频道
+    case remoteJoined = 107                       //远端用户加入RTC频道
+    case remoteLeft = 108                         //远端用户离开RTC频道(eventReason请参考AgoraUserOfflineReason)
+    case localCancelled = 109                      //本地用户取消呼叫
+    case remoteCancelled = 110                     //远端用户取消呼叫
+    case localJoined = 111                        //本地用户加入RTC频道
+    case localLeft = 112                          //本地用户离开RTC频道
     case recvRemoteFirstFrame = 113               //收到远端首帧(视频呼叫为视频帧首帧，音频呼叫为音频帧首帧)
 //    case cancelByCallerRecall = 114               //同样的主叫呼叫不同频道导致取消[已废弃]
 //    case rtmLost = 115                            //rtm超时断连[2.0.0废弃，请从信令管理中实现中处理相关的异常]

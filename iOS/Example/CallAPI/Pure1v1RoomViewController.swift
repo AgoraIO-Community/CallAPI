@@ -82,7 +82,7 @@ class Pure1v1RoomViewController: UIViewController {
         config.audioScenario = .gameStreaming
         config.areaCode = .global
         let engine = AgoraRtcEngineKit.sharedEngine(with: config,
-                                                    delegate: self)
+                                                    delegate: nil)
         
         engine.setClientRole(.broadcaster)
         return engine
@@ -285,7 +285,6 @@ extension Pure1v1RoomViewController {
         api.deinitialize {
             self.api.removeListener(listener: self)
             self.rtcEngine.stopPreview()
-            self.rtcEngine.delegate = nil
             self.rtcEngine.leaveChannel()
             AgoraRtcEngineKit.destroy()
             self.rtmManager?.delegate = nil
@@ -500,7 +499,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                 AUIToast.show(text: "通话被拒绝")
             case .callingTimeout, .remoteCallingTimeout:
                 AUIToast.show(text: "无应答")
-            case .localCancel, .remoteCancel:
+            case .localCancelled, .remoteCancelled:
                 AUIToast.show(text: "通话被取消")
             case .remoteCallBusy:
                 AUIToast.show(text: "用户正忙")
@@ -524,7 +523,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
     @objc func onCallEventChanged(with event: CallEvent, eventReason: String?) {
         NSLog("onCallEventChanged event: \(event.rawValue), eventReason: \(eventReason ?? "")")
         switch event {
-        case .remoteLeave:
+        case .remoteLeft:
             hangupAction()
         default:
             break
