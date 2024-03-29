@@ -313,7 +313,7 @@ class CallApiImpl constructor(
         } else if (state == CallStateType.Prepared && oldState == CallStateType.Connected) {
             when (stateReason) {
                 //正常只会触发.remoteCancel, .remoteHangup，剩余的做兜底
-                CallStateReason.RemoteCancel, CallStateReason.RemoteHangup, CallStateReason.RemoteRejected, CallStateReason.RemoteCallBusy -> {
+                CallStateReason.RemoteCancelled, CallStateReason.RemoteHangup, CallStateReason.RemoteRejected, CallStateReason.RemoteCallBusy -> {
                     _notifyCallDisconnected(connectInfo.callingUserId ?: 0)
                 }
                 else -> {
@@ -375,8 +375,8 @@ class CallApiImpl constructor(
         }
         when (event) {
             CallEvent.RemoteUserRecvCall -> _reportCostEvent(CallConnectCostType.RemoteUserRecvCall)
-            CallEvent.RemoteJoin -> _reportCostEvent(CallConnectCostType.RemoteUserJoinChannel)
-            CallEvent.LocalJoin -> _reportCostEvent(CallConnectCostType.LocalUserJoinChannel)
+            CallEvent.RemoteJoined -> _reportCostEvent(CallConnectCostType.RemoteUserJoinChannel)
+            CallEvent.LocalJoined -> _reportCostEvent(CallConnectCostType.LocalUserJoinChannel)
             CallEvent.RemoteAccepted -> {
                 _reportCostEvent(CallConnectCostType.AcceptCall)
                 checkConnectedSuccess(CallStateReason.RemoteAccepted)
@@ -624,6 +624,7 @@ class CallApiImpl constructor(
         if (ret != Constants.ERR_OK) {
             _notifyRtcOccurErrorEvent(ret)
         }
+        _notifyEvent(CallEvent.JoinRTCStart)
     }
 
     /**
@@ -905,8 +906,8 @@ class CallApiImpl constructor(
         //如果不是来自的正在呼叫的用户的操作，不处理
         if (!_isCallingUser(message)) return
 
-        var stateReason: CallStateReason = CallStateReason.RemoteCancel
-        var callEvent: CallEvent = CallEvent.RemoteCancel
+        var stateReason: CallStateReason = CallStateReason.RemoteCancelled
+        var callEvent: CallEvent = CallEvent.RemoteCancelled
         val cancelCallByInternal = message[kCancelCallByInternal] as? Int
         if (cancelCallByInternal == 1) {
             stateReason = CallStateReason.RemoteCallingTimeout
@@ -1043,6 +1044,7 @@ class CallApiImpl constructor(
         super.onFirstRemoteAudioFrame(uid, elapsed)
         val channelId = prepareConfig?.roomId ?: return
         if (uid != connectInfo.callingUserId) return
+        if (connectInfo.callType != CallType.Audio) return
         callPrint("firstRemoteAudioFrameOfUid, channelId: $channelId, uid: $uid")
         runOnUiThread {
             firstFrameCompletion?.invoke()
@@ -1102,8 +1104,8 @@ class CallApiImpl constructor(
         _reportMethod("cancelCall")
         val message = _messageDic(CallAction.CancelCall)
         _cancelCall(message, false, completion)
-        _updateAndNotifyState(CallStateType.Prepared, CallStateReason.LocalCancel, eventInfo = message)
-        _notifyEvent(CallEvent.LocalCancel)
+        _updateAndNotifyState(CallStateType.Prepared, CallStateReason.LocalCancelled, eventInfo = message)
+        _notifyEvent(CallEvent.LocalCancelled)
     }
 
     //接受
@@ -1217,12 +1219,12 @@ class CallApiImpl constructor(
     override fun onUserJoined(uid: Int, elapsed: Int) {
         callPrint("didJoinedOfUid: $uid elapsed: $elapsed")
         if (connectInfo.callingUserId == uid) else return
-        _notifyEvent(CallEvent.RemoteJoin)
+        _notifyEvent(CallEvent.RemoteJoined)
     }
     override fun onUserOffline(uid: Int, reason: Int) {
         callPrint("didOfflineOfUid: $uid， reason: $reason")
         if (connectInfo.callingUserId != uid) { return }
-        _notifyEvent(CallEvent.RemoteLeave, reasonCode = "$reason")
+        _notifyEvent(CallEvent.RemoteLeft, reasonCode = "$reason")
     }
     override fun onLeaveChannel(stats: RtcStats?) {
         callPrint("didLeaveChannel: $stats")
@@ -1232,7 +1234,7 @@ class CallApiImpl constructor(
          这里rtcConnection = nil会导致leave之后马上join，didLeaveChannelWith会在join之后错误的置空了rtc connection
          */
         //rtcConnection = null
-        _notifyEvent(CallEvent.LocalLeave)
+        _notifyEvent(CallEvent.LocalLeft)
     }
 
     override fun onJoinChannelSuccess(channel: String?, uid: Int, elapsed: Int) {
@@ -1243,7 +1245,7 @@ class CallApiImpl constructor(
         runOnUiThread {
             joinRtcCompletion?.invoke(null)
             joinRtcCompletion = null
-            _notifyEvent(CallEvent.LocalJoin)
+            _notifyEvent(CallEvent.LocalJoined)
         }
     }
 

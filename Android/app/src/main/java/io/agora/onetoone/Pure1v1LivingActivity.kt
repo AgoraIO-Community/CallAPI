@@ -504,9 +504,35 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
     override fun onCallEventChanged(event: CallEvent, eventReason: String?) {
         Log.d(TAG, "onCallEventChanged: $event, eventReason: $eventReason")
         when(event) {
-            CallEvent.RemoteLeave -> {
+            CallEvent.RemoteLeft -> {
                 hangupAction()
-            } else -> {}
+            }
+            CallEvent.JoinRTCStart -> {
+                rtcEngine.addHandlerEx(
+                    object : IRtcEngineEventHandler() {
+                        override fun onJoinChannelSuccess(
+                            channel: String?,
+                            uid: Int,
+                            elapsed: Int
+                        ) {
+                            super.onJoinChannelSuccess(channel, uid, elapsed)
+                            Log.d(TAG, "onJoinChannelSuccess, channel:$channel, uid:$channel")
+                        }
+
+                        override fun onRemoteAudioStateChanged(
+                            uid: Int,
+                            state: Int,
+                            reason: Int,
+                            elapsed: Int
+                        ) {
+                            super.onRemoteAudioStateChanged(uid, state, reason, elapsed)
+                            Log.d(TAG, "onRemoteAudioStateChanged, uid:$uid, state:$state, reason:$reason")
+                        }
+                    },
+                    RtcConnection(enterModel.currentUid, enterModel.currentUid.toInt()) // demo 为了方便将本端uid的字符串作为了频道名
+                )
+            }
+            else -> {}
         }
     }
 

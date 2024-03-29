@@ -66,8 +66,8 @@ enum class CallStateReason(val value: Int) {
     LocalAccepted(8),           // 本地用户接受
     LocalHangup(9),             // 本地用户挂断
     RemoteHangup(10),           // 远端用户挂断
-    LocalCancel(11),            // 本地用户取消呼叫
-    RemoteCancel(12),           // 远端用户取消呼叫
+    LocalCancelled(11),            // 本地用户取消呼叫
+    RemoteCancelled(12),           // 远端用户取消呼叫
     RecvRemoteFirstFrame(13),   // 收到远端首帧(视频呼叫为视频帧首帧，音频呼叫为音频帧首帧)
     CallingTimeout (14),        // 呼叫超时
     CancelByCallerRecall(15),   // 同样的主叫呼叫不同频道导致取消
@@ -94,7 +94,7 @@ enum class CallEvent(val value: Int) {
     RtmSetupSuccessed(7),           // 设置RTM成功
     //MessageFailed(8),                   // 消息发送失败[已废弃，请使用onCallErrorOccur(state: sendMessageFail)]
     StateMismatch(9),               // 状态流转异常
-    //PreparedRoomIdChanged(10),      // prepared了另一个roomId导致[已废弃]
+    JoinRTCStart(10),               // 本地已经加入Rtc频道，但是还未成功(调用了JoinChannelEx)
     RemoteUserRecvCall(99),         // 主叫呼叫成功
     LocalRejected(100),             // 本地用户拒绝
     RemoteRejected(101),            // 远端用户拒绝
@@ -103,12 +103,12 @@ enum class CallEvent(val value: Int) {
     LocalAccepted(104),             // 本地用户接收
     LocalHangup(105),               // 本地用户挂断
     RemoteHangup(106),              // 远端用户挂断
-    RemoteJoin(107),                // 远端用户加入RTC频道
-    RemoteLeave(108),               // 远端用户离开RTC频道, RTC频道(eventReason请参考AgoraUserOfflineReason)
-    LocalCancel(109),               // 本地用户取消呼叫
-    RemoteCancel(110),              // 远端用户取消呼叫
-    LocalJoin(111),                 // 本地用户加入RTC频道
-    LocalLeave(112),                // 本地用户离开RTC频道
+    RemoteJoined(107),                // 远端用户加入RTC频道
+    RemoteLeft(108),               // 远端用户离开RTC频道, RTC频道(eventReason请参考AgoraUserOfflineReason)
+    LocalCancelled(109),               // 本地用户取消呼叫
+    RemoteCancelled(110),              // 远端用户取消呼叫
+    LocalJoined(111),                 // 本地用户加入RTC频道
+    LocalLeft(112),                // 本地用户离开RTC频道
     RecvRemoteFirstFrame(113),      // 收到远端首帧
     //CancelByCallerRecall(114),      // 同样的主叫呼叫不同频道导致取消[已废弃]
     RtmLost(115),                   // rtm超时断连
