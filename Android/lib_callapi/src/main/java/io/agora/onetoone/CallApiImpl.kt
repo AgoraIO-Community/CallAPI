@@ -47,7 +47,7 @@ class CallApiImpl constructor(
 ): ICallApi, ISignalClientListener, IRtcEngineEventHandler() {
 
     companion object {
-        const val kReportCategory = "2_Android_1.0.0"
+        const val kReportCategory = "2_Android_2.0.0"
         const val kPublisher = "publisher"
         const val kCostTimeMap = "costTimeMap"    //呼叫时的耗时信息，会在connected时抛出分步耗时
         const val kRemoteUserId = "remoteUserId"
@@ -923,6 +923,26 @@ class CallApiImpl constructor(
             return
         }
         this.config = config.cloneConfig()
+
+        // 数据上报
+        config.rtcEngine?.setParameters("{\"rtc.direct_send_custom_event\": true}")
+
+        // 写日志
+        config.rtcEngine?.setParameters("{\"rtc.log_external_input\": true}")
+
+        // 视频最佳实践
+        // 3.API 开启音视频首帧加速渲染
+        config.rtcEngine?.enableInstantMediaRendering()
+
+        // 4.私有参数或配置下发开启首帧 FEC
+        config.rtcEngine?.setParameters("{\"rtc.video.quickIntraHighFec\": true}")
+
+        // 5.私有参数或配置下发设置 AUT CC mode
+        config.rtcEngine?.setParameters("{\"rtc.network.e2e_cc_mode\": 3}")  //(4.3.0及以后版本不需要设置此项，默认值已改为3)
+
+        // 6.私有参数或配置下发设置VQC分辨率调节的灵敏度
+        config.rtcEngine?.setParameters("{\"che.video.min_holdtime_auto_resize_zoomin\": 1000}")
+        config.rtcEngine?.setParameters("{\"che.video.min_holdtime_auto_resize_zoomout\": 1000}")
     }
 
     override fun deinitialize(completion: (() -> Unit)) {
@@ -1235,6 +1255,7 @@ class CallApiImpl constructor(
                 listener.callDebugInfo(message, logLevel)
             }
         }
+        config?.rtcEngine?.writeLog(Constants.LOG_LEVEL_INFO, message)
     }
 
     private fun callWarningPrint(message: String) {
@@ -1242,6 +1263,7 @@ class CallApiImpl constructor(
             listener.callDebugInfo(message, CallLogLevel.Warning)
         }
         callPrint("[Warning]$message")
+        config?.rtcEngine?.writeLog(Constants.LOG_LEVEL_WARNING, message)
     }
 
     private val mHandler = Handler(Looper.getMainLooper())
