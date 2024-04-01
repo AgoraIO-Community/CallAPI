@@ -717,7 +717,7 @@ class CallApiImpl constructor(
     }
 
     private fun _reportMethod(event: String, label: String = "") {
-        val msgId = "scenarioAPI"
+        val msgId = "agora:scenarioAPI"
         callPrint("_reportMethod event: $event")
         var subEvent = event
         val range = event.indexOf("(")
