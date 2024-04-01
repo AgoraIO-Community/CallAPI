@@ -708,7 +708,7 @@ class CallApiImpl constructor(
     }
 
     private fun _reportMethod(event: String, label: String = "") {
-        val msgId = "scenarioAPI"
+        val msgId = "agora:scenarioAPI"
         callPrint("_reportMethod event: $event")
         var subEvent = event
         val range = event.indexOf("(")
@@ -964,6 +964,9 @@ class CallApiImpl constructor(
 
         // 数据上报
         config.rtcEngine?.setParameters("{\"rtc.direct_send_custom_event\": true}")
+
+        // 写日志
+        config.rtcEngine?.setParameters("{\"rtc.log_external_input\": true}")
 
         // 视频最佳实践
         // 3.API 开启音视频首帧加速渲染
@@ -1284,13 +1287,14 @@ class CallApiImpl constructor(
                 listener.callDebugInfo(message, logLevel)
             }
         }
+        config?.rtcEngine?.writeLog(Constants.LOG_LEVEL_INFO, message)
     }
 
     private fun callWarningPrint(message: String) {
         delegates.forEach { listener ->
             listener.callDebugInfo(message, CallLogLevel.Warning)
         }
-        callPrint("[Warning]$message")
+        config?.rtcEngine?.writeLog(Constants.LOG_LEVEL_WARNING, message)
     }
 
     private val mHandler = Handler(Looper.getMainLooper())
