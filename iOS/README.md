@@ -130,16 +130,14 @@
     ```
     pod 'CallAPI', :path => './iOS'
     ```
-  - 把[CallRtmManager.swift](./Example/CallAPI/SignalClient/CallRtmManager.swift)文件拷贝到自己的工程里
-    <img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/guide/guide1.png" width="500px"><br>
   - 如果在您的项目中已经使用了声网的Rtc或Rtm SDK
     - 请确保SDK不低于下述版本:
-      - AgoraRtm_iOS: 2.1.8
+      - AgoraRtm_iOS: 2.1.10
       - AgoraRtcEngine_Special_iOS: 4.1.1.26
     - 如果您依赖的版本与上述依赖不同，请修改[CallAPI.podspec](/iOS/CallAPI.podspec)文件对应SDK的版本
       ```
       s.dependency 'AgoraRtcEngine_Special_iOS', '4.1.1.26'
-      s.dependency 'AgoraRtm_iOS', '2.1.8'
+      s.dependency 'AgoraRtm_iOS', '2.1.10'
       ```
   - 打开终端，执行`pod install`命令，CallAPI代码即可集成进项目里。
 ### 4.2 结构图
