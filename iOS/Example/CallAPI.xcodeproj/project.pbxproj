@@ -499,7 +499,7 @@
 				INFOPLIST_FILE = CallAPI/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "一对一秒开";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 2.1.0;
 				MODULE_NAME = ExampleApp;
 				PRODUCT_BUNDLE_IDENTIFIER = io.agora.callapi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -521,7 +521,7 @@
 				INFOPLIST_FILE = CallAPI/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "一对一秒开";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 2.0.0;
+				MARKETING_VERSION = 2.1.0;
 				MODULE_NAME = ExampleApp;
 				PRODUCT_BUNDLE_IDENTIFIER = io.agora.callapi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
