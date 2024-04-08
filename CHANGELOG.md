@@ -1,15 +1,15 @@
 # Change Log
 
-## [2.1.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.1.0)
-
-- 新增语音通话功能
-- 呼叫时支持发送自定义扩展信息
-
 ## [2.0.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.0.0)
 
 - 新增自定义信令功能，支持使用非 Rtm 来发送消息。
 - 优化事件上报
 - 优化 Demo 层的异常处理。
+
+
+## [1.1.2](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.2)
+- 升级 Rtm SDK 至 2.1.10
+- 修复收到 calling 时直接调用 accpet 方法建立通话导致的音频异常问题
 
 ## [1.1.1](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.1)
 
