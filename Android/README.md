@@ -69,7 +69,7 @@ AG_APP_CERTIFICATE=
 - 拷贝 [lib_callapi/src/main/java/io/agora/onetoone](lib_callapi/src/main/java/io/agora/onetoone) 到自己的工程中
 
 - 请确保项目中使用正确的声网 SDK 依赖，保证和 CallApi 的依赖不冲突:
-  - 'io.agora:agora-rtm:2.1.8'
+  - 'io.agora:agora-rtm:2.1.10'
   - 'io.agora.rtc:agora-special-full:4.1.1.17'
 
 - 在 Android Studio 顶部工具栏中，单击“File”->选择“Sync Project With Gradle File”，CallAPI 代码即可集成进项目里。

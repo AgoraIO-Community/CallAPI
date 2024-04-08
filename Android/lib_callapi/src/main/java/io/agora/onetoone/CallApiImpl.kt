@@ -27,8 +27,8 @@ enum class CallAction(val value: Int) {
     Reject(3),
     Hangup(4);
     companion object {
-        fun fromValue(value: Int): CallAction {
-            return CallAction.values().find { it.value == value } ?: Call
+        fun fromValue(value: Int): CallAction? {
+            return CallAction.values().find { it.value == value }
         }
     }
 }
@@ -1156,7 +1156,9 @@ class CallApiImpl constructor(
         //TODO: compatible other message version
         if (kCurrentMessageVersion != messageVersion)  { return }
         callPrint("on event message: $jsonString")
-        _processRespEvent(CallAction.fromValue(messageAction), map)
+        CallAction.fromValue(messageAction)?.let {
+            _processRespEvent(it, map)
+        }
     }
     override fun debugInfo(message: String, logLevel: Int) {
         callPrint(message)
