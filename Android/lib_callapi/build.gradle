@@ -56,7 +56,7 @@ dependencies {
     // rtc
     api 'io.agora.rtc:agora-special-full:4.1.1.26'
     // rtm
-    api 'io.agora:agora-rtm:2.1.8'
+    api 'io.agora:agora-rtm:2.1.10'
     // im
     api 'io.hyphenate:hyphenate-chat:4.3.0'
 }

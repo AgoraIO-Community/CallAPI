@@ -98,8 +98,8 @@ IM_APP_KEY=
 - 拷贝 [lib_callapi/src/main/java/io/agora/onetoone](lib_callapi/src/main/java/io/agora/onetoone) 到自己的工程中
 
 - 请确保项目中使用正确的声网 SDK 依赖，保证和 CallApi 的依赖不冲突:
-  - 'io.agora:agora-rtm:2.1.8'
-  - 'io.agora.rtc:agora-special-full:4.1.1.17'
+  - 'io.agora:agora-rtm:2.1.10'
+  - 'io.agora.rtc:agora-special-full:4.1.1.26'
 
 - 在 Android Studio 顶部工具栏中，单击“File”->选择“Sync Project With Gradle File”，CallAPI 代码即可集成进项目里。
 
@@ -310,8 +310,8 @@ IM_APP_KEY=
   - 通过 CallAPI 内部的日志上报，可以在声网后台查询到当次通话的各个节点耗时，请确保已经[开通声网自定义数据上报和分析服务](#custom-report)。
 
 - 自定义信令消息
-  - CallApi 默认使用的是 RTM 的信令管理，CallApi 通过 [CallRtmSignalClient](lib_callapi/src/main/java/io/agora/onetoone/signalClient/CallRtmSignalClient) 来进行发送和接收消息
-  - 要实现一个自定义信令管理类，首先需要在对应管理类里实现 [ISignalClient](lib_callapi/src/main/java/io/agora/onetoone/signalClient/ISignalClient.kt) 协议，声网已经基于环信实现了一个自定义信令管理类 [CallEasemobSignalClient](app/src/main/io/agora/onetoone/signalClient/CallEasemobSignalClient.kt)，您可以参考该实现，重新实现基于其他平台的信令管理类
+  - CallApi 默认使用的是 RTM 的信令管理，CallApi 通过 [CallRtmSignalClient](lib_callapi/src/main/java/io/agora/onetoone/signalClient/CallRtmSignalClient.kt) 来进行发送和接收消息
+  - 要实现一个自定义信令管理类，首先需要在对应管理类里实现 [ISignalClient](lib_callapi/src/main/java/io/agora/onetoone/signalClient/ISignalClient.kt) 协议，声网已经基于环信实现了一个自定义信令管理类 [CallEasemobSignalClient](app/src/main/java/io/agora/onetoone/signalClient/CallEasemobSignalClient.kt)，您可以参考该实现，重新实现基于其他平台的信令管理类
   - 该信令管理类需要维持信令的登录注销等，并且需要自行维护信令的异常处理，保证CallApi在调用时处于可用状态
   - 通过如下方式使用自定义信令管理类，例如使用Demo里实现的CallEasemobSignalClient
     ```kotlin
