@@ -125,6 +125,7 @@ class CallApiImpl constructor(
                     _updateAutoSubscribe(CallAutoSubscribeType.AudioVideo)
                 }
                 CallStateType.Connected -> {
+                    _updateAutoSubscribe(CallAutoSubscribeType.AudioVideo)
                     tempRemoteCanvasView.alpha = 1f
                     connectInfo.scheduledTimer(null)
                 }
@@ -904,7 +905,7 @@ class CallApiImpl constructor(
 
     private fun _onHangup(message: Map<String, Any>) {
         if (!_isCallingUser(message)) return
-        
+
         _updateAndNotifyState(CallStateType.Prepared, CallStateReason.RemoteHangup, eventInfo = message)
         _notifyEvent(CallEvent.RemoteHangup)
     }

@@ -55,5 +55,5 @@ dependencies {
 
     // rtc
     api 'io.agora.rtc:agora-special-full:4.1.1.17'
-    api 'io.agora:agora-rtm:2.1.8'
+    api 'io.agora:agora-rtm:2.1.10'
 }
