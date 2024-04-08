@@ -311,7 +311,7 @@ IM_APP_KEY=
 
 - 自定义信令消息
   - CallApi 默认使用的是 RTM 的信令管理，CallApi 通过 [CallRtmSignalClient](lib_callapi/src/main/java/io/agora/onetoone/signalClient/CallRtmSignalClient.kt) 来进行发送和接收消息
-  - 要实现一个自定义信令管理类，首先需要在对应管理类里实现 [ISignalClient](lib_callapi/src/main/java/io/agora/onetoone/signalClient/ISignalClient.kt) 协议，声网已经基于环信实现了一个自定义信令管理类 [CallEasemobSignalClient](app/src/main/io/agora/onetoone/signalClient/CallEasemobSignalClient.kt)，您可以参考该实现，重新实现基于其他平台的信令管理类
+  - 要实现一个自定义信令管理类，首先需要在对应管理类里实现 [ISignalClient](lib_callapi/src/main/java/io/agora/onetoone/signalClient/ISignalClient.kt) 协议，声网已经基于环信实现了一个自定义信令管理类 [CallEasemobSignalClient](app/src/main/java/io/agora/onetoone/signalClient/CallEasemobSignalClient.kt)，您可以参考该实现，重新实现基于其他平台的信令管理类
   - 该信令管理类需要维持信令的登录注销等，并且需要自行维护信令的异常处理，保证CallApi在调用时处于可用状态
   - 通过如下方式使用自定义信令管理类，例如使用Demo里实现的CallEasemobSignalClient
     ```kotlin
