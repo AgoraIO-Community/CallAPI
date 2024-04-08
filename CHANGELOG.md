@@ -12,6 +12,10 @@
 - 优化事件上报
 - 优化 Demo 层的异常处理。
 
+## [1.1.2](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.2)
+- 升级 Rtm SDK 至 2.1.10
+- 修复收到 calling 时直接调用 accpet 方法建立通话导致的音频异常问题
+
 ## [1.1.1](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.1)
 
 - 新增 canJoinRTC 方法，用于外部控制加入 RTC 的时机。
