@@ -42,7 +42,7 @@ public let kCancelCallByInternal = "cancelCallByInternal"
 public let kCostTimeMap = "costTimeMap"    //呼叫时的耗时信息，会在connected时抛出分步耗时
 
 enum CallAction: UInt {
-    case call = 0
+    case videoCall = 0
     case cancelCall = 1
     case accept = 2
     case reject = 3
@@ -182,7 +182,7 @@ extension CallApiImpl {
                                  callType: CallType,
                                  fromRoomId: String,
                                  callExtension: [String: Any]) -> [String: Any] {
-        var message: [String: Any] = _messageDic(action: callType == .video ? .call : .audioCall)
+        var message: [String: Any] = _messageDic(action: callType == .video ? .videoCall : .audioCall)
         message[kRemoteUserId] = remoteUserId
         message[kFromRoomId] = fromRoomId
         var userExtension = (message[kFromUserExtension] as? [String: Any]) ?? [:]
@@ -760,7 +760,7 @@ extension CallApiImpl {
 extension CallApiImpl {
     private func _processRespEvent(reason: CallAction, message: [String: Any]) {
         switch reason {
-        case .call:
+        case .videoCall:
             _onCall(message: message, callType: .video)
         case .audioCall:
             _onCall(message: message, callType: .audio)
