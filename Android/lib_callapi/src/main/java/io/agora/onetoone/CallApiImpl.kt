@@ -28,8 +28,8 @@ enum class CallAction(val value: Int) {
     Reject(3),
     Hangup(4);
     companion object {
-        fun fromValue(value: Int): CallAction {
-            return CallAction.values().find { it.value == value } ?: Call
+        fun fromValue(value: Int): CallAction? {
+            return CallAction.values().find { it.value == value }
         }
     }
 }
@@ -124,6 +124,7 @@ class CallApiImpl constructor(
                     _updateAutoSubscribe(CallAutoSubscribeType.AudioVideo)
                 }
                 CallStateType.Connected -> {
+                    _updateAutoSubscribe(CallAutoSubscribeType.AudioVideo)
                     tempRemoteCanvasView.alpha = 1f
                     connectInfo.scheduledTimer(null)
                 }
@@ -905,7 +906,7 @@ class CallApiImpl constructor(
 
     private fun _onHangup(message: Map<String, Any>) {
         if (!_isCallingUser(message)) return
-        
+
         _updateAndNotifyState(CallStateType.Prepared, CallStateReason.RemoteHangup, eventInfo = message)
         _notifyEvent(CallEvent.RemoteHangup)
     }
@@ -1173,7 +1174,9 @@ class CallApiImpl constructor(
         //TODO: compatible other message version
         if (kCurrentMessageVersion != messageVersion)  { return }
         callPrint("on event message: $message")
-        _processRespEvent(CallAction.fromValue(messageAction), messageDic)
+        CallAction.fromValue(messageAction)?.let {
+            _processRespEvent(CallAction.fromValue(messageAction), messageDic)
+        }
     }
 
     override fun debugInfo(message: String, logLevel: Int) {
