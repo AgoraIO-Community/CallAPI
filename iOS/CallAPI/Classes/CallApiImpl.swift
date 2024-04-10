@@ -720,6 +720,7 @@ extension CallApiImpl {
             return
         }
         cleanCanvas()
+        _updateRole(role: .audience)
         config?.rtcEngine.stopPreview()
         let ret = config?.rtcEngine.leaveChannelEx(rtcConnection)
         callPrint("leave RTC channel[\(ret ?? -1)]")
