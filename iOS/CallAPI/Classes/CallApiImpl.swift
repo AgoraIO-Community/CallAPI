@@ -10,7 +10,7 @@ import AgoraRtcKit
 import AgoraRtmKit
 
 
-let kReportCategory = "2_iOS_1.0.0"
+let kReportCategory = "2_iOS_1.1.3"
 
 private let kCurrentMessageVersion = "1.0"
 private let kMessageAction = "message_action"
