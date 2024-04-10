@@ -86,7 +86,7 @@ public class CallApiImpl: NSObject {
     /// 是否加入频道
     var isChannelJoined: Bool = false
     
-    private let tempRemoteCanvasView: UIView = UIView()
+    private var tempRemoteCanvasView: UIView = UIView()
     
     /// 当前状态
     private var state: CallStateType = .idle {
@@ -447,7 +447,6 @@ extension CallApiImpl {
         case.failed, .idle:
             break
         }
-        connectInfo.clean()
         
         let tag = UUID().uuidString
         callPrint("prepareForCall[\(tag)]")
@@ -469,6 +468,7 @@ extension CallApiImpl {
         } else {
             _leaveRTC()
         }
+        connectInfo.clean()
         
         //login rtm if need
         if enableLoginRtm {
@@ -501,7 +501,7 @@ extension CallApiImpl {
     }
     
     //设置远端画面
-    private func _setupRemoteVideo(uid: UInt, canvasView: UIView) {
+    private func _setupRemoteVideo(uid: UInt) {
         guard let connection = rtcConnection, let engine = config?.rtcEngine else {
             callWarningPrint("_setupRemoteVideo fail: connection or engine is empty")
             return
@@ -509,10 +509,25 @@ extension CallApiImpl {
         
         let videoCanvas = AgoraRtcVideoCanvas()
         videoCanvas.uid = uid
-        videoCanvas.view = canvasView
+        videoCanvas.view = tempRemoteCanvasView
         videoCanvas.renderMode = .hidden
         let ret = engine.setupRemoteVideoEx(videoCanvas, connection: connection)
         callPrint("_setupRemoteVideo ret = \(ret) channelId: \(connection.channelId) uid: \(uid)")
+    }
+    
+    private func _removeRemoteVideo(uid: UInt) {
+        guard let connection = rtcConnection, let engine = config?.rtcEngine else {
+            callWarningPrint("_removeRemoteVideo fail: connection or engine is empty")
+            return
+        }
+        
+        let videoCanvas = AgoraRtcVideoCanvas()
+        videoCanvas.uid = uid
+        videoCanvas.view = nil
+        let ret = engine.setupRemoteVideoEx(videoCanvas, connection: connection)
+        callPrint("_removeRemoteVideo ret = \(ret) channelId: \(connection.channelId) uid: \(uid)")
+        tempRemoteCanvasView.removeFromSuperview()
+        tempRemoteCanvasView = UIView()
     }
     
     //设置本地画面
@@ -572,24 +587,6 @@ extension CallApiImpl {
         default:
             return true
         }
-    }
-    
-    /// 是否可以继续呼叫
-    /// - Parameter callerUserId: <#callerUserId description#>
-    /// - Returns: <#description#>
-    private func _isCallActive(callerUserId: UInt) -> Bool {
-        switch state {
-        case .prepared:
-            return true
-        case .idle, .failed:
-            return false
-        case .calling, .connecting, .connected:
-            if connectInfo.callingUserId ?? 0 == callerUserId {
-                return true
-            }
-        }
-        
-        return false
     }
     
     private func _isCallingUser(message: [String: Any]) -> Bool {
@@ -722,7 +719,7 @@ extension CallApiImpl {
             callWarningPrint("leave RTC channel failed, not joined the channel")
             return
         }
-        _removeLocalVideo()
+        cleanCanvas()
         config?.rtcEngine.stopPreview()
         let ret = config?.rtcEngine.leaveChannelEx(rtcConnection)
         callPrint("leave RTC channel[\(ret ?? -1)]")
@@ -733,10 +730,19 @@ extension CallApiImpl {
     private func setupCanvas() {
         _setupLocalVideo()
         guard let callingUserId = connectInfo.callingUserId else {
-            callWarningPrint("join rtc fail: callingUserId == nil")
+            callWarningPrint("setupCanvas fail: callingUserId == nil")
             return
         }
-        _setupRemoteVideo(uid: callingUserId, canvasView: tempRemoteCanvasView)
+        _setupRemoteVideo(uid: callingUserId)
+    }
+    
+    private func cleanCanvas() {
+        _removeLocalVideo()
+        guard let callingUserId = connectInfo.callingUserId else {
+            callWarningPrint("cleanCanvas fail: callingUserId == nil")
+            return
+        }
+        _removeRemoteVideo(uid: callingUserId)
     }
     
     /// 发送report message
@@ -1226,7 +1232,7 @@ extension CallApiImpl: AgoraRtcEngineDelegate {
     }
     
     public func rtcEngine(_ engine: AgoraRtcEngineKit, didOfflineOfUid uid: UInt, reason: AgoraUserOfflineReason) {
-        callPrint("didOfflineOfUid: \(uid)")
+        callPrint("didOfflineOfUid: \(uid) reason: \(reason.rawValue)")
         guard connectInfo.callingUserId == uid else { return }
         _notifyEvent(event: .remoteLeave, reasonCode: "\(reason.rawValue)")
     }
