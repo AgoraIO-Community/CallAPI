@@ -612,7 +612,7 @@ extension CallApiImpl {
         }
         //没有加入频道又是观众的情况下，不需要update role，join默认就是观众和不推流
         if isChannelJoinedOrJoining == true || role == .broadcaster {
-            _updateRole(role: role)
+            _updateClientRoleAndToggleLocalMedia(role: role)
         }
         _updateAutoSubscribe(type: subscribeType)
     }
@@ -667,11 +667,11 @@ extension CallApiImpl {
         }
     }
     
-    /// 切换主播和观众角色
+    /// 切换主播和观众角色，并根据角色开启/关闭本地音视频采集
     /// - Parameter role: <#role description#>
-    private func _updateRole(role: AgoraClientRole) {
+    private func _updateClientRoleAndToggleLocalMedia(role: AgoraClientRole) {
         guard let config = self.config, let connection = rtcConnection else { return }
-        callPrint("_updateRole: \(role.rawValue)")
+        callPrint("_updateClientRoleAndToggleLocalMedia: \(role.rawValue)")
         
         //需要先开启音视频，使用enableLocalAudio而不是enableAudio，否则会导致外部mute的频道变成unmute
         if role == .broadcaster {
@@ -720,7 +720,7 @@ extension CallApiImpl {
             return
         }
         cleanCanvas()
-        _updateRole(role: .audience)
+        _updateClientRoleAndToggleLocalMedia(role: .audience)
         config?.rtcEngine.stopPreview()
         let ret = config?.rtcEngine.leaveChannelEx(rtcConnection)
         callPrint("leave RTC channel[\(ret ?? -1)]")
