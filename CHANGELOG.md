@@ -5,6 +5,7 @@
 - 升级 Rtm SDK 至 2.1.10。
 - 修复收到 calling 时直接调用 accpet 方法建立通话导致的音频异常问题。
 - 优化画布清理逻辑。
+- 通话结束时关闭本地音视频采集
   
 ## [1.1.2](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.2)
 
