@@ -42,11 +42,11 @@ enum class CalleeJoinRTCTiming(val value: Int) {
 }
 
 class CallApiImpl constructor(
-    context: Context
+    val context: Context
 ): ICallApi, RtmEventListener, CallMessageListener, IRtcEngineEventHandler() {
 
     companion object {
-        const val kReportCategory = "2_Android_1.0.0"
+        const val kReportCategory = "2_Android_1.1.3"
         const val kPublisher = "publisher"
         const val kCostTimeMap = "costTimeMap"    //呼叫时的耗时信息，会在connected时抛出分步耗时
         const val kRemoteUserId = "remoteUserId"
@@ -437,6 +437,8 @@ class CallApiImpl constructor(
         } else {
             _leaveRTC()
         }
+        connectInfo.clean()
+
         //login rtm if need
         if (enableLoginRtm) {
             isPreparing = true
@@ -502,18 +504,33 @@ class CallApiImpl constructor(
         _updateAndNotifyState(CallStateType.Idle)
         _notifyEvent(CallEvent.Deinitialize)
     }
-    private fun _setupRemoteVideo(uid: Int, view: TextureView) {
+
+    //设置远端画面
+    private fun _setupRemoteVideo(uid: Int) {
         val engine = config?.rtcEngine ?: return
         val connection = rtcConnection ?: run {
             callWarningPrint("_setupRemoteVideo fail: connection or engine is empty")
             return
         }
-        val videoCanvas = VideoCanvas(view)
+        val videoCanvas = VideoCanvas(tempRemoteCanvasView)
         videoCanvas.uid = uid
         videoCanvas.renderMode = VideoCanvas.RENDER_MODE_HIDDEN
         videoCanvas.mirrorMode = Constants.VIDEO_MIRROR_MODE_AUTO
         val ret = engine.setupRemoteVideoEx(videoCanvas, connection)
         callPrint("_setupRemoteVideo ret: $ret, channelId: ${connection.channelId}, uid: $uid")
+    }
+
+    private fun _removeRemoteVideo(uid: Int) {
+        val engine = config?.rtcEngine ?: return
+        val connection = rtcConnection ?: run {
+            callWarningPrint("_setupRemoteVideo fail: connection or engine is empty")
+            return
+        }
+        val videoCanvas = VideoCanvas(null)
+        videoCanvas.uid = uid
+        val ret = engine.setupRemoteVideoEx(videoCanvas, connection)
+        callPrint("_setupRemoteVideo ret: $ret, channelId: ${connection.channelId}, uid: $uid")
+        tempRemoteCanvasView = TextureView(context)
     }
 
     private fun _setupLocalVideo() {
@@ -565,22 +582,6 @@ class CallApiImpl constructor(
             CallStateType.Idle, CallStateType.Failed -> false
             else -> true
         }
-    }
-
-    /// 是否可以继续呼叫
-    /// - Parameter callerUserId: <#callerUserId description#>
-    /// - Returns: <#description#>
-    private fun _isCallActive(callerUserId: Int): Boolean {
-        when (state) {
-            CallStateType.Prepared -> return true
-            CallStateType.Idle, CallStateType.Failed -> return false
-            CallStateType.Calling, CallStateType.Connecting, CallStateType.Connected -> {
-                if ((connectInfo.callingUserId ?: 0) == callerUserId) {
-                    return true
-                }
-            }
-        }
-        return false
     }
 
     private fun _isCallingUser(message: Map<String, Any>) : Boolean {
@@ -701,7 +702,8 @@ class CallApiImpl constructor(
             callWarningPrint("leave RTC channel failed, not joined the channel")
             return
         }
-        _removeLocalVideo()
+        cleanCanvas()
+        _updateRole(Constants.CLIENT_ROLE_AUDIENCE)
         config?.rtcEngine?.stopPreview()
         val ret = config?.rtcEngine?.leaveChannelEx(connection)
         callPrint("leave RTC channel[${ret ?: -1}]")
@@ -711,10 +713,19 @@ class CallApiImpl constructor(
     private fun setupCanvas() {
         _setupLocalVideo()
         val callingUserId = connectInfo.callingUserId ?: run {
-            callWarningPrint("join rtc fail: callingUserId == nil")
+            callWarningPrint("setupCanvas fail: callingUserId == null")
             return
         }
-        _setupRemoteVideo(callingUserId, tempRemoteCanvasView)
+        _setupRemoteVideo(callingUserId)
+    }
+
+    private fun cleanCanvas() {
+        _removeLocalVideo()
+        val callingUserId = connectInfo.callingUserId ?: run {
+            callWarningPrint("cleanCanvas fail: callingUserId == null")
+            return
+        }
+        _removeRemoteVideo(callingUserId)
     }
 
     private fun _flushReport() {
