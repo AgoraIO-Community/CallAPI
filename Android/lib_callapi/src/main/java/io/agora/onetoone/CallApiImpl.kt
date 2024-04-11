@@ -604,7 +604,7 @@ class CallApiImpl constructor(
         }
         //没有加入频道又是观众的情况下，不需要update role，join默认就是观众和不推流
         if (isChannelJoinedOrJoining || role == Constants.CLIENT_ROLE_BROADCASTER) {
-            _updateRole(role)
+            _updateClientRoleAndToggleLocalMedia(role)
         }
         _updateAutoSubscribe(subscribeType)
     }
@@ -648,13 +648,13 @@ class CallApiImpl constructor(
         }
     }
 
-    /// 切换主播和观众角色
+    /// 切换主播和观众角色, 并根据角色开启/关闭本地音视频采集
     /// - Parameter role: <#role description#>
-    private fun _updateRole(role: Int) {
+    private fun _updateClientRoleAndToggleLocalMedia(role: Int) {
         val config = config
         val connection = rtcConnection
         if (config == null || connection == null) { return}
-        callPrint("_updateRole: $role")
+        callPrint("_updateClientRoleAndToggleLocalMedia: $role")
 
         //需要先开启音视频，使用enableLocalAudio而不是enableAudio，否则会导致外部mute的频道变成unmute
         if (role == Constants.CLIENT_ROLE_BROADCASTER) {
@@ -703,7 +703,7 @@ class CallApiImpl constructor(
             return
         }
         cleanCanvas()
-        _updateRole(Constants.CLIENT_ROLE_AUDIENCE)
+        _updateClientRoleAndToggleLocalMedia(Constants.CLIENT_ROLE_AUDIENCE)
         config?.rtcEngine?.stopPreview()
         val ret = config?.rtcEngine?.leaveChannelEx(connection)
         callPrint("leave RTC channel[${ret ?: -1}]")
