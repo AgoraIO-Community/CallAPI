@@ -341,7 +341,7 @@ extension CallApiImpl {
         let ext: [String: Any] = ["state": state.rawValue,
                                   "stateReason": stateReason.rawValue,
                                   "eventReason": eventReason,
-                                  "eventInfo": eventInfo,
+//                                  "eventInfo": eventInfo,
                                   "userId": config?.userId ?? "",
                                   "callId": connectInfo.callId]
         _reportCustomEvent(event: CallCustomEvent.stateChange, ext: ext)
@@ -353,7 +353,6 @@ extension CallApiImpl {
                                        eventReason: eventReason,
                                        eventInfo: eventInfo)
         }
-        
     }
     
     private func _notifySendMessageErrorEvent(error: NSError, reason: String?) {
@@ -392,10 +391,10 @@ extension CallApiImpl {
                                       "userId": config.userId,
                                       "state": state.rawValue,
                                       "callId": connectInfo.callId]
-            if let reasonCode = reasonCode {
+            if let reasonCode = reasonCode, !reasonCode.isEmpty {
                 ext["reasonCode"] = reasonCode
             }
-            if let reasonString = reasonString {
+            if let reasonString = reasonString, !reasonString.isEmpty {
                 ext["reasonString"] = reasonString
             }
             _reportCustomEvent(event: CallCustomEvent.eventChange, ext: ext)
@@ -416,7 +415,11 @@ extension CallApiImpl {
             _reportCostEvent(type: .localUserJoinChannel)
         case .captureFirstLocalVideoFrame:
             _reportCostEvent(type: .localFirstFrameDidCapture)
-        case .publishFirstLocalAudioFrame, .publishFirstLocalVideoFrame:
+        case .publishFirstLocalAudioFrame:
+            if connectInfo.callType == .audio {
+                _reportCostEvent(type: .localFirstFrameDidPublish)
+            }
+        case .publishFirstLocalVideoFrame:
             _reportCostEvent(type: .localFirstFrameDidPublish)
         case .remoteAccepted:
             _reportCostEvent(type: .acceptCall)
@@ -1094,7 +1097,6 @@ extension CallApiImpl: CallApiProtocol {
             completion?(NSError(domain: errReason, code: -1))
             return
         }
-        
         //查询是否是calling状态，如果是prapared，表示可能被主叫取消了
         guard state == .calling else {
             let errReason = "accept fail! current state[\(state.rawValue)] is not calling"

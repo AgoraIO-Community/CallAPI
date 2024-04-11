@@ -53,6 +53,8 @@ public class APIReporter: NSObject {
     }
     
     public func reportFuncEvent(name: String, value: [String: Any], ext: [String: Any]) {
+        let content = "[APIReporter]reportFuncEvent: \(name) value: \(value) ext: \(ext)"
+        debugApiPrint(content)
         let eventMap: [String: Any] = [ApiEventKey.type: APIEventType.api.rawValue, ApiEventKey.desc: name]
         let labelMap: [String: Any] = [ApiEventKey.apiValue: value, ApiEventKey.ts: getCurrentTs(), ApiEventKey.ext: ext]
         let event = convertToJSONString(eventMap) ?? ""
@@ -83,6 +85,8 @@ public class APIReporter: NSObject {
     }
     
     public func reportCustomEvent(name: String, ext: [String: Any]) {
+        let content = "[APIReporter]reportCustomEvent: \(name) ext: \(ext)"
+        debugApiPrint(content)
         let eventMap: [String: Any] = [ApiEventKey.type: APIEventType.custom.rawValue, ApiEventKey.desc: name]
         let labelMap: [String: Any] = [ApiEventKey.ts: getCurrentTs(), ApiEventKey.ext: ext]
         let event = convertToJSONString(eventMap) ?? ""
