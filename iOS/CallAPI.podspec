@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'CallAPI'
-  s.version          = '1.1.1'
+  s.version          = '1.1.3'
   s.summary          = 'A short description of CallAPI.'
 
 # This description is used to generate tags and improve search results.
@@ -43,5 +43,5 @@ TODO: Add long description of the pod here.
 
   # s.public_header_files = 'Pod/Classes/**/*.h'
   s.dependency 'AgoraRtcEngine_Special_iOS', '4.1.1.17'
-  s.dependency 'AgoraRtm_iOS', '2.1.8'
+  s.dependency 'AgoraRtm_iOS', '2.1.10'
 end

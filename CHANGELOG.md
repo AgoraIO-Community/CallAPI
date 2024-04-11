@@ -1,4 +1,19 @@
 
+
+## [1.1.3](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.3)
+
+- 升级 Rtm SDK 至 2.1.10。
+- 修复收到 calling 时直接调用 accpet 方法建立通话导致的音频异常问题。
+- 优化画布清理逻辑。
+- 通话结束时关闭本地音视频采集
+  
+## [1.1.2](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.2)
+
+- 优化美颜接入后镜像问题。
+- 关闭采集逻辑优化。
+- 呼叫取消返回原因。
+- 支持外部本地采集画面展示与CallApi内部展示共存。
+
 ## [1.1.1](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.1)
 
 - 新增 canJoinRTC 方法，用于外部控制加入 RTC 的时机。
