@@ -530,6 +530,8 @@ class CallApiImpl constructor(
         videoCanvas.uid = uid
         val ret = engine.setupRemoteVideoEx(videoCanvas, connection)
         callPrint("_setupRemoteVideo ret: $ret, channelId: ${connection.channelId}, uid: $uid")
+
+        (tempRemoteCanvasView.parent as? ViewGroup)?.removeView(tempRemoteCanvasView)
         tempRemoteCanvasView = TextureView(context)
     }
 
