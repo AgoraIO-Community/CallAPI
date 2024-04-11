@@ -43,7 +43,7 @@ enum class CalleeJoinRTCTiming(val value: Int) {
 }
 
 class CallApiImpl constructor(
-    context: Context
+    val context: Context
 ): ICallApi, ISignalClientListener, IRtcEngineEventHandler() {
 
     companion object {
@@ -1188,7 +1188,7 @@ class CallApiImpl constructor(
         if (kCurrentMessageVersion != messageVersion)  { return }
         callPrint("on event message: $message")
         CallAction.fromValue(messageAction)?.let {
-            _processRespEvent(CallAction.fromValue(messageAction), messageDic)
+            _processRespEvent(it, messageDic)
         }
     }
 
