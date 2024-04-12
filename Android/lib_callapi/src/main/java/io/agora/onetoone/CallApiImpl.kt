@@ -533,6 +533,19 @@ class CallApiImpl constructor(
 
         (tempRemoteCanvasView.parent as? ViewGroup)?.removeView(tempRemoteCanvasView)
         tempRemoteCanvasView = TextureView(context)
+
+        // 添加远端渲染视图
+        prepareConfig?.remoteView?.let { remoteView ->
+            if (remoteView.indexOfChild(tempRemoteCanvasView) == -1) {
+                tempRemoteCanvasView.layoutParams = FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+                remoteView.addView(tempRemoteCanvasView)
+            } else {
+                callWarningPrint("remote view not found in connected state!")
+            }
+        }
     }
 
     private fun _setupLocalVideo() {
