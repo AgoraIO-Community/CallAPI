@@ -29,8 +29,8 @@ enum class CallAction(val value: Int) {
     Hangup(4),
     AudioCall(10);
     companion object {
-        fun fromValue(value: Int): CallAction {
-            return CallAction.values().find { it.value == value } ?: Call
+        fun fromValue(value: Int): CallAction? {
+            return CallAction.values().find { it.value == value }
         }
     }
 }
@@ -44,7 +44,7 @@ enum class CalleeJoinRTCTiming(val value: Int) {
 }
 
 class CallApiImpl constructor(
-    context: Context
+    val context: Context
 ): ICallApi, ISignalClientListener, IRtcEngineEventHandler() {
 
     companion object {
@@ -419,13 +419,14 @@ class CallApiImpl constructor(
             CallStateType.Failed, CallStateType.Idle -> {
             }
         }
-        connectInfo.clean()
 
         val tag = UUID.randomUUID().toString()
         callPrint("prepareForCall[$tag]")
         this.prepareConfig = prepareConfig.cloneConfig()
 
         _leaveRTC()
+        connectInfo.clean()
+        
         completion?.invoke(null)
 
         // 和iOS不同，Android先将渲染视图TextureView添加进传进来的容器
@@ -474,19 +475,37 @@ class CallApiImpl constructor(
         _updateAndNotifyState(CallStateType.Idle)
         _notifyEvent(CallEvent.Deinitialize)
     }
-    private fun _setupRemoteVideo(uid: Int, view: TextureView) {
+    
+    //设置远端画面
+    private fun _setupRemoteVideo(uid: Int) {
         if (connectInfo.callType == CallType.Audio) return
+
         val engine = config?.rtcEngine ?: return
         val connection = rtcConnection ?: run {
             callWarningPrint("_setupRemoteVideo fail: connection or engine is empty")
             return
         }
-        val videoCanvas = VideoCanvas(view)
+        val videoCanvas = VideoCanvas(tempRemoteCanvasView)
         videoCanvas.uid = uid
         videoCanvas.renderMode = VideoCanvas.RENDER_MODE_HIDDEN
         videoCanvas.mirrorMode = Constants.VIDEO_MIRROR_MODE_AUTO
         val ret = engine.setupRemoteVideoEx(videoCanvas, connection)
         callPrint("_setupRemoteVideo ret: $ret, channelId: ${connection.channelId}, uid: $uid")
+    }
+
+    private fun _removeRemoteVideo(uid: Int) {
+        val engine = config?.rtcEngine ?: return
+        val connection = rtcConnection ?: run {
+            callWarningPrint("_setupRemoteVideo fail: connection or engine is empty")
+            return
+        }
+        val videoCanvas = VideoCanvas(null)
+        videoCanvas.uid = uid
+        val ret = engine.setupRemoteVideoEx(videoCanvas, connection)
+        callPrint("_setupRemoteVideo ret: $ret, channelId: ${connection.channelId}, uid: $uid")
+
+        (tempRemoteCanvasView.parent as? ViewGroup)?.removeView(tempRemoteCanvasView)
+        tempRemoteCanvasView = TextureView(context)
     }
 
     private fun _setupLocalVideo() {
@@ -541,22 +560,6 @@ class CallApiImpl constructor(
         }
     }
 
-    /// 是否可以继续呼叫
-    /// - Parameter callerUserId: <#callerUserId description#>
-    /// - Returns: <#description#>
-    private fun _isCallActive(callerUserId: Int): Boolean {
-        when (state) {
-            CallStateType.Prepared -> return true
-            CallStateType.Idle, CallStateType.Failed -> return false
-            CallStateType.Calling, CallStateType.Connecting, CallStateType.Connected -> {
-                if ((connectInfo.callingUserId ?: 0) == callerUserId) {
-                    return true
-                }
-            }
-        }
-        return false
-    }
-
     private fun _isCallingUser(message: Map<String, Any>) : Boolean {
         val fromUserId = message[kFromUserId] as? Int ?: return false
         if (connectInfo.callingUserId != fromUserId) return false
@@ -575,7 +578,6 @@ class CallApiImpl constructor(
                 completion.invoke(error)
             }
         }
-
         val publishVideo = connectInfo.callType != CallType.Audio
         val subscribeVideo = connectInfo.callType != CallType.Audio
 
@@ -679,7 +681,8 @@ class CallApiImpl constructor(
             //callWarningPrint("leave RTC channel failed, not joined the channel")
             return
         }
-        _removeLocalVideo()
+        cleanCanvas()
+        _updatePublishStatus(audioStatus = false, videoStatus = false)
         config?.rtcEngine?.stopPreview()
         val ret = config?.rtcEngine?.leaveChannelEx(connection)
         callPrint("leave RTC channel[${ret ?: -1}]")
@@ -689,10 +692,19 @@ class CallApiImpl constructor(
     private fun setupCanvas() {
         _setupLocalVideo()
         val callingUserId = connectInfo.callingUserId ?: run {
-            callWarningPrint("join rtc fail: callingUserId == nil")
+            callWarningPrint("setupCanvas fail: callingUserId == null")
             return
         }
-        _setupRemoteVideo(callingUserId, tempRemoteCanvasView)
+        _setupRemoteVideo(callingUserId)
+    }
+
+    private fun cleanCanvas() {
+        _removeLocalVideo()
+        val callingUserId = connectInfo.callingUserId ?: run {
+            callWarningPrint("cleanCanvas fail: callingUserId == null")
+            return
+        }
+        _removeRemoteVideo(callingUserId)
     }
 
     private fun _flushReport() {
@@ -943,7 +955,7 @@ class CallApiImpl constructor(
 
     private fun _onHangup(message: Map<String, Any>) {
         if (!_isCallingUser(message)) return
-        
+
         _updateAndNotifyState(CallStateType.Prepared, CallStateReason.RemoteHangup, eventInfo = message)
         _notifyEvent(CallEvent.RemoteHangup)
     }
@@ -1208,7 +1220,9 @@ class CallApiImpl constructor(
         //TODO: compatible other message version
         if (kCurrentMessageVersion != messageVersion)  { return }
         callPrint("on event message: $message")
-        _processRespEvent(CallAction.fromValue(messageAction), messageDic)
+        CallAction.fromValue(messageAction)?.let {
+            _processRespEvent(it, messageDic)
+        }
     }
 
     override fun debugInfo(message: String, logLevel: Int) {

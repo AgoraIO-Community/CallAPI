@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'CallAPI'
-  s.version          = '1.1.1'
+  s.version          = '2.0.0'
   s.summary          = 'A short description of CallAPI.'
 
 # This description is used to generate tags and improve search results.

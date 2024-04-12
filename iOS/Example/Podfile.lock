@@ -1,10 +1,10 @@
 PODS:
   - AgoraRtcEngine_Special_iOS (4.1.1.26)
   - AgoraRtm_iOS (2.1.10)
-  - CallAPI (1.1.1):
+  - CallAPI (2.0.0):
     - AgoraRtcEngine_Special_iOS (= 4.1.1.26)
-    - CallAPI/All (= 1.1.1)
-  - CallAPI/All (1.1.1):
+    - CallAPI/All (= 2.0.0)
+  - CallAPI/All (2.0.0):
     - AgoraRtcEngine_Special_iOS (= 4.1.1.26)
     - AgoraRtm_iOS (= 2.1.10)
   - HyphenateChat (4.5.0)
@@ -36,7 +36,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   AgoraRtcEngine_Special_iOS: 62ac62b0caddac27ab3c2e26ed7a2e5d9c7739a5
   AgoraRtm_iOS: b53a57502a35349aceea890df4416b483ea4153c
-  CallAPI: 2339dbe12ffacaa65d0a73bb512cf029da94efe5
+  CallAPI: d79578dfa240ebda3ffc14b4c5a2c0ab33041c9c
   HyphenateChat: bf4cfa65a83ffa210803fdc91263b4891fb510ee
   SVProgressHUD: 4837c74bdfe2e51e8821c397825996a8d7de6e22
   YYCategories: 6bcd4314c6661a561410dce4a793379ebd306abd
