@@ -488,7 +488,6 @@ extension CallApiImpl {
     private func _setupRemoteVideo(uid: UInt) {
         if connectInfo.callType == .audio { return }
         
-
         guard let connection = rtcConnection, let engine = config?.rtcEngine else {
             callWarningPrint("_setupRemoteVideo fail: connection or engine is empty")
             return
@@ -1279,7 +1278,13 @@ extension CallApiImpl {
         for element in delegates.allObjects {
             element.callDebugInfo?(message: "\(timeString) \(message)", logLevel: logLevel)
         }
-        reporter?.writeLog(content: "[CallApi]\(message)", level: .info)
+        var level: AgoraLogLevel = .info
+        if logLevel == .error {
+            level = .error
+        } else if logLevel == .warning {
+            level = .warn
+        }
+        reporter?.writeLog(content: "[CallApi]\(message)", level: level)
     }
     
     func callWarningPrint(_ message: String) {
