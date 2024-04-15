@@ -111,7 +111,7 @@ public class APIReporter: NSObject {
         let content = "[APIReporter]reportCostEvent: \(name) cost: \(cost) ms"
         debugApiPrint(content)
         writeLog(content: content, level: .info)
-        let eventMap: [String: Any] = [ApiEventKey.type: APIEventType.api.rawValue, ApiEventKey.desc: name]
+        let eventMap: [String: Any] = [ApiEventKey.type: APIEventType.cost.rawValue, ApiEventKey.desc: name]
         let labelMap: [String: Any] = [ApiEventKey.ts: ts, ApiEventKey.ext: [:]]
         let event = convertToJSONString(eventMap) ?? ""
         let label = convertToJSONString(labelMap) ?? ""
