@@ -1006,16 +1006,16 @@ extension CallApiImpl: CallApiProtocol {
         _reportMethod(event: "\(#function)")
         switch state {
         case .calling:
-            cancelCall {[weak self] err in
-                self?._deinitialize()
+            cancelCall { err in
                 completion()
             }
+            _deinitialize()
         case .connecting, .connected:
             let callingUserId = connectInfo.callingUserId ?? 0
-            _hangup(remoteUserId: callingUserId) {[weak self] err in
-                self?._deinitialize()
+            _hangup(remoteUserId: callingUserId) { err in
                 completion()
             }
+            _deinitialize()
         default:
             self._deinitialize()
             completion()
@@ -1289,6 +1289,10 @@ extension CallApiImpl {
     
     func callWarningPrint(_ message: String) {
         callPrint(message, .warning)
+    }
+    
+    func callErrorPrint(_ message: String) {
+        callPrint(message, .error)
     }
 
     func callProfilePrint(_ message: String) {
