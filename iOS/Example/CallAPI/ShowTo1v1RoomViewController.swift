@@ -356,6 +356,12 @@ extension ShowTo1v1RoomViewController {
         self.api.prepareForCall(prepareConfig: prepareConfig) { err in
             completion?(err == nil)
         }
+        
+        let cameraConfig = AgoraCameraCapturerConfiguration()
+        cameraConfig.cameraDirection = .front
+        cameraConfig.dimensions = videoEncoderConfig!.dimensions
+        cameraConfig.frameRate = Int32(videoEncoderConfig!.frameRate.rawValue)
+        rtcEngine.setCameraCapturerConfiguration(cameraConfig)
     }
     
     @objc func closeAction() {
@@ -534,12 +540,6 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
             
             //setup configuration after join channel
             rtcEngine.setVideoEncoderConfiguration(videoEncoderConfig!)
-
-            let cameraConfig = AgoraCameraCapturerConfiguration()
-            cameraConfig.cameraDirection = .front
-            cameraConfig.dimensions = videoEncoderConfig!.dimensions
-            cameraConfig.frameRate = Int32(videoEncoderConfig!.frameRate.rawValue)
-            rtcEngine.setCameraCapturerConfiguration(cameraConfig)
         case .prepared:
             AUIAlertManager.hiddenView()
             switch stateReason {

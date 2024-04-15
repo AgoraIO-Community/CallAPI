@@ -279,6 +279,14 @@ extension Pure1v1RoomViewController {
         api.prepareForCall(prepareConfig: prepareConfig) { err in
             completion(err == nil)
         }
+        
+        if let videoEncoderConfig = videoEncoderConfig {
+            let cameraConfig = AgoraCameraCapturerConfiguration()
+            cameraConfig.cameraDirection = .front
+            cameraConfig.dimensions = videoEncoderConfig.dimensions
+            cameraConfig.frameRate = Int32(videoEncoderConfig.frameRate.rawValue)
+            rtcEngine.setCameraCapturerConfiguration(cameraConfig)
+        }
     }
     
     @objc func closeAction() {
@@ -485,11 +493,6 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
             //setup configuration after join channel ex
             if let videoEncoderConfig = videoEncoderConfig {
                 rtcEngine.setVideoEncoderConfiguration(videoEncoderConfig)
-                let cameraConfig = AgoraCameraCapturerConfiguration()
-                cameraConfig.cameraDirection = .front
-                cameraConfig.dimensions = videoEncoderConfig.dimensions
-                cameraConfig.frameRate = Int32(videoEncoderConfig.frameRate.rawValue)
-                rtcEngine.setCameraCapturerConfiguration(cameraConfig)
             }
         case .prepared:
             switch stateReason {
