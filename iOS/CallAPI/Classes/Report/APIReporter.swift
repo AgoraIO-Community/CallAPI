@@ -28,13 +28,13 @@ struct APICostEvent {
 }
 
 let formatter = DateFormatter()
-#if DEBUG
 func debugApiPrint(_ message: String) {
+#if DEBUG
     formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
     let timeString = formatter.string(from: Date())
     print("\(timeString) \(message)")
-}
 #endif
+}
 
 @objcMembers
 public class APIReporter: NSObject {
