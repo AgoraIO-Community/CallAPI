@@ -8,7 +8,7 @@
 import Foundation
 import AgoraRtcKit
 
-let kReportCategory = "2_iOS_2.1.0"
+let kApiVersion = "2.1.0"
 
 let kMessageId: String = "messageId"     //发送的消息id
 
@@ -995,11 +995,7 @@ extension CallApiImpl: CallApiProtocol {
         
         //API 开启音视频首帧加速渲染
         if let rtcEngine = config.rtcEngine {
-            //日志上报优化
-//            rtcEngine.setParameters("{\"rtc.qos_for_test_purpose\": true}")
-//            rtcEngine.setParameters("{\"rtc.direct_send_custom_event\": true}")
-//            rtcEngine.setParameters("{\"rtc.log_external_input\": true}")
-            reporter = APIReporter(category: kReportCategory, engine: rtcEngine)
+            reporter = APIReporter(type: .call, version: kApiVersion, engine: rtcEngine)
             optimize1v1Video(engine: rtcEngine)
         }
     }

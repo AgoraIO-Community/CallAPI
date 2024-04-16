@@ -7,6 +7,19 @@
 
 import AgoraRtcKit
 
+
+/// 场景化类型
+public enum APIType: Int {
+    case ktv = 1             //K歌
+    case call = 2            //呼叫
+    case beauty = 3          //美颜
+    case videoLoader = 4     //秒开/秒切
+    case pk = 5              //团战
+    case vitualSpace = 6     //
+    case screenSpace = 7     //屏幕共享
+    case audioScenario = 8   //音频scenario
+}
+
 enum APIEventType: Int {
     case api = 0       //api事件
     case cost          //耗时事件
@@ -44,8 +57,8 @@ public class APIReporter: NSObject {
     private var durationEventStartMap: [String: Int64] = [:]
     
     //MARK: public
-    public init(category: String, engine: AgoraRtcEngineKit) {
-        self.category = category
+    public init(type: APIType, version: String, engine: AgoraRtcEngineKit) {
+        self.category = "\(type.rawValue)_iOS_\(version)"
         self.engine = engine
         super.init()
         
