@@ -70,18 +70,18 @@ public class APIReporter: NSObject {
         durationEventStartMap[name] = getCurrentTs()
     }
     
-    public func endDurationEvent(name: String) {
+    public func endDurationEvent(name: String, ext: [String: Any]) {
         guard let beginTs = durationEventStartMap[name] else {return}
         durationEventStartMap.removeValue(forKey: name)
         let ts = getCurrentTs()
         let cost = Int(ts - beginTs)
         
-        reportCostEvent(ts: ts, name: name, cost: cost)
+        reportCostEvent(ts: ts, name: name, cost: cost, ext: ext)
     }
     
-    public func reportCostEvent(name: String, cost: Int) {
+    public func reportCostEvent(name: String, cost: Int, ext: [String: Any]) {
         durationEventStartMap.removeValue(forKey: name)
-        reportCostEvent(ts: getCurrentTs(), name: name, cost: cost)
+        reportCostEvent(ts: getCurrentTs(), name: name, cost: cost, ext: ext)
     }
     
     public func reportCustomEvent(name: String, ext: [String: Any]) {
@@ -107,12 +107,12 @@ public class APIReporter: NSObject {
     }
     
     //MARK: private
-    private func reportCostEvent(ts: Int64, name: String, cost: Int) {
-        let content = "[APIReporter]reportCostEvent: \(name) cost: \(cost) ms"
+    private func reportCostEvent(ts: Int64, name: String, cost: Int, ext: [String: Any]) {
+        let content = "[APIReporter]reportCostEvent: \(name) cost: \(cost) ms ext: \(ext)"
         debugApiPrint(content)
         writeLog(content: content, level: .info)
         let eventMap: [String: Any] = [ApiEventKey.type: APIEventType.cost.rawValue, ApiEventKey.desc: name]
-        let labelMap: [String: Any] = [ApiEventKey.ts: ts, ApiEventKey.ext: [:]]
+        let labelMap: [String: Any] = [ApiEventKey.ts: ts, ApiEventKey.ext: ext]
         let event = convertToJSONString(eventMap) ?? ""
         let label = convertToJSONString(labelMap) ?? ""
         engine.sendCustomReportMessage(messsageId,

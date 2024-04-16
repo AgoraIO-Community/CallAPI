@@ -124,8 +124,9 @@ public class CallApiImpl: NSObject {
                 } else {
                     callWarningPrint("remote view not found in connected state!")
                 }
-                reporter?.endDurationEvent(name: APICostEvent.firstFramePerceived)
-                reporter?.endDurationEvent(name: APICostEvent.firstFrameActual)
+                let ext: [String: Any] = ["channelName": connectInfo.callingRoomId ?? ""]
+                reporter?.endDurationEvent(name: APICostEvent.firstFramePerceived, ext: ext)
+                reporter?.endDurationEvent(name: APICostEvent.firstFrameActual, ext: ext)
             case .idle, .failed:
                 _leaveRTC()
                 connectInfo.clean()
@@ -738,7 +739,8 @@ extension CallApiImpl {
     private func _reportCostEvent(type: CallConnectCostType) {
         let cost = _getCost()
         connectInfo.callCostMap[type.rawValue] = cost
-        reporter?.reportCostEvent(name: type.rawValue, cost: cost)
+        let ext: [String: Any] = ["channelName": connectInfo.callingRoomId ?? ""]
+        reporter?.reportCostEvent(name: type.rawValue, cost: cost, ext: ext)
     }
     
     private func _reportMethod(event: String, value: [String: Any]? = nil) {
