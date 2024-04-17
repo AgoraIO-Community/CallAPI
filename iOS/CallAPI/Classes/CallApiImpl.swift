@@ -711,7 +711,6 @@ extension CallApiImpl {
         _updatePublishStatus(audioStatus: false, videoStatus: false)
         config?.rtcEngine.stopPreview()
         config?.rtcEngine.removeDelegate(self)
-        config?.rtcEngine.removeDelegateEx(self, connection: rtcConnection)
         let ret = config?.rtcEngine.leaveChannelEx(rtcConnection)
         callPrint("leave RTC channel[\(rtcConnection.channelId)]: \(ret ?? -1)")
         self.rtcConnection = nil
