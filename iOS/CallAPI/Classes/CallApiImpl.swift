@@ -8,7 +8,7 @@
 import Foundation
 import AgoraRtcKit
 
-let kReportCategory = "2_iOS_2.1.0"
+let kApiVersion = "2.1.0"
 
 let kMessageId: String = "messageId"     //发送的消息id
 
@@ -40,6 +40,11 @@ public let kRejectByInternal = "rejectByInternal"
 public let kCancelCallByInternal = "cancelCallByInternal"
 
 public let kCostTimeMap = "costTimeMap"    //呼叫时的耗时信息，会在connected时抛出分步耗时
+
+struct CallCustomEvent {
+    static let stateChange = "stateChange"
+    static let eventChange = "eventChange"
+}
 
 enum CallAction: UInt {
     case videoCall = 0
@@ -77,6 +82,8 @@ public class CallApiImpl: NSObject {
     
     private var tempRemoteCanvasView: UIView = UIView()
     
+    private var reporter: APIReporter?
+    
     /// 当前状态
     private var state: CallStateType = .idle {
         didSet {
@@ -105,6 +112,7 @@ public class CallApiImpl: NSObject {
                     }
                 }
             case .connecting:
+                self.reporter?.startDurationEvent(name: APICostEvent.firstFramePerceived)
                 break
             case .connected:
                 _muteRemoteAudio(false)
@@ -116,6 +124,9 @@ public class CallApiImpl: NSObject {
                 } else {
                     callWarningPrint("remote view not found in connected state!")
                 }
+                let ext: [String: Any] = ["channelName": connectInfo.callingRoomId ?? ""]
+                reporter?.endDurationEvent(name: APICostEvent.firstFramePerceived, ext: ext)
+                reporter?.endDurationEvent(name: APICostEvent.firstFrameActual, ext: ext)
             case .idle, .failed:
                 _leaveRTC()
                 connectInfo.clean()
@@ -328,6 +339,13 @@ extension CallApiImpl {
                 break
             }
         }
+        let ext: [String: Any] = ["state": state.rawValue,
+                                  "stateReason": stateReason.rawValue,
+                                  "eventReason": eventReason,
+//                                  "eventInfo": eventInfo,
+                                  "userId": config?.userId ?? "",
+                                  "callId": connectInfo.callId]
+        _reportCustomEvent(event: CallCustomEvent.stateChange, ext: ext)
         
         self.state = state
         for element in delegates.allObjects {
@@ -336,7 +354,6 @@ extension CallApiImpl {
                                        eventReason: eventReason,
                                        eventInfo: eventInfo)
         }
-        
     }
     
     private func _notifySendMessageErrorEvent(error: NSError, reason: String?) {
@@ -371,14 +388,17 @@ extension CallApiImpl {
                               reasonString: String? = nil) {
         callPrint("call change[\(connectInfo.callId)] event: \(event.rawValue) reasonCode: '\(reasonCode ?? "")' reasonString: '\(reasonString ?? "")'")
         if let config = config {
-            var reason = ""
-            if let reasonCode = reasonCode {
-                reason += "&reasonCode=\(reasonCode)"
+            var ext: [String: Any] = ["event": event.rawValue, 
+                                      "userId": config.userId,
+                                      "state": state.rawValue,
+                                      "callId": connectInfo.callId]
+            if let reasonCode = reasonCode, !reasonCode.isEmpty {
+                ext["reasonCode"] = reasonCode
             }
-            if let reasonString = reasonString {
-                reason += "&reasonString=\(reasonString)"
+            if let reasonString = reasonString, !reasonString.isEmpty {
+                ext["reasonString"] = reasonString
             }
-            _reportEvent(key: "event=\(event.rawValue)&userId=\(config.userId)&state=\(state.rawValue)\(reason)", value: 0)
+            _reportCustomEvent(event: CallCustomEvent.eventChange, ext: ext)
         } else {
             callWarningPrint("_notifyEvent config == nil")
         }
@@ -394,6 +414,14 @@ extension CallApiImpl {
             _reportCostEvent(type: .remoteUserJoinChannel)
         case .localJoined:
             _reportCostEvent(type: .localUserJoinChannel)
+        case .captureFirstLocalVideoFrame:
+            _reportCostEvent(type: .localFirstFrameDidCapture)
+        case .publishFirstLocalAudioFrame:
+            if connectInfo.callType == .audio {
+                _reportCostEvent(type: .localFirstFrameDidPublish)
+            }
+        case .publishFirstLocalVideoFrame:
+            _reportCostEvent(type: .localFirstFrameDidPublish)
         case .remoteAccepted:
             _reportCostEvent(type: .acceptCall)
             checkConnectedSuccess(reason: .remoteAccepted)
@@ -454,13 +482,13 @@ extension CallApiImpl {
     private func _deinitialize() {
         _updateAndNotifyState(state: .idle)
         _notifyEvent(event: .deinitialize)
+        reporter = nil
     }
     
     //设置远端画面
     private func _setupRemoteVideo(uid: UInt) {
         if connectInfo.callType == .audio { return }
         
-
         guard let connection = rtcConnection, let engine = config?.rtcEngine else {
             callWarningPrint("_setupRemoteVideo fail: connection or engine is empty")
             return
@@ -629,6 +657,8 @@ extension CallApiImpl {
             _notifyRtcOccurErrorEvent(errorCode: Int(ret))
         }
         _notifyEvent(event: .joinRTCStart)
+        
+        reporter?.startDurationEvent(name: APICostEvent.firstFrameActual)
     }
     
     /// 更新推送音视频流状态
@@ -709,42 +739,23 @@ extension CallApiImpl {
     private func _reportCostEvent(type: CallConnectCostType) {
         let cost = _getCost()
         connectInfo.callCostMap[type.rawValue] = cost
-        _reportEvent(key: type.rawValue, value: cost)
+        let ext: [String: Any] = ["channelName": connectInfo.callingRoomId ?? ""]
+        reporter?.reportCostEvent(name: type.rawValue, cost: cost, ext: ext)
     }
     
-    private func _reportMethod(event: String, label: String = "") {
-        let msgId = "agora:scenarioAPI"
-        callPrint("_reportMethod event: \(event) label: \(label)")
+    private func _reportMethod(event: String, value: [String: Any]? = nil) {
+        let value = value ?? [:]
+        callPrint("_reportMethod event: \(event) ext: \(value)")
         var subEvent = event
         if let range = event.range(of: "(") {
             subEvent = String(event[..<range.lowerBound])
         }
-        var labelValue = "callId=\(connectInfo.callId)&ts=\(_getTimeInMs())"
-        if !label.isEmpty {
-            labelValue = "\(label)&\(labelValue)"
-        }
-        
-        _sendCustomReportMessage(msgId: msgId, category: kReportCategory, event: subEvent, label: labelValue, value: 0)
+        reporter?.reportFuncEvent(name: subEvent, value: value, ext: ["callId": connectInfo.callId])
     }
     
-    private func _reportEvent(key: String, value: Int) {
-        guard let config = config else { return }
-        let msgId = "uid=\(config.userId)&roomId=\(connectInfo.callingRoomId ?? "")"
-        let label = "callId=\(connectInfo.callId)&ts=\(_getTimeInMs())"
-        _sendCustomReportMessage(msgId: msgId, category: kReportCategory, event: key, label: label, value: value)
-    }
-    
-    private func _sendCustomReportMessage(msgId: String,
-                                          category: String,
-                                          event: String,
-                                          label: String,
-                                          value: Int) {
-        guard let config = config else { return }
-        let _ = config.rtcEngine.sendCustomReportMessage(msgId,
-                                                         category: category,
-                                                         event: event,
-                                                         label: label,
-                                                         value: value)
+    private func _reportCustomEvent(event: String, ext: [String: Any]) {
+        callPrint("_reportCustomEvent event: \(event) ext: \(ext)")
+        reporter?.reportCustomEvent(name: event, ext: ext)
     }
     
     private func _sendMessage(userId: String, 
@@ -973,7 +984,7 @@ extension CallApiImpl: CallApiProtocol {
     
     public func initialize(config: CallConfig) {
         defer {
-            _reportMethod(event: "\(#function)", label: "appId=\(config.appId)&userId=\(config.userId)")
+            _reportMethod(event: "\(#function)", value: ["appId": config.appId, "userId": config.userId])
         }
         if state != .idle {
             callWarningPrint("must invoke 'deinitialize' to clean state")
@@ -984,10 +995,7 @@ extension CallApiImpl: CallApiProtocol {
         
         //API 开启音视频首帧加速渲染
         if let rtcEngine = config.rtcEngine {
-            //日志上报优化
-//            rtcEngine.setParameters("{\"rtc.qos_for_test_purpose\": true}")
-            rtcEngine.setParameters("{\"rtc.direct_send_custom_event\": true}")
-            rtcEngine.setParameters("{\"rtc.log_external_input\": true}")
+            reporter = APIReporter(type: .call, version: kApiVersion, engine: rtcEngine)
             optimize1v1Video(engine: rtcEngine)
         }
     }
@@ -996,16 +1004,16 @@ extension CallApiImpl: CallApiProtocol {
         _reportMethod(event: "\(#function)")
         switch state {
         case .calling:
-            cancelCall {[weak self] err in
-                self?._deinitialize()
+            cancelCall { err in
                 completion()
             }
+            _deinitialize()
         case .connecting, .connected:
             let callingUserId = connectInfo.callingUserId ?? 0
-            _hangup(remoteUserId: callingUserId) {[weak self] err in
-                self?._deinitialize()
+            _hangup(remoteUserId: callingUserId) { err in
                 completion()
             }
+            _deinitialize()
         default:
             self._deinitialize()
             completion()
@@ -1030,7 +1038,7 @@ extension CallApiImpl: CallApiProtocol {
     }
     
     public func prepareForCall(prepareConfig: PrepareConfig, completion: ((NSError?) -> ())?) {
-        _reportMethod(event: "\(#function)", label: "roomId=\(prepareConfig.roomId)&callTimeoutMillisecond=\(prepareConfig.callTimeoutMillisecond)")
+        _reportMethod(event: "\(#function)", value: ["roomId": prepareConfig.roomId, "callTimeoutMillisecond": prepareConfig.callTimeoutMillisecond])
         _prepareForCall(prepareConfig: prepareConfig) { err in
             if let err = err {
                 self._updateAndNotifyState(state: .failed,
@@ -1061,7 +1069,7 @@ extension CallApiImpl: CallApiProtocol {
               callType: .video,
               callExtension: [:],
               completion: completion)
-        _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)")
+        _reportMethod(event: "\(#function)", value: ["remoteUserId": remoteUserId])
     }
     
     public func call(remoteUserId: UInt,
@@ -1072,7 +1080,7 @@ extension CallApiImpl: CallApiProtocol {
               callType: callType,
               callExtension: callExtension,
               completion: completion)
-        _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)&callType=\(callType.rawValue)&callExtension=\(callExtension)")
+        _reportMethod(event: "\(#function)", value: ["remoteUserId": remoteUserId, "callType": callType.rawValue, "callExtension": callExtension])
     }
     
     //取消呼叫
@@ -1086,13 +1094,12 @@ extension CallApiImpl: CallApiProtocol {
     
     //接受
     public func accept(remoteUserId: UInt, completion: ((NSError?) -> ())?) {
-        _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)")
+        _reportMethod(event: "\(#function)", value: ["remoteUserId": remoteUserId])
         guard let roomId = connectInfo.callingRoomId else {
             let errReason = "accept fail! current userId or roomId is empty"
             completion?(NSError(domain: errReason, code: -1))
             return
         }
-        
         //查询是否是calling状态，如果是prapared，表示可能被主叫取消了
         guard state == .calling else {
             let errReason = "accept fail! current state[\(state.rawValue)] is not calling"
@@ -1125,7 +1132,7 @@ extension CallApiImpl: CallApiProtocol {
     
     //拒绝
     public func reject(remoteUserId: UInt, reason: String?, completion: ((NSError?) -> ())?) {
-        _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)&reason=\(reason ?? "")")
+        _reportMethod(event: "\(#function)", value: ["remoteUserId": remoteUserId, "reason": reason ?? ""])
         let message = _rejectMessageDic(reason: reason, rejectByInternal: false)
         _reject(remoteUserId: remoteUserId, message: message) {[weak self] err in
             completion?(err)
@@ -1138,7 +1145,7 @@ extension CallApiImpl: CallApiProtocol {
     
     //挂断
     public func hangup(remoteUserId: UInt, reason: String?, completion: ((NSError?) -> ())?) {
-        _reportMethod(event: "\(#function)", label: "remoteUserId=\(remoteUserId)")
+        _reportMethod(event: "\(#function)", value: ["remoteUserId": remoteUserId])
         let message = _hangupMessageDic(reason: reason)
         _hangup(remoteUserId: remoteUserId, message: message) {[weak self] err in
             completion?(err)
@@ -1262,31 +1269,28 @@ extension CallApiImpl: AgoraRtcEngineDelegate {
     }
 }
 
-let formatter = DateFormatter()
-#if DEBUG
-func debugApiPrint(_ message: String) {
-    formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-    let timeString = formatter.string(from: Date())
-    print("\(timeString) \(message)")
-}
-#endif
-
 extension CallApiImpl {
     func callPrint(_ message: String, _ logLevel: CallLogLevel = .normal) {
-//        #if DEBUG
-//        debugApiPrint("[CallApi]\(message)")
-//        #else
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
         let timeString = formatter.string(from: Date())
         for element in delegates.allObjects {
             element.callDebugInfo?(message: "\(timeString) \(message)", logLevel: logLevel)
         }
-        config?.rtcEngine?.writeLog(.info, content: "[CallApi]\(message)")
-//        #endif
+        var level: AgoraLogLevel = .info
+        if logLevel == .error {
+            level = .error
+        } else if logLevel == .warning {
+            level = .warn
+        }
+        reporter?.writeLog(content: "[CallApi]\(message)", level: level)
     }
     
     func callWarningPrint(_ message: String) {
         callPrint(message, .warning)
+    }
+    
+    func callErrorPrint(_ message: String) {
+        callPrint(message, .error)
     }
 
     func callProfilePrint(_ message: String) {

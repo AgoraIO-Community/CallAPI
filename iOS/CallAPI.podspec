@@ -49,6 +49,7 @@ TODO: Add long description of the pod here.
     'CallAPI/Classes/*.swift',
     'CallAPI/Classes/Extension/*',
     'CallAPI/Classes/Scenarios/*',
+    'CallAPI/Classes/Report/*',
     'CallAPI/Classes/SignalClient/ISignalClient.swift',
     'CallAPI/Classes/SignalClient/CallBaseSignalClient.swift',
     ]

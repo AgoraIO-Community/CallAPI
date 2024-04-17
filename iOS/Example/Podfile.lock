@@ -36,7 +36,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   AgoraRtcEngine_Special_iOS: 62ac62b0caddac27ab3c2e26ed7a2e5d9c7739a5
   AgoraRtm_iOS: b53a57502a35349aceea890df4416b483ea4153c
-  CallAPI: 15cc6ffb97dcdc3a1f528e18243828961c778bbf
+  CallAPI: d79578dfa240ebda3ffc14b4c5a2c0ab33041c9c
   HyphenateChat: bf4cfa65a83ffa210803fdc91263b4891fb510ee
   SVProgressHUD: 4837c74bdfe2e51e8821c397825996a8d7de6e22
   YYCategories: 6bcd4314c6661a561410dce4a793379ebd306abd
