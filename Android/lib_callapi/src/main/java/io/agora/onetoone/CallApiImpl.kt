@@ -970,12 +970,13 @@ class CallApiImpl constructor(
     }
 
     override fun initialize(config: CallConfig) {
-        reporter = APIReporter(APIType.CALL, kReportCategory, config.rtcEngine)
-        _reportMethod("initialize", mapOf("appId" to config.appId, "userId" to config.userId))
         if (state != CallStateType.Idle) {
             callWarningPrint("must invoke 'deinitialize' to clean state")
             return
         }
+
+        reporter = APIReporter(APIType.CALL, kReportCategory, config.rtcEngine)
+        _reportMethod("initialize", mapOf("appId" to config.appId, "userId" to config.userId))
         this.config = config.cloneConfig()
 
         // 视频最佳实践
