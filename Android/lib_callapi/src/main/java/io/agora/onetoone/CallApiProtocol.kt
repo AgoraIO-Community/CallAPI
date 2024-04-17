@@ -10,7 +10,7 @@ open class CallConfig(
     //用户id，通过该用户id来发送信令消息
     var userId: Int = 0,
     //rtc engine实例
-    var rtcEngine: RtcEngineEx? = null,
+    var rtcEngine: RtcEngineEx,
     //ISignalClient实例
     var signalClient: ISignalClient
 ){}
