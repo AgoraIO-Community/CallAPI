@@ -1111,7 +1111,7 @@ class CallApiImpl constructor(
             callExtension = callExtension,
             completion = completion
         )
-        _reportMethod("call", mapOf("remoteUserId" to remoteUserId, "callType" to callType, "callExtension" to callExtension))
+        _reportMethod("call", mapOf("remoteUserId" to remoteUserId, "callType" to callType.value, "callExtension" to callExtension))
     }
 
     override fun cancelCall(completion: ((AGError?) -> Unit)?) {
