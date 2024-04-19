@@ -20,6 +20,7 @@ import io.agora.onetoone.*
 import io.agora.onetoone.databinding.ActivityLivingBinding
 import io.agora.onetoone.http.HttpManager
 import io.agora.onetoone.model.EnterRoomInfoModel
+import io.agora.onetoone.signalClient.*
 import io.agora.onetoone.utils.Ov1Logger
 import io.agora.onetoone.utils.PermissionHelp
 import io.agora.rtc2.*
@@ -32,7 +33,7 @@ enum class CallRole(val value: Int) {
     CALLEE(0),
     CALLER(1)
 }
-class LivingActivity : AppCompatActivity(),  ICallApiListener {
+class LivingActivity : AppCompatActivity(), ICallApiListener {
 
     companion object {
 
@@ -60,13 +61,13 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
     private val mViewBinding by lazy { ActivityLivingBinding.inflate(LayoutInflater.from(this)) }
 
     private lateinit var rtcEngine: RtcEngine
-
     private lateinit var api: CallApiImpl
+    private var rtmManager: CallRtmManager? = null
+    private var emClient: CallEasemobSignalClient? = null
 
     private var mCallState = CallStateType.Idle
     private var role: CallRole = CallRole.CALLEE         //角色
     private lateinit var prepareConfig: PrepareConfig
-    private var rtmClient: RtmClient? = null
 
     private val mCenterCanvas by lazy { TextureView(this) }
 
@@ -102,30 +103,17 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         prepareConfig.rtcToken = enterModel.rtcToken
         prepareConfig.rtmToken = enterModel.rtmToken
         prepareConfig.autoJoinRTC = enterModel.autoJoinRTC
-        //prepareConfig.autoAccept = enterModel.autoAccept
 
         role = if (enterModel.isBrodCaster) CallRole.CALLEE else CallRole.CALLER
 
         rtcEngine = _createRtcEngine()
         setupView()
+        mCallState = CallStateType.Idle
         updateCallState(CallStateType.Idle)
-        // 外部创建RTMClient
-        rtmClient = _createRtmClient()
-        // 外部创建需要自行管理login
-        rtmClient?.login(enterModel.rtmToken, object: ResultCallback<Void?> {
-            override fun onSuccess(p0: Void?) {
-                _initialize(rtmClient, if (enterModel.isBrodCaster) CallRole.CALLEE else CallRole.CALLER) { success ->
-                    Log.d(TAG, "_initialize: $success")
-                }
-            }
-            override fun onFailure(p0: ErrorInfo?) {
-                Log.e(TAG, "login error = ${p0.toString()}")
-            }
-        })
-        // 内部创建rtmClient
-//        _initialize(null, if (enterModel.isBrodCaster) CallRole.CALLEE else CallRole.CALLER) { success ->
-//            Log.d(TAG, "_initialize: $success")
-//        }
+
+        // 初始化
+        initMessageManager {}
+
         PermissionHelp(this).checkCameraAndMicPerms(
             {
                 rtcJoinChannel()
@@ -135,46 +123,123 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         )
     }
 
+    private fun initMessageManager(completion: ((Boolean) -> Unit)) {
+        if (enterModel.isRtm) {
+            // 使用RtmManager管理RTM
+            rtmManager = createRtmManager(BuildConfig.AG_APP_ID, enterModel.currentUid.toInt())
+            // rtm login
+            rtmManager?.login(prepareConfig.rtmToken) {
+                if (it == null) {
+                    // login 成功后初始化 call api
+                    initCallApi(completion)
+                } else {
+                    completion.invoke(false)
+                }
+            }
+            // 监听 rtm manager 事件
+            rtmManager?.addListener(object : ICallRtmManagerListener {
+                override fun onConnected() {
+                    mViewBinding.root.post {
+                        Toasty.normal(this@LivingActivity, "rtm已连接", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onDisconnected() {
+                    mViewBinding.root.post {
+                        Toasty.normal(this@LivingActivity, "rtm已断开", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onConnectionLost() {
+                    // 表示rtm超时断连了，需要重新登录，这里模拟了3s重新登录
+                    mViewBinding.root.post {
+                        Toasty.normal(this@LivingActivity, "rtm连接错误，需要重新登录", Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                    mViewBinding.root.postDelayed({
+                        rtmManager?.logout()
+                        rtmManager?.login(prepareConfig.rtmToken) {}
+                    }, 3000)
+                }
+
+                override fun onTokenPrivilegeWillExpire(channelName: String) {
+                    // 重新获取token
+                    tokenPrivilegeWillExpire()
+                }
+            })
+        } else {
+            emClient = createEasemobSignalClient(this, BuildConfig.IM_APP_KEY, enterModel.currentUid.toInt())
+            emClient?.login {
+                if (it) {
+                    // login 成功后初始化 call api
+                    initCallApi(completion)
+                } else {
+                    completion.invoke(false)
+                }
+            }
+        }
+    }
+
+    private fun initCallApi(completion: ((Boolean) -> Unit)) {
+        val config = CallConfig(
+            appId = BuildConfig.AG_APP_ID,
+            userId = enterModel.currentUid.toInt(),
+            rtcEngine = rtcEngine as RtcEngineEx,
+            signalClient = if (enterModel.isRtm) createRtmSignalClient(rtmManager!!.getRtmClient()) else emClient!!
+        )
+        api.initialize(config)
+
+        prepareConfig.roomId = enterModel.currentUid
+        prepareConfig.localView = mViewBinding.vRight
+        prepareConfig.remoteView = mViewBinding.vLeft
+
+        api.addListener(this)
+        api.prepareForCall(prepareConfig){ error ->
+            completion.invoke(error == null)
+        }
+    }
+
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         closeAction()
     }
 
     private fun updateCallState(state: CallStateType) {
-        mCallState = state
-        when(mCallState) {
-            CallStateType.Calling ->{
-                publishMedia(false)
-                setupCanvas(null)
-                mViewBinding.vRight.alpha = 1f
-                mViewBinding.vCenter.removeView(mCenterCanvas)
-                mViewBinding.btnHangUp.isVisible = false
-                mViewBinding.btnCall.isVisible = false
-            }
-            CallStateType.Prepared,
-            CallStateType.Idle,
-            CallStateType.Failed -> {
-                rtcEngine.enableLocalAudio(true)
-                rtcEngine.enableLocalVideo(true)
-                publishMedia(true)
-                if (mViewBinding.vCenter.indexOfChild(mCenterCanvas) == -1) {
-                    mViewBinding.vCenter.addView(mCenterCanvas)
+        runOnUiThread {
+            when (state) {
+                CallStateType.Calling -> {
+                    publishMedia(false)
+                    setupCanvas(null)
+                    mViewBinding.vRight.alpha = 1f
+                    mViewBinding.vCenter.removeView(mCenterCanvas)
+                    mViewBinding.btnHangUp.isVisible = false
+                    mViewBinding.btnCall.isVisible = false
                 }
-                setupCanvas(mCenterCanvas)
-                mCenterCanvas.isVisible = true
-                mViewBinding.vLeft.alpha = 0f
-                mViewBinding.vRight.alpha = 0f
-                mViewBinding.btnCall.isVisible = !enterModel.isBrodCaster
-                mViewBinding.btnHangUp.isVisible = false
+                CallStateType.Prepared,
+                CallStateType.Idle,
+                CallStateType.Failed -> {
+                    rtcEngine.enableLocalAudio(true)
+                    rtcEngine.enableLocalVideo(true)
+                    publishMedia(true)
+                    if (mViewBinding.vCenter.indexOfChild(mCenterCanvas) == -1) {
+                        mViewBinding.vCenter.addView(mCenterCanvas)
+                    }
+                    setupCanvas(mCenterCanvas)
+                    mCenterCanvas.isVisible = true
+                    mViewBinding.vLeft.alpha = 0f
+                    mViewBinding.vRight.alpha = 0f
+                    mViewBinding.btnCall.isVisible = !enterModel.isBrodCaster
+                    mViewBinding.btnHangUp.isVisible = false
+                }
+                CallStateType.Connected -> {
+                    mViewBinding.vLeft.alpha = 1f
+                    mCenterCanvas.isVisible = false
+                    mViewBinding.vCenter.removeView(mCenterCanvas)
+                    mViewBinding.btnHangUp.isVisible = true
+                    mViewBinding.btnCall.isVisible = false
+                }
+                else -> {}
             }
-            CallStateType.Connected -> {
-                mViewBinding.vLeft.alpha = 1f
-                mCenterCanvas.isVisible = false
-                mViewBinding.vCenter.removeView(mCenterCanvas)
-                mViewBinding.btnHangUp.isVisible = true
-                mViewBinding.btnCall.isVisible = false
-            }
-            else -> {}
         }
     }
 
@@ -193,22 +258,21 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         }
     }
 
-    private fun _initialize(rtmClient: RtmClient?, role: CallRole, completion: ((Boolean) -> Unit)?) {
-        val config = CallConfig(
-            appId = BuildConfig.AG_APP_ID,
-            userId = enterModel.currentUid.toInt(),
-            rtcEngine = _createRtcEngine(),
-            rtmClient = rtmClient
-        )
-        api.initialize(config)
-
-        prepareConfig.roomId = enterModel.currentUid
-        prepareConfig.localView = mViewBinding.vRight
-        prepareConfig.remoteView = mViewBinding.vLeft
-
-        api.addListener(this)
-        api.prepareForCall(prepareConfig){ error ->
-            completion?.invoke(error == null)
+    // 检查信令通道链接状态
+    private fun checkConnectionAndNotify(): Boolean {
+        if (enterModel.isRtm) {
+            val manager = rtmManager ?: return false
+            if (!manager.isConnected) {
+                Toasty.normal(this, "rtm未登录或连接异常", Toast.LENGTH_SHORT).show()
+                return false
+            }
+            return true
+        } else {
+            val client = emClient ?: return false
+            if (!client.isConnected) {
+                Toasty.normal(this, "环信未登录或连接异常", Toast.LENGTH_SHORT).show()
+            }
+            return client.isConnected
         }
     }
 
@@ -232,17 +296,6 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             Log.e(TAG, "RtcEngine.create() called error: $e")
         }
         return rtcEngine ?: throw RuntimeException("RtcEngine create failed!")
-    }
-
-    private fun _createRtmClient(): RtmClient {
-        val rtmConfig = RtmConfig.Builder(BuildConfig.AG_APP_ID, enterModel.currentUid).build()
-        if (rtmConfig.userId.isEmpty()) {
-            Log.d(TAG, "userId is empty")
-        }
-        if (rtmConfig.appId.isEmpty()) {
-            Log.d(TAG, "appId is empty")
-        }
-        return RtmClient.create(rtmConfig)
     }
 
     private fun setupCanvas(canvasView: TextureView?) {
@@ -361,19 +414,29 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             rtcEngine.stopPreview()
             rtcEngine.leaveChannel()
             RtcEngine.destroy()
-            RtmClient.release()
-
+            rtmManager?.logout()
+            rtmManager = null
+            emClient?.clean()
+            emClient = null
             finish()
         }
     }
 
     private fun callAction() {
+        // 检查信令通道链接状态
+        if (!checkConnectionAndNotify()) return
         publishMedia(false)
         api.call(enterModel.showUserId.toInt()) { error ->
+            // call 失败立刻挂断
+            if (error != null && mCallState == CallStateType.Calling) {
+                api.cancelCall {  }
+            }
         }
     }
 
     private fun hangupAction() {
+        // 检查信令通道链接状态
+        if (!checkConnectionAndNotify()) return
         val connectedUserId = connectedUserId ?: return
         api.hangup(connectedUserId, "hangup by user") {
         }
@@ -403,6 +466,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
             return
         }
         Log.d(TAG, "onCallStateChanged state: ${state.value}, stateReason: ${stateReason.value}, eventReason: $eventReason, eventInfo: $eventInfo publisher: $publisher / ${enterModel.currentUid}")
+        mCallState = state
         updateCallState(state)
 
         when (state) {
@@ -410,6 +474,8 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
                 val fromUserId = eventInfo[CallApiImpl.kFromUserId] as? Int ?: 0
                 val toUserId = eventInfo[CallApiImpl.kRemoteUserId] as? Int ?: 0
                 if (connectedUserId != null && connectedUserId != fromUserId) {
+                    // 检查信令通道链接状态
+                    if (!checkConnectionAndNotify()) return
                     api.reject(fromUserId, "already calling") {
                     }
                     return
@@ -417,13 +483,22 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
                 // 触发状态的用户是自己才处理
                 if (enterModel.currentUid.toIntOrNull() == toUserId) {
                     connectedUserId = fromUserId
-                    api.accept(remoteUserId = fromUserId) {}
+                    // 检查信令通道链接状态
+                    if (!checkConnectionAndNotify()) return
+                    api.accept(remoteUserId = fromUserId) { err ->
+                        if (err != null) {
+                            //如果接受消息出错，则发起拒绝，回到初始状态
+                            api.reject(fromUserId, err.msg) {}
+                        }
+                    }
                 } else if (enterModel.currentUid.toIntOrNull() == fromUserId) {
                     connectedUserId = toUserId
                     callDialog = AlertDialog.Builder(this)
                         .setTitle("提示")
                         .setMessage("呼叫用户 $toUserId 中")
                         .setNegativeButton("取消") { p0, p1 ->
+                            // 检查信令通道链接状态
+                            if (!checkConnectionAndNotify()) return@setNegativeButton
                             api.cancelCall { err ->
                             }
                         }.create()
@@ -459,6 +534,9 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
                     }
                     CallStateReason.CallingTimeout -> {
                         Toasty.normal(this, "无应答", Toast.LENGTH_SHORT).show()
+                    }
+                    CallStateReason.RemoteCallBusy -> {
+                        Toasty.normal(this, "用户正忙", Toast.LENGTH_SHORT).show()
                     }
                     else -> {}
                 }
@@ -528,7 +606,7 @@ class LivingActivity : AppCompatActivity(),  ICallApiListener {
         var rtmTokenTemp = ""
         val runnable = Runnable {
             if (rtcTokenTemp.isNotEmpty() && rtmTokenTemp.isNotEmpty()) {
-                api.renewToken(rtcTokenTemp, rtmTokenTemp)
+                api.renewToken(rtcTokenTemp)
                 if (enterModel.isBrodCaster) {
                     rtcEngine.renewToken(enterModel.showRoomToken)
                 }

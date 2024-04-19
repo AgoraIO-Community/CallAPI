@@ -9,6 +9,12 @@
 import UIKit
 import CallAPI
 import AgoraRtcKit
+import SVProgressHUD
+
+enum CallRole: Int {
+    case callee = 0
+    case caller
+}
 
 private let fpsItems: [AgoraVideoFrameRate] = [
     .fps1,
@@ -25,7 +31,7 @@ class ViewController: UIViewController {
     private let videoEncoderConfig = AgoraVideoEncoderConfiguration()
     
     private lazy var modeControl: UISegmentedControl = {
-        let items = ["秀场转1v1", "纯1v1"]
+        let items = ["RTM秀场1v1", "RTM纯1v1", "环信秀场1v1", "环信纯1v1"]
         let control = UISegmentedControl(items: items)
         control.selectedSegmentIndex = 0
         control.addTarget(self, action: #selector(modeChanged), for: .valueChanged)
@@ -77,7 +83,7 @@ class ViewController: UIViewController {
         } set {
             UserDefaults.standard.set(newValue, forKey: "modeIndex")
             
-            if newValue == 0 {
+            if newValue % 2 == 0 {
                 roleControl.isHidden = false
                 enterButton1.isHidden = false
                 enterButton2.isHidden = true
@@ -172,15 +178,6 @@ class ViewController: UIViewController {
         }
     }
     
-    private var isAutoAccept: Bool {
-        get {
-            let val = UserDefaults.standard.bool(forKey: "autoAccept")
-            return val
-        } set {
-            UserDefaults.standard.set(newValue, forKey: "autoAccept")
-        }
-    }
-    
     private lazy var userLabel: UILabel = {
         let label = UILabel()
         label.text = "当前的用户id"
@@ -257,22 +254,6 @@ class ViewController: UIViewController {
         return tf
     }()
     
-    private lazy var autoAcceptLabel: UILabel = {
-        let label = UILabel()
-        label.text = "收到呼叫自动接受"
-        label.textColor = .black
-        label.isHidden = true
-        return label
-    }()
-    
-    private lazy var autoAcceptSwitch: UISwitch = {
-        let uiSwitch = UISwitch()
-        uiSwitch.isOn = isAutoAccept
-        uiSwitch.addTarget(self, action: #selector(onAutoAcceptAction), for: .touchUpInside)
-        uiSwitch.isHidden = true
-        return uiSwitch
-    }()
-    
     private lazy var autoJointRTCLabel: UILabel = {
         let label = UILabel()
         label.text = "提前加入RTC频道"
@@ -309,9 +290,6 @@ class ViewController: UIViewController {
         view.addSubview(dimensionsWTf)
         view.addSubview(dimensionsHTf)
         
-        view.addSubview(autoAcceptLabel)
-        view.addSubview(autoAcceptSwitch)
-        
         view.addSubview(autoJointRTCLabel)
         view.addSubview(autoJoinRTCSwitch)
         
@@ -330,7 +308,7 @@ class ViewController: UIViewController {
     }
     
     private func updateUI() {
-        if role == .caller, modeIndex == 0 {
+        if role == .caller, modeIndex % 2 == 0 {
             callUserLabel.isHidden = false
             callUserTextField.isHidden = false
         } else {
@@ -338,7 +316,7 @@ class ViewController: UIViewController {
             callUserTextField.isHidden = true
         }
         
-        modeControl.frame = CGRect(x: 10, y: 80, width: 200, height: 40)
+        modeControl.frame = CGRect(x: 10, y: 80, width: view.frame.width - 20, height: 40)
         var topEdge: CGFloat = modeControl.frame.origin.y + modeControl.frame.height + 10
         if roleControl.isHidden == false {
             roleControl.frame = CGRect(x: 10, y: topEdge, width: 200, height: 40)
@@ -361,20 +339,9 @@ class ViewController: UIViewController {
         dimensionsWTf.frame = CGRect(x: dimensionsLabel.frame.size.width + dimensionsLabel.frame.origin.x + 10, y: topEdge, width: 80, height: 40)
         dimensionsHTf.frame = CGRect(x: dimensionsWTf.frame.size.width + dimensionsWTf.frame.origin.x + 10, y: topEdge, width: 80, height: 40)
         
-        autoAcceptLabel.sizeToFit()
-        autoAcceptLabel.frame = CGRect(x: 10, 
-                                       y: dimensionsLabel.frame.origin.y + dimensionsLabel.frame.height + 10,
-                                       width: autoAcceptLabel.frame.width,
-                                       height: 40)
-        autoAcceptSwitch.frame = CGRect(x: autoAcceptLabel.frame.origin.x + autoAcceptLabel.frame.width + 10,
-                                        y: autoAcceptLabel.frame.origin.y,
-                                        width: 60,
-                                        height: 40)
-        
-        
         autoJointRTCLabel.sizeToFit()
         autoJointRTCLabel.frame = CGRect(x: 10,
-                                         y: autoAcceptLabel.frame.origin.y + autoAcceptLabel.frame.height + 10,
+                                         y: dimensionsLabel.frame.origin.y + dimensionsLabel.frame.height + 10,
                                          width: autoJointRTCLabel.frame.width,
                                          height: 40)
         autoJoinRTCSwitch.frame = CGRect(x: autoJointRTCLabel.frame.origin.x + autoJointRTCLabel.frame.width + 10,
@@ -412,10 +379,6 @@ class ViewController: UIViewController {
         dimW = Int(dimensionsWTf.text ?? "") ?? 0
     }
     
-    @objc func onAutoAcceptAction() {
-        self.isAutoAccept = autoAcceptSwitch.isOn
-    }
-    
     @objc func onAutoJoinAction() {
         self.isAutoJoinRTC = autoJoinRTCSwitch.isOn
     }
@@ -441,12 +404,13 @@ class ViewController: UIViewController {
         view.isUserInteractionEnabled = false
         
         let prepareConfig = PrepareConfig()
-//        prepareConfig.autoAccept = autoAcceptSwitch.isOn
         prepareConfig.autoJoinRTC = autoJoinRTCSwitch.isOn
+        SVProgressHUD.show()
         NetworkManager.shared.generateTokens(channelName: "",
                                              uid: "\(currentUserId)",
                                              tokenGeneratorType: .token007,
                                              tokenTypes: [.rtc, .rtm]) {[weak self] tokens in
+            SVProgressHUD.dismiss()
             guard let self = self else {return}
             self.view.isUserInteractionEnabled = true
             guard tokens.count == 2 else {
@@ -454,18 +418,37 @@ class ViewController: UIViewController {
                 return
             }
             prepareConfig.rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
-            prepareConfig.rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
             
             let targetUserId = role == .caller ? "\(callUserId)" : "\(currentUserId)"
             
-            let vc = ShowTo1v1RoomViewController(showRoomId: "\(targetUserId)_live",
-                                                 showUserId: role == .callee ? currentUserId : callUserId,
-                                                 showRoomToken: prepareConfig.rtcToken,
-                                                 currentUid: currentUserId,
-                                                 role: role,
-                                                 prepareConfig: prepareConfig)
+            var showVc: UIViewController? = nil
+            if modeIndex == 0 {
+            #if canImport(AgoraRtmKit)
+                let rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
+                let vc = ShowTo1v1RoomViewController(showRoomId: "\(targetUserId)_live",
+                                                     showUserId: role == .callee ? currentUserId : callUserId,
+                                                     showRoomToken: prepareConfig.rtcToken,
+                                                     currentUid: currentUserId,
+                                                     role: role,
+                                                     rtmToken: rtmToken,
+                                                     prepareConfig: prepareConfig)
+                vc.videoEncoderConfig = videoEncoderConfig
+                showVc = vc
+            #else
+                AUIToast.show(text: "CallAPI未包含RTM，请检查集成方式")
+            #endif
+            } else {
+                let vc = EMShowTo1v1RoomViewController(showRoomId: "\(targetUserId)_live",
+                                                       showUserId: role == .callee ? currentUserId : callUserId,
+                                                       showRoomToken: prepareConfig.rtcToken,
+                                                       currentUid: currentUserId,
+                                                       role: role,
+                                                       prepareConfig: prepareConfig)
+                vc.videoEncoderConfig = videoEncoderConfig
+                showVc = vc
+            }
+            guard let vc = showVc else { return }
             vc.modalPresentationStyle = .fullScreen
-            vc.videoEncoderConfig = videoEncoderConfig
             self.present(vc, animated: true)
         }
     }
@@ -476,23 +459,40 @@ class ViewController: UIViewController {
         let prepareConfig = PrepareConfig()
 //        prepareConfig.autoAccept = autoAcceptSwitch.isOn
         prepareConfig.autoJoinRTC = autoJoinRTCSwitch.isOn
+        SVProgressHUD.show()
         NetworkManager.shared.generateTokens(channelName: "",
                                              uid: "\(currentUserId)",
                                              tokenGeneratorType: .token007,
                                              tokenTypes: [.rtc, .rtm]) {[weak self] tokens in
+            SVProgressHUD.dismiss()
             guard let self = self else {return}
+            self.view.isUserInteractionEnabled = true
             guard tokens.count == 2 else {
                 print("generateTokens fail")
-                self.view.isUserInteractionEnabled = true
                 return
             }
             prepareConfig.rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
-            prepareConfig.rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
             
-            let vc = Pure1v1RoomViewController(currentUid: currentUserId, prepareConfig: prepareConfig)
+            var showVc: UIViewController? = nil
+            if modeIndex == 1 {
+            #if canImport(AgoraRtmKit)
+                let rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
+                let vc = Pure1v1RoomViewController(currentUid: currentUserId,
+                                                   prepareConfig: prepareConfig,
+                                                   rtmToken: rtmToken)
+                vc.videoEncoderConfig = videoEncoderConfig
+                showVc = vc
+            #else
+                AUIToast.show(text: "CallAPI未包含RTM，请检查集成方式")
+            #endif
+            } else {
+                let vc = EMPure1v1RoomViewController(currentUid: currentUserId,
+                                                     prepareConfig: prepareConfig)
+                vc.videoEncoderConfig = videoEncoderConfig
+                showVc = vc
+            }
+            guard let vc = showVc else { return }
             vc.modalPresentationStyle = .fullScreen
-            vc.videoEncoderConfig = videoEncoderConfig
-            self.view.isUserInteractionEnabled = true
             self.present(vc, animated: true)
         }
     }

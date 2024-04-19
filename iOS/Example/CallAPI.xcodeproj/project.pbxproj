@@ -18,8 +18,11 @@
 		DD3667582A38428200969395 /* AUIAlertView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD3667542A38428200969395 /* AUIAlertView.swift */; };
 		DD3667592A38428200969395 /* AUIAlertManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD3667552A38428200969395 /* AUIAlertManager.swift */; };
 		DD36675A2A38428200969395 /* AUIToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD3667572A38428200969395 /* AUIToast.swift */; };
+		DD66E46E2B876F8300D3AFB4 /* EMShowTo1v1RoomViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD66E46D2B876F8300D3AFB4 /* EMShowTo1v1RoomViewController.swift */; };
+		DDCB25CE2B832C000068F62F /* EMPure1v1RoomViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDCB25CD2B832C000068F62F /* EMPure1v1RoomViewController.swift */; };
 		DDE090782A24E8A700752E62 /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE090762A24E8A700752E62 /* NetworkManager.swift */; };
 		DDE090792A24E8A700752E62 /* KeyCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE090772A24E8A700752E62 /* KeyCenter.swift */; };
+		DDE4724E2B8DDF130089F0E1 /* CallEasemobSignalClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE4724C2B8DDF130089F0E1 /* CallEasemobSignalClient.swift */; };
 		DDEFE3C72A52D626006D6D2E /* Pure1v1RoomViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDEFE3C62A52D626006D6D2E /* Pure1v1RoomViewController.swift */; };
 /* End PBXBuildFile section */
 
@@ -43,8 +46,11 @@
 		DD3667542A38428200969395 /* AUIAlertView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AUIAlertView.swift; sourceTree = "<group>"; };
 		DD3667552A38428200969395 /* AUIAlertManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AUIAlertManager.swift; sourceTree = "<group>"; };
 		DD3667572A38428200969395 /* AUIToast.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AUIToast.swift; sourceTree = "<group>"; };
+		DD66E46D2B876F8300D3AFB4 /* EMShowTo1v1RoomViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EMShowTo1v1RoomViewController.swift; sourceTree = "<group>"; };
+		DDCB25CD2B832C000068F62F /* EMPure1v1RoomViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EMPure1v1RoomViewController.swift; sourceTree = "<group>"; };
 		DDE090762A24E8A700752E62 /* NetworkManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
 		DDE090772A24E8A700752E62 /* KeyCenter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeyCenter.swift; sourceTree = "<group>"; };
+		DDE4724C2B8DDF130089F0E1 /* CallEasemobSignalClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CallEasemobSignalClient.swift; sourceTree = "<group>"; };
 		DDEFE3C62A52D626006D6D2E /* Pure1v1RoomViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pure1v1RoomViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -91,6 +97,7 @@
 		607FACD21AFB9204008FA782 /* Example for CallAPI */ = {
 			isa = PBXGroup;
 			children = (
+				DDE4724B2B8DDF130089F0E1 /* SignalClient */,
 				DD18F9572A29E6F4009EEEC0 /* Widget */,
 				DD18F9522A28974F009EEEC0 /* Extension */,
 				DDE090772A24E8A700752E62 /* KeyCenter.swift */,
@@ -99,6 +106,8 @@
 				607FACD71AFB9204008FA782 /* ViewController.swift */,
 				DD18F9502A286AC4009EEEC0 /* ShowTo1v1RoomViewController.swift */,
 				DDEFE3C62A52D626006D6D2E /* Pure1v1RoomViewController.swift */,
+				DDCB25CD2B832C000068F62F /* EMPure1v1RoomViewController.swift */,
+				DD66E46D2B876F8300D3AFB4 /* EMShowTo1v1RoomViewController.swift */,
 				607FACD91AFB9204008FA782 /* Main.storyboard */,
 				607FACDC1AFB9204008FA782 /* Images.xcassets */,
 				607FACDE1AFB9204008FA782 /* LaunchScreen.xib */,
@@ -169,6 +178,14 @@
 			path = Toast;
 			sourceTree = "<group>";
 		};
+		DDE4724B2B8DDF130089F0E1 /* SignalClient */ = {
+			isa = PBXGroup;
+			children = (
+				DDE4724C2B8DDF130089F0E1 /* CallEasemobSignalClient.swift */,
+			);
+			path = SignalClient;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -205,7 +222,7 @@
 						CreatedOnToolsVersion = 6.3.1;
 						DevelopmentTeam = YS397FG5PA;
 						LastSwiftMigration = 0900;
-						ProvisioningStyle = Manual;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -271,6 +288,7 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-CallAPI_Example/Pods-CallAPI_Example-frameworks.sh",
+				"${BUILT_PRODUCTS_DIR}/SVProgressHUD/SVProgressHUD.framework",
 				"${BUILT_PRODUCTS_DIR}/YYCategories/YYCategories.framework",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraAiEchoCancellationExtension.framework/AgoraAiEchoCancellationExtension",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraAiNoiseSuppressionExtension.framework/AgoraAiNoiseSuppressionExtension",
@@ -278,7 +296,6 @@
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraClearVisionExtension.framework/AgoraClearVisionExtension",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraContentInspectExtension.framework/AgoraContentInspectExtension",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraDav1d.framework/AgoraDav1d",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraDrmLoaderExtension.framework/AgoraDrmLoaderExtension",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraFaceDetectionExtension.framework/AgoraFaceDetectionExtension",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraReplayKitExtension.framework/AgoraReplayKitExtension",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/AgoraRtcKit.framework/AgoraRtcKit",
@@ -293,9 +310,11 @@
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/video_dec.framework/video_dec",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtcEngine_Special_iOS/video_enc.framework/video_enc",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/AgoraRtm_iOS/AgoraRtmKit.framework/AgoraRtmKit",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/HyphenateChat/HyphenateChat.framework/HyphenateChat",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SVProgressHUD.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/YYCategories.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraAiEchoCancellationExtension.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraAiNoiseSuppressionExtension.framework",
@@ -303,7 +322,6 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraClearVisionExtension.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraContentInspectExtension.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraDav1d.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraDrmLoaderExtension.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraFaceDetectionExtension.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraReplayKitExtension.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraRtcKit.framework",
@@ -318,6 +336,7 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/video_dec.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/video_enc.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AgoraRtmKit.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/HyphenateChat.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -333,8 +352,11 @@
 			files = (
 				DD18F9542A289759009EEEC0 /* UIDevice+CallAPI.swift in Sources */,
 				DD36675A2A38428200969395 /* AUIToast.swift in Sources */,
+				DDE4724E2B8DDF130089F0E1 /* CallEasemobSignalClient.swift in Sources */,
+				DDCB25CE2B832C000068F62F /* EMPure1v1RoomViewController.swift in Sources */,
 				DDE090792A24E8A700752E62 /* KeyCenter.swift in Sources */,
 				DD3667592A38428200969395 /* AUIAlertManager.swift in Sources */,
+				DD66E46E2B876F8300D3AFB4 /* EMShowTo1v1RoomViewController.swift in Sources */,
 				DDE090782A24E8A700752E62 /* NetworkManager.swift in Sources */,
 				607FACD81AFB9204008FA782 /* ViewController.swift in Sources */,
 				DD18F9512A286AC4009EEEC0 /* ShowTo1v1RoomViewController.swift in Sources */,
@@ -471,20 +493,17 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 0;
-				DEVELOPMENT_TEAM = "";
-				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = YS397FG5PA;
+				DEVELOPMENT_TEAM = YS397FG5PA;
 				INFOPLIST_FILE = CallAPI/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "一对一秒开";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 1.1.3;
+				MARKETING_VERSION = 2.0.0;
 				MODULE_NAME = ExampleApp;
 				PRODUCT_BUNDLE_IDENTIFIER = io.agora.callapi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = wildcard;
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 5.0;
 			};
@@ -496,20 +515,17 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 0;
-				DEVELOPMENT_TEAM = "";
-				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = YS397FG5PA;
+				DEVELOPMENT_TEAM = YS397FG5PA;
 				INFOPLIST_FILE = CallAPI/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "一对一秒开";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 1.1.3;
+				MARKETING_VERSION = 2.0.0;
 				MODULE_NAME = ExampleApp;
 				PRODUCT_BUNDLE_IDENTIFIER = io.agora.callapi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = wildcard;
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 5.0;
 			};

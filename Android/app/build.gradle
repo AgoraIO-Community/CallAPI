@@ -18,12 +18,13 @@ android {
         minSdk 24
         targetSdk 33
         versionCode 1
-        versionName "1.1.3"
+        versionName "2.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "AG_APP_ID", "\"${project.getProperty("AG_APP_ID")}\"")
         buildConfigField("String", "AG_APP_CERTIFICATE", "\"${project.getProperty("AG_APP_CERTIFICATE")}\"")
+        buildConfigField "String", "IM_APP_KEY", "\"${IM_APP_KEY}\""
     }
 
     signingConfigs {
