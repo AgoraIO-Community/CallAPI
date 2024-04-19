@@ -178,16 +178,7 @@
       rtmManager.delegate = self
       ```
     - 实现回调ICallRtmManagerListener
-      ```swift
-      func onConnectionLost() {
-          AUIToast.show(text: "rtm连接错误，需要重新登录")
-          // 表示rtm超时断连了，需要重新登录，这里模拟了3s重新登录
-          DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 3) {
-              self.rtmClient?.logout()
-              self.rtmClient?.login(self.rtmToken)
-          }
-      }
-      
+      ```swift      
       func onConnected() {
           NSLog("onConnected")
           AUIToast.show(text: "rtm已连接")

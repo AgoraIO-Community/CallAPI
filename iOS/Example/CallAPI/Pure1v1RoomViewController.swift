@@ -318,8 +318,10 @@ extension Pure1v1RoomViewController {
         // 添加操作按钮
         let action1 = UIAlertAction(title: "视频呼叫", style: .default) {[weak self] _ in
             self?.api.call(remoteUserId: remoteUserId) { error in
-                guard let _ = error, self?.callState == .calling else {return}
+                guard let error = error, self?.callState == .calling else {return}
                 self?.api.cancelCall { err in }
+                
+                AUIToast.show(text: "呼叫失败: \(error.localizedDescription)")
             }
         }
         alertController.addAction(action1)
@@ -462,11 +464,11 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                         guard let self = self else { return }
                         guard self._checkConnectionAndNotify() else { return }
                         self.api.accept(remoteUserId: fromUserId) {[weak self] err in
-                            if let err = err {
-                                //如果接受消息出错，则发起拒绝，回到初始状态
-                                self?.api.reject(remoteUserId: fromUserId, reason: err.localizedDescription, completion: { err in
-                                })
-                            }
+                            guard let err = err else { return }
+                            //如果接受消息出错，则发起拒绝，回到初始状态
+                            self?.api.reject(remoteUserId: fromUserId, reason: err.localizedDescription, completion: { err in
+                            })
+                            AUIToast.show(text: "接受呼叫失败: \(err.localizedDescription)")
                         }
                     })
                     .show()
@@ -583,16 +585,6 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
 }
 
 extension Pure1v1RoomViewController: ICallRtmManagerListener {
-    func onConnectionLost() {
-        NSLog("onConnectionLost")
-        AUIToast.show(text: "rtm连接错误，需要重新登录")
-        // 表示rtm超时断连了，需要重新登录，这里模拟了3s重新登录
-        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 3) {
-            self.rtmClient?.logout()
-            self.rtmClient?.login(self.rtmToken)
-        }
-    }
-    
     func onConnected() {
         NSLog("onConnected")
         AUIToast.show(text: "rtm已连接")

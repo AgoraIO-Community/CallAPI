@@ -1,12 +1,12 @@
 PODS:
   - AgoraRtcEngine_Special_iOS (4.1.1.26)
-  - AgoraRtm_iOS (2.1.10)
+  - AgoraRtm (2.2.0)
   - CallAPI (2.0.0):
     - AgoraRtcEngine_Special_iOS (= 4.1.1.26)
     - CallAPI/All (= 2.0.0)
   - CallAPI/All (2.0.0):
     - AgoraRtcEngine_Special_iOS (= 4.1.1.26)
-    - AgoraRtm_iOS (= 2.1.10)
+    - AgoraRtm (= 2.2.0)
   - HyphenateChat (4.5.0)
   - SVProgressHUD (2.3.1):
     - SVProgressHUD/Core (= 2.3.1)
@@ -24,7 +24,7 @@ DEPENDENCIES:
 SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
     - AgoraRtcEngine_Special_iOS
-    - AgoraRtm_iOS
+    - AgoraRtm
     - HyphenateChat
     - SVProgressHUD
     - YYCategories
@@ -35,8 +35,8 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   AgoraRtcEngine_Special_iOS: 62ac62b0caddac27ab3c2e26ed7a2e5d9c7739a5
-  AgoraRtm_iOS: b53a57502a35349aceea890df4416b483ea4153c
-  CallAPI: d79578dfa240ebda3ffc14b4c5a2c0ab33041c9c
+  AgoraRtm: 4813aab832ca612facb29c831339546c71e0b764
+  CallAPI: 847fbd556485e28404740e718df18a9912818e3c
   HyphenateChat: bf4cfa65a83ffa210803fdc91263b4891fb510ee
   SVProgressHUD: 4837c74bdfe2e51e8821c397825996a8d7de6e22
   YYCategories: 6bcd4314c6661a561410dce4a793379ebd306abd
