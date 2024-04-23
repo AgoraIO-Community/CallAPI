@@ -16,11 +16,6 @@ interface ICallRtmManagerListener {
     fun onDisconnected()
 
     /**
-     * rtm中断，需要重新login
-     */
-    fun onConnectionLost()
-
-    /**
      * token即将过期，需要renew token
      */
     fun onTokenPrivilegeWillExpire(channelName: String)
@@ -160,7 +155,6 @@ class CallRtmManager(
             listeners.forEach { it.onTokenPrivilegeWillExpire(channelName) }
         } else if (reason == RtmConstants.RtmConnectionChangeReason.LOST) {
             isConnected = false
-            listeners.forEach { it.onConnectionLost() }
         } else if (state == RtmConstants.RtmConnectionState.CONNECTED) {
             if (isConnected) return
             isConnected = true

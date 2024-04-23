@@ -142,21 +142,6 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
                     }
                 }
 
-                override fun onConnectionLost() {
-                    // 表示rtm超时断连了，需要重新登录，这里模拟了3s重新登录
-                    mViewBinding.root.post {
-                        Toasty.normal(
-                            this@Pure1v1LivingActivity,
-                            "rtm连接错误，需要重新登录",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                    mViewBinding.root.postDelayed({
-                        rtmManager?.logout()
-                        rtmManager?.login(prepareConfig.rtmToken) {}
-                    }, 3000)
-                }
-
                 override fun onTokenPrivilegeWillExpire(channelName: String) {
                     // 重新获取token
                     tokenPrivilegeWillExpire()
