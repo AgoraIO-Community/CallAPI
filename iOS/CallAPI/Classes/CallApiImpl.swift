@@ -339,12 +339,14 @@ extension CallApiImpl {
                 break
             }
         }
-        let ext: [String: Any] = ["state": state.rawValue,
+        var ext: [String: Any] = ["state": state.rawValue,
                                   "stateReason": stateReason.rawValue,
                                   "eventReason": eventReason,
-//                                  "eventInfo": eventInfo,
                                   "userId": config?.userId ?? "",
                                   "callId": connectInfo.callId]
+        if let roomId = connectInfo.callingRoomId {
+            ext["roomId"] = roomId
+        }
         _reportCustomEvent(event: CallCustomEvent.stateChange, ext: ext)
         
         self.state = state
@@ -392,6 +394,9 @@ extension CallApiImpl {
                                       "userId": config.userId,
                                       "state": state.rawValue,
                                       "callId": connectInfo.callId]
+            if let roomId = connectInfo.callingRoomId {
+                ext["roomId"] = roomId
+            }
             if let reasonCode = reasonCode, !reasonCode.isEmpty {
                 ext["reasonCode"] = reasonCode
             }
