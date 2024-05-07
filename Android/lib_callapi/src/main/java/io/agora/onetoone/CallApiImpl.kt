@@ -542,6 +542,7 @@ class CallApiImpl constructor(
     }
 
     private fun _setupLocalVideo() {
+        if (connectInfo.callType == CallType.Audio) return
         val engine = config?.rtcEngine ?: run {
             callWarningPrint("_setupLocalVideo fail: engine is empty")
             return
@@ -1142,7 +1143,9 @@ class CallApiImpl constructor(
 
         // accept内默认启动一次采集+推流
         rtcConnection?.let {
-            config?.rtcEngine?.startPreview()
+            if (connectInfo.callType != CallType.Audio) {
+                config?.rtcEngine?.startPreview()
+            }
             val mediaOptions = ChannelMediaOptions()
             mediaOptions.clientRoleType = Constants.CLIENT_ROLE_BROADCASTER
             mediaOptions.publishCameraTrack = true
