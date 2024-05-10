@@ -349,7 +349,7 @@ extension Pure1v1RoomViewController {
         let alertController = UIAlertController(title: "呼叫", message: "请选择呼叫类型", preferredStyle: .actionSheet)
         // 添加操作按钮
         let action1 = UIAlertAction(title: "视频呼叫", style: .default) {[weak self] _ in
-            self?.checkCallEnable(userId: "\(remoteUserId)", completion: { enable in
+            self?.checkCallEnable(userId: "\(remoteUserId)") { enable in
                 guard enable else {return}
                 self?.api.call(remoteUserId: remoteUserId) { error in
                     guard let error = error, self?.callState == .calling else {return}
@@ -357,17 +357,19 @@ extension Pure1v1RoomViewController {
                     
                     AUIToast.show(text: "呼叫失败: \(error.localizedDescription)")
                 }
-            })
-            
+            }
         }
         alertController.addAction(action1)
 
         let action2 = UIAlertAction(title: "音频呼叫", style: .default) {[weak self] _ in
-            self?.api.call(remoteUserId: remoteUserId, 
-                           callType: .audio,
-                           callExtension: ["test_call": 111]) { error in
-                guard let _ = error, self?.callState == .calling else {return}
-                self?.api.cancelCall { err in }
+            self?.checkCallEnable(userId: "\(remoteUserId)") { enable in
+                guard enable else {return}
+                self?.api.call(remoteUserId: remoteUserId,
+                               callType: .audio,
+                               callExtension: ["test_call": 111]) { error in
+                    guard let _ = error, self?.callState == .calling else {return}
+                    self?.api.cancelCall { err in }
+                }
             }
         }
         alertController.addAction(action2)
