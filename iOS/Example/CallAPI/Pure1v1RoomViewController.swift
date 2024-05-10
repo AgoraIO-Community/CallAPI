@@ -58,6 +58,9 @@ class Pure1v1RoomViewController: UIViewController {
             default:
                 break
             }
+            rtmManager?.setCallState(channelName: nil, state: callState, completion: { err in
+                print("setCallState completion: \(err?.localizedDescription ?? "success")")
+            })
         }
     }
     
@@ -276,9 +279,19 @@ extension Pure1v1RoomViewController {
         prepareConfig.roomId = "\(currentUid)"
         prepareConfig.localView = rightView
         prepareConfig.remoteView = leftView
-        api.prepareForCall(prepareConfig: prepareConfig) { err in
-            completion(err == nil)
+        
+        rtmManager.joinChannel(channelName: nil) {[weak self] err in
+            guard let self = self else {return}
+            print("joinChannel completion: \(err?.localizedDescription ?? "success")")
+            if let _ = err {
+                completion(false)
+                return
+            }
+            self.api.prepareForCall(prepareConfig: self.prepareConfig) { err in
+                completion(err == nil)
+            }
         }
+        
         
         if let videoEncoderConfig = videoEncoderConfig {
             let cameraConfig = AgoraCameraCapturerConfiguration()
@@ -287,6 +300,25 @@ extension Pure1v1RoomViewController {
             cameraConfig.frameRate = Int32(videoEncoderConfig.frameRate.rawValue)
             rtcEngine.setCameraCapturerConfiguration(cameraConfig)
         }
+        
+    }
+    
+    private func checkCallEnable(userId: String, completion: @escaping(Bool) -> ()) {
+        self.rtmManager?.getCallState(userChannelName: nil, userId: userId, completion: { err, state in
+            if let _ = err {
+                AUIToast.show(text: "呼叫失败：对方用户不在线")
+                completion(false)
+                return
+            }
+            
+            guard state == .prepared else {
+                AUIToast.show(text: "呼叫失败：对方用户正忙")
+                completion(false)
+                return
+            }
+            
+            completion(true)
+        })
     }
     
     @objc func closeAction() {
@@ -317,12 +349,16 @@ extension Pure1v1RoomViewController {
         let alertController = UIAlertController(title: "呼叫", message: "请选择呼叫类型", preferredStyle: .actionSheet)
         // 添加操作按钮
         let action1 = UIAlertAction(title: "视频呼叫", style: .default) {[weak self] _ in
-            self?.api.call(remoteUserId: remoteUserId) { error in
-                guard let error = error, self?.callState == .calling else {return}
-                self?.api.cancelCall { err in }
-                
-                AUIToast.show(text: "呼叫失败: \(error.localizedDescription)")
-            }
+            self?.checkCallEnable(userId: "\(remoteUserId)", completion: { enable in
+                guard enable else {return}
+                self?.api.call(remoteUserId: remoteUserId) { error in
+                    guard let error = error, self?.callState == .calling else {return}
+                    self?.api.cancelCall { err in }
+                    
+                    AUIToast.show(text: "呼叫失败: \(error.localizedDescription)")
+                }
+            })
+            
         }
         alertController.addAction(action1)
 

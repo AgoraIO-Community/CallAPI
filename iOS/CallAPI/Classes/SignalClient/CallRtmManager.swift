@@ -8,6 +8,8 @@
 import Foundation
 import AgoraRtmKit
 
+let kUserCallStateKey = "callState"
+
 private func createRtmClient(appId: String, userId: String) -> AgoraRtmClientKit {
     let rtmConfig = AgoraRtmClientConfig(appId: appId, userId: userId)
     var rtmClient: AgoraRtmClientKit? = nil
@@ -24,7 +26,7 @@ func callMessagePrint(_ message: String) {
 }
 
 /// CallRtmManager回调协议
-public protocol ICallRtmManagerListener: NSObjectProtocol {
+@objc public protocol ICallRtmManagerListener: NSObjectProtocol {
     
     /// rtm连接成功
     func onConnected()
@@ -37,12 +39,14 @@ public protocol ICallRtmManagerListener: NSObjectProtocol {
     func onTokenPrivilegeWillExpire(channelName: String)
 }
 
+@objcMembers
 public class CallRtmManager: NSObject {
     public var isConnected: Bool = false
+    private var userId: String
     public weak var delegate: ICallRtmManagerListener?
     
     private var rtmClient: AgoraRtmClientKit
-
+    
     /// RTM是否已经登录
     private var isLoginedRtm: Bool = false
     
@@ -59,7 +63,8 @@ public class CallRtmManager: NSObject {
     ///   - appId: 声网AppId
     ///   - userId: 用户id
     ///   - rtmClient: [可选]声网实时消息(Rtm)实例，传空则CallRtmManager内部自行创建
-    public required init(appId: String, userId: String, rtmClient: AgoraRtmClientKit? = nil) {
+     @objc public required init(appId: String, userId: String, rtmClient: AgoraRtmClientKit? = nil) {
+        self.userId = userId
         if let rtmClient = rtmClient {
             //如果外部传入rtmclient，默认登陆成功
             self.isLoginedRtm = true
@@ -81,7 +86,7 @@ public class CallRtmManager: NSObject {
     
     /// 获取到rtm实例，使用该方法获取到后传递给CallRtmSignalClient
     /// - Returns: rtm实例对象
-    public func getRtmClient() -> AgoraRtmClientKit {
+    @objc public func getRtmClient() -> AgoraRtmClientKit {
         return rtmClient
     }
     
@@ -90,7 +95,7 @@ public class CallRtmManager: NSObject {
     /// - Parameters:
     ///   - rtmToken: rtm token
     ///   - completion: 完成回调
-    public func login(rtmToken: String, completion: @escaping ((NSError?) -> ())) {
+    @objc public func login(rtmToken: String, completion: @escaping ((NSError?) -> ())) {
         callMessagePrint("initialize")
         if rtmToken.isEmpty, isExternalRtmClient == false {
             let reason = "RTM Token is Empty"
@@ -113,7 +118,7 @@ public class CallRtmManager: NSObject {
     
     
     /// 登出
-    public func logout() {
+    @objc public func logout() {
         if isExternalRtmClient == false {
             rtmClient.logout()
             rtmClient.destroy()
@@ -123,7 +128,7 @@ public class CallRtmManager: NSObject {
     
     /// 更新RTM token
     /// - Parameter tokenConfig: CallTokenConfig
-    public func renewToken(rtmToken: String) {
+    @objc public func renewToken(rtmToken: String) {
         guard isLoginedRtm else {
             //没有登陆成功，但是需要自动登陆，可能是初始token问题，这里重新initialize
             callMessagePrint("renewToken need to reinit")
@@ -151,6 +156,57 @@ public class CallRtmManager: NSObject {
             callMessagePrint("login completion: \(error?.errorCode.rawValue ?? 0)")
             self.isLoginedRtm = error == nil ? true : false
             completion(error)
+        }
+    }
+    
+    @objc public func joinChannel(channelName: String?, completion: @escaping(NSError?)-> ()) {
+        let currentUserChannelName = channelName ?? userId
+        let options = AgoraRtmSubscribeOptions()
+        options.features = [.presence]
+        callMessagePrint("will joinChannel[\(currentUserChannelName)]")
+        rtmClient.subscribe(channelName: currentUserChannelName, option: options) { resp, err in
+            callMessagePrint("joinChannel[\(currentUserChannelName)] completion: \(err?.localizedDescription ?? "success")")
+            completion(err)
+        }
+    }
+    
+    @objc public func leaveChannel(channelName: String?) {
+        let currentUserChannelName = channelName ?? userId
+        rtmClient.unsubscribe(currentUserChannelName)
+    }
+    
+    @objc public func setCallState(channelName: String?, state: CallStateType, completion: @escaping (NSError?)->()) {
+        let currentUserChannelName = channelName ?? userId
+        callMessagePrint("will setCallState[\(currentUserChannelName)] '\(state.rawValue)'")
+        rtmClient.getPresence()?.setState(channelName: currentUserChannelName,
+                                          channelType: .message,
+                                          items: [kUserCallStateKey: "\(state.rawValue)"]) { resp, err in
+            callMessagePrint("setCallState[\(currentUserChannelName)] '\(state.rawValue)' completion \(err?.localizedDescription ?? "success")")
+            completion(err)
+        }
+    }
+    
+    @objc public func getCallState(userChannelName: String?,
+                                   userId: String,
+                                   completion: @escaping (NSError?, CallStateType)->()) {
+        let channelName = userChannelName ?? userId
+        callMessagePrint("will getCallState[\(channelName)]")
+        rtmClient.getPresence()?.getState(channelName: channelName,
+                                          channelType: .message,
+                                          userId: userId) { resp, err in
+            callMessagePrint("getCallState[\(channelName)] completion \(err?.localizedDescription ?? "success")")
+            if let err = err {
+                completion(err, .idle)
+                return
+            }
+            guard let states = resp?.state.states else {
+                completion(nil, .idle)
+                return
+            }
+            let stateRaw = UInt(states[kUserCallStateKey] as? String ?? "") ?? UInt.max
+            let state = CallStateType(rawValue: stateRaw) ?? .idle
+            callMessagePrint("getCallState[\(channelName)] \(stateRaw)")
+            completion(err, state)
         }
     }
 }
