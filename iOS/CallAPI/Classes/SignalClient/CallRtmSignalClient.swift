@@ -16,7 +16,7 @@ import AgoraRtmKit
         clean()
     }
     
-    public required init(rtmClient: AgoraRtmClientKit) {
+    @objc public required init(rtmClient: AgoraRtmClientKit) {
         self.rtmClient = rtmClient
         super.init()
         self.rtmClient.addDelegate(self)

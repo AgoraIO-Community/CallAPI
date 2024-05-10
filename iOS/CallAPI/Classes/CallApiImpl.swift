@@ -981,12 +981,12 @@ extension CallApiImpl {
 
 //MARK: CallApiProtocol
 extension CallApiImpl: CallApiProtocol {
-    public func getCallId() -> String {
+    @objc public func getCallId() -> String {
         _reportMethod(event: "\(#function)")
         return connectInfo.callId
     }
     
-    public func initialize(config: CallConfig) {
+    @objc public func initialize(config: CallConfig) {
         defer {
             _reportMethod(event: "\(#function)", value: ["appId": config.appId, "userId": config.userId])
         }
@@ -1004,7 +1004,7 @@ extension CallApiImpl: CallApiProtocol {
         }
     }
     
-    public func deinitialize(completion: @escaping (()->())) {
+    @objc public func deinitialize(completion: @escaping (()->())) {
         _reportMethod(event: "\(#function)")
         switch state {
         case .calling:
@@ -1024,7 +1024,7 @@ extension CallApiImpl: CallApiProtocol {
         }
     }
     
-    public func renewToken(with rtcToken: String) {
+    @objc public func renewToken(with rtcToken: String) {
         _reportMethod(event: "\(#function)")
         guard let roomId = prepareConfig?.roomId else {
             callWarningPrint("renewToken failed, roomid missmatch")
@@ -1041,7 +1041,7 @@ extension CallApiImpl: CallApiProtocol {
         callPrint("rtc[\(roomId)] renewToken ret = \(ret ?? -1)")
     }
     
-    public func prepareForCall(prepareConfig: PrepareConfig, completion: ((NSError?) -> ())?) {
+    @objc public func prepareForCall(prepareConfig: PrepareConfig, completion: ((NSError?) -> ())?) {
         _reportMethod(event: "\(#function)", value: ["roomId": prepareConfig.roomId, "callTimeoutMillisecond": prepareConfig.callTimeoutMillisecond])
         _prepareForCall(prepareConfig: prepareConfig) { err in
             if let err = err {
@@ -1056,19 +1056,19 @@ extension CallApiImpl: CallApiProtocol {
         }
     }
     
-    public func addListener(listener: CallApiListenerProtocol) {
+    @objc public func addListener(listener: CallApiListenerProtocol) {
         _reportMethod(event: "\(#function)")
         if delegates.contains(listener) { return }
         delegates.add(listener)
     }
     
-    public func removeListener(listener: CallApiListenerProtocol) {
+    @objc public func removeListener(listener: CallApiListenerProtocol) {
         _reportMethod(event: "\(#function)")
         delegates.remove(listener)
     }
     
     //呼叫
-    public func call(remoteUserId: UInt, completion: ((NSError?) -> ())?) {
+    @objc public func call(remoteUserId: UInt, completion: ((NSError?) -> ())?) {
         _call(remoteUserId: remoteUserId,
               callType: .video,
               callExtension: [:],
@@ -1076,7 +1076,7 @@ extension CallApiImpl: CallApiProtocol {
         _reportMethod(event: "\(#function)", value: ["remoteUserId": remoteUserId])
     }
     
-    public func call(remoteUserId: UInt,
+    @objc public func call(remoteUserId: UInt,
                      callType: CallType,
                      callExtension: [String: Any],
                      completion: ((NSError?)->())?) {
@@ -1088,7 +1088,7 @@ extension CallApiImpl: CallApiProtocol {
     }
     
     //取消呼叫
-    public func cancelCall(completion: ((NSError?) -> ())?) {
+    @objc public func cancelCall(completion: ((NSError?) -> ())?) {
         _reportMethod(event: "\(#function)")
         let message: [String: Any] = _cancelCallMessageDic(cancelCallByInternal: false)
         _cancelCall(message: message, completion: completion)
@@ -1097,7 +1097,7 @@ extension CallApiImpl: CallApiProtocol {
     }
     
     //接受
-    public func accept(remoteUserId: UInt, completion: ((NSError?) -> ())?) {
+    @objc public func accept(remoteUserId: UInt, completion: ((NSError?) -> ())?) {
         _reportMethod(event: "\(#function)", value: ["remoteUserId": remoteUserId])
         guard let roomId = connectInfo.callingRoomId else {
             let errReason = "accept fail! current userId or roomId is empty"
@@ -1135,7 +1135,7 @@ extension CallApiImpl: CallApiProtocol {
     }
     
     //拒绝
-    public func reject(remoteUserId: UInt, reason: String?, completion: ((NSError?) -> ())?) {
+    @objc public func reject(remoteUserId: UInt, reason: String?, completion: ((NSError?) -> ())?) {
         _reportMethod(event: "\(#function)", value: ["remoteUserId": remoteUserId, "reason": reason ?? ""])
         let message = _rejectMessageDic(reason: reason, rejectByInternal: false)
         _reject(remoteUserId: remoteUserId, message: message) {[weak self] err in
@@ -1148,7 +1148,7 @@ extension CallApiImpl: CallApiProtocol {
     }
     
     //挂断
-    public func hangup(remoteUserId: UInt, reason: String?, completion: ((NSError?) -> ())?) {
+    @objc public func hangup(remoteUserId: UInt, reason: String?, completion: ((NSError?) -> ())?) {
         _reportMethod(event: "\(#function)", value: ["remoteUserId": remoteUserId])
         let message = _hangupMessageDic(reason: reason)
         _hangup(remoteUserId: remoteUserId, message: message) {[weak self] err in
