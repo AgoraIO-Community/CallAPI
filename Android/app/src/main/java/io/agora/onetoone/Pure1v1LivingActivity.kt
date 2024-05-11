@@ -174,8 +174,14 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         prepareConfig.remoteView = mViewBinding.vLeft
 
         api.addListener(this)
-        api.prepareForCall(prepareConfig){ error ->
-            completion.invoke(error == null)
+
+        rtmManager?.joinChannel(enterModel.currentUid) {
+            Log.d("pig", "rtm joinchannel: ${it?.errorReason}")
+            if (it == null) {
+                api.prepareForCall(prepareConfig){ error ->
+                    completion.invoke(error == null)
+                }
+            }
         }
     }
 
@@ -214,6 +220,9 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
             }
             else -> {}
         }
+        rtmManager?.setCallState(null, state) {
+
+        }
     }
 
     // 检查信令通道链接状态
@@ -231,6 +240,23 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
                 Toasty.normal(this, "环信未登录或连接异常", Toast.LENGTH_SHORT).show()
             }
             return client.isConnected
+        }
+    }
+
+    private fun checkCallEnable(userId: String, completion: (Boolean) -> Unit) {
+        rtmManager?.getCallState(null, userId) { e, state ->
+            if (e != null) {
+                runOnUiThread { Toasty.normal(this, "对方不在线", Toast.LENGTH_SHORT).show() }
+                completion.invoke(false)
+                return@getCallState
+            }
+
+            if (state != CallStateType.Prepared) {
+                runOnUiThread { Toasty.normal(this, "呼叫失败：对方用户正忙", Toast.LENGTH_SHORT).show() }
+                completion.invoke(false)
+                return@getCallState
+            }
+            completion.invoke(true)
         }
     }
 
@@ -313,6 +339,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
             rtcEngine.stopPreview()
             rtcEngine.leaveChannel()
             RtcEngine.destroy()
+            rtmManager?.leaveChannel(null)
             rtmManager?.logout()
             rtmManager = null
             emClient?.clean()
@@ -342,17 +369,25 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
             .setTitle("通话类型选择")
             .setMessage("选择音频或视频通话")
             .setPositiveButton("音频") { p0, p1 ->
-                api.call(targetUserId, CallType.Audio, mapOf("key1" to "value1", "key2" to "value2")) { error ->
-                    // call 失败立刻挂断
-                    if (error != null && mCallState == CallStateType.Calling) {
-                        api.cancelCall {  }
+                checkCallEnable(targetUserId.toString()) {
+                    if (it) {
+                        api.call(targetUserId, CallType.Audio, mapOf("key1" to "value1", "key2" to "value2")) { error ->
+                            // call 失败立刻挂断
+                            if (error != null && mCallState == CallStateType.Calling) {
+                                api.cancelCall {  }
+                            }
+                        }
                     }
                 }
             }.setNegativeButton("视频") { p0, p1 ->
-                api.call(targetUserId) { error ->
-                    // call 失败立刻挂断
-                    if (error != null && mCallState == CallStateType.Calling) {
-                        api.cancelCall {  }
+                checkCallEnable(targetUserId.toString()) {
+                    if (it) {
+                        api.call(targetUserId) { error ->
+                            // call 失败立刻挂断
+                            if (error != null && mCallState == CallStateType.Calling) {
+                                api.cancelCall { }
+                            }
+                        }
                     }
                 }
             }.create()

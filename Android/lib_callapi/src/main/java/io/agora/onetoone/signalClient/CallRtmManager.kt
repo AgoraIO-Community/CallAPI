@@ -2,6 +2,7 @@ package io.agora.onetoone.signalClient
 
 import android.util.Log
 import io.agora.onetoone.AGError
+import io.agora.onetoone.CallStateType
 import io.agora.rtm.*
 
 interface ICallRtmManagerListener {
@@ -40,6 +41,8 @@ class CallRtmManager(
     private var isExternalRtmClient = false
 
     private val listeners = mutableListOf<ICallRtmManagerListener>()
+
+    private val kUserCallStateKey = "callState"
 
     init {
         val rtm = client
@@ -138,6 +141,71 @@ class CallRtmManager(
                 callMessagePrint("rtm renewToken")
             }
             override fun onFailure(errorInfo: ErrorInfo?) {
+            }
+        })
+    }
+
+    fun joinChannel(channelName: String?, completion: (ErrorInfo?) -> Unit) {
+        val currentUserChannelName = channelName ?: userId.toString()
+        val options = SubscribeOptions()
+        options.withPresence = true
+        callMessagePrint("will joinChannel[$currentUserChannelName]")
+        rtmClient.subscribe(currentUserChannelName, options, object : ResultCallback<Void> {
+            override fun onSuccess(responseInfo: Void?) {
+                callMessagePrint("joinChannel[$currentUserChannelName] completion success")
+                completion(null)
+            }
+
+            override fun onFailure(errorInfo: ErrorInfo?) {
+                callMessagePrint("joinChannel[$currentUserChannelName] completion ${errorInfo?.errorReason}")
+                completion(errorInfo)
+            }
+        })
+    }
+
+    fun leaveChannel(channelName: String?) {
+        val currentUserChannelName = channelName ?: userId.toString()
+        rtmClient.unsubscribe(currentUserChannelName, object : ResultCallback<Void> {
+            override fun onSuccess(responseInfo: Void?) {
+            }
+
+            override fun onFailure(errorInfo: ErrorInfo?) {
+            }
+        })
+    }
+
+    fun setCallState(channelName: String?, state: CallStateType, completion: (ErrorInfo?) -> Unit) {
+        val currentUserChannelName = channelName ?: userId.toString()
+        callMessagePrint("will setCallState[$currentUserChannelName] '${state.value}'")
+        rtmClient.presence?.setState(currentUserChannelName, RtmConstants.RtmChannelType.MESSAGE, mapOf(kUserCallStateKey to state.value.toString()), object : ResultCallback<Void> {
+            override fun onSuccess(responseInfo: Void?) {
+                callMessagePrint("setCallState[$currentUserChannelName] completion success")
+                completion(null)
+            }
+
+            override fun onFailure(errorInfo: ErrorInfo?) {
+                callMessagePrint("setCallState[$currentUserChannelName] completion ${errorInfo?.errorReason}")
+                completion.invoke(errorInfo)
+            }
+        })
+    }
+
+    fun getCallState(userChannelName: String?, userId: String, completion: (ErrorInfo?, CallStateType) -> Unit) {
+        val channelName = userChannelName ?: userId
+        callMessagePrint("will getCallState[$channelName]")
+        rtmClient.presence?.getState(channelName, RtmConstants.RtmChannelType.MESSAGE, userId, object : ResultCallback<UserState> {
+            override fun onSuccess(responseInfo: UserState) {
+                callMessagePrint("getCallState[$channelName] completion success")
+                val states = responseInfo.states
+                val stateRaw = states?.get(kUserCallStateKey) ?: ""
+                val state = CallStateType.fromValue(stateRaw.toIntOrNull() ?: 0)
+                callMessagePrint("getCallState[$channelName] $stateRaw")
+                completion(null, state)
+            }
+
+            override fun onFailure(errorInfo: ErrorInfo?) {
+                callMessagePrint("getCallState[$channelName] completion ${errorInfo?.errorReason}")
+                completion.invoke(errorInfo, CallStateType.Idle)
             }
         })
     }
