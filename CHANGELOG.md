@@ -2,10 +2,12 @@
 
 ## [2.1.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.1.0)
 
-- 升级 Rtm SDK 至 2.2.0
+- 升级 Rtm SDK 至 2.2.0。
 - 新增语音通话功能。
 - 呼叫时支持发送自定义扩展信息。
 - 在呼叫中状态（calling）时，增加返回的 CallStateReason 和 CallEvent 类型。
+- 改进事件上报和日志写入，提升异常定位能力。
+
 
 ## [2.0.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.0.0)
 
