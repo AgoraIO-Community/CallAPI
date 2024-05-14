@@ -175,12 +175,18 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
 
         api.addListener(this)
 
-        rtmManager?.joinChannel(enterModel.currentUid) {
-            Log.d("pig", "rtm joinchannel: ${it?.errorReason}")
-            if (it == null) {
-                api.prepareForCall(prepareConfig){ error ->
-                    completion.invoke(error == null)
+        if (enterModel.isRtm) {
+            rtmManager?.joinChannel(enterModel.currentUid) {
+                Log.d("pig", "rtm joinchannel: ${it?.errorReason}")
+                if (it == null) {
+                    api.prepareForCall(prepareConfig) { error ->
+                        completion.invoke(error == null)
+                    }
                 }
+            }
+        } else {
+            api.prepareForCall(prepareConfig) { error ->
+                completion.invoke(error == null)
             }
         }
     }
@@ -244,6 +250,10 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
     }
 
     private fun checkCallEnable(userId: String, completion: (Boolean) -> Unit) {
+        if (!enterModel.isRtm) {
+            completion.invoke(true)
+            return
+        }
         rtmManager?.getCallState(null, userId) { e, state ->
             if (e != null) {
                 runOnUiThread { Toasty.normal(this, "对方不在线", Toast.LENGTH_SHORT).show() }
