@@ -584,6 +584,11 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
                            errorCode: Int,
                            message: String?) {
         NSLog("onCallErrorOccur errorEvent:\(errorEvent.rawValue), errorType: \(errorType.rawValue), errorCode: \(errorCode), message: \(message ?? "")")
+        if errorEvent == .rtcOccurError, errorType == .rtc, errorCode == AgoraErrorCode.tokenExpired.rawValue {
+            //RTC加入频道失败，需要取消呼叫，并重新获取token
+            self.api.cancelCall { err in
+            }
+        }
     }
     
     @objc func callDebugInfo(message: String, logLevel: CallLogLevel) {
