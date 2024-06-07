@@ -18,7 +18,41 @@
 请参考官网文档 [开通服务](https://doc.shengwang.cn/doc/one-to-one-live/android/get-started/enable-service)
 
 ## 2. 运行示例
-请参考官网文档 [跑通示例项目](https://doc.shengwang.cn/doc/one-to-one-live/android/get-started/run-example)
+
+- 克隆或者直接下载项目源码
+- 打开 Android Studio，并用它来打开项目的 [Android](../Android) 目录。IDE 会自动开始构建项目
+
+- 获取声网 App ID -------- [声网Agora - 文档中心 - 如何获取 App ID](https://docs.agora.io/cn/Agora%20Platform/get_appid_token?platform=All%20Platforms#%E8%8E%B7%E5%8F%96-app-id)
+
+  > 点击创建应用。
+  > <br><img src="https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/create_app_1.jpg" width="500px">
+  > <br>选择你要创建的应用类型。
+  > <br><img src="https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/create_app_2.jpg" width="500px">
+
+- 获取 App 证书 ----- [声网Agora - 文档中心 - 获取 App 证书](https://docs.agora.io/cn/Agora%20Platform/get_appid_token?platform=All%20Platforms#%E8%8E%B7%E5%8F%96-app-%E8%AF%81%E4%B9%A6)
+
+  > 在声网控制台的项目管理页面，找到你的项目，点击配置。
+  > <br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/1641871111769.png" width="500px">
+  > <br>点击主要证书下面的复制图标，即可获取项目的 App 证书。
+  > <br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/1637637672988.png" width="500px">
+
+- 开启 RTM
+  > <br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config1.jpg" width="500px">
+  > <br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config2.jpg" width="500px">
+  > <br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/config/rtm_config3.jpg" width="500px">
+
+- <a id="custom-report">开通声网自定义数据上报和分析服务</a>
+  
+  > 该服务当前处于免费内测期，如需试用该服务，请联系 sales@agora.io
+  
+- 在项目根目录找到 [gradle.properties](gradle.properties)，填入声网的 AppId 和 Certificate 以及环信 AppKey(如果不需要体验环信自定义信令流程，IMAppKey 可以设置为`""`)
+```
+AG_APP_ID=
+AG_APP_CERTIFICATE=
+IM_APP_KEY=
+```
+- 在 Android Studio 顶部工具栏中，单击“File”->选择“Sync Project With Gradle File”，等待 Gradle 同步完成，即可运行项目并进行调试
+
 
 ## 3. 项目介绍
 请参考官网文档 [场景介绍](https://doc.shengwang.cn/doc/one-to-one-live/android/overview/product-overview)

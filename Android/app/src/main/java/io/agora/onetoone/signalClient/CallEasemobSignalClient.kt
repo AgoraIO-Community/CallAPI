@@ -122,12 +122,12 @@ class CallEasemobSignalClient(
         msg.setMessageStatusCallback(object : EMCallBack {
             override fun onSuccess() {
                 // 发送消息成功
-                completion?.invoke(null)
+                runOnUiThread { completion?.invoke(null) }
             }
 
             override fun onError(code: Int, error: String) {
                 // 发送消息失败
-                completion?.invoke(AGError(error, code))
+                runOnUiThread { completion?.invoke(AGError(error, code)) }
             }
 
             override fun onProgress(progress: Int, status: String) {}
@@ -138,8 +138,8 @@ class CallEasemobSignalClient(
 
     // ---------------- EMMessageListener ----------------
     override fun onMessageReceived(messages: MutableList<EMMessage>?) {
-        messages?.forEach {
-            runOnUiThread {
+        runOnUiThread {
+            messages?.forEach {
                 val body = it.body as EMTextMessageBody
                 listeners.forEach {
                     it.onMessageReceive(body.message)

@@ -20,7 +20,49 @@
 请参考官网文档 [开通服务](https://doc.shengwang.cn/doc/one-to-one-live/ios/get-started/enable-service)
 
 ## 2. 运行示例
-请参考官网文档 [跑通示例项目](https://doc.shengwang.cn/doc/one-to-one-live/ios/get-started/run-example)
+
+- 克隆或者直接下载项目源码
+- 申请账号和权限
+  > **注意，由于Demo里包含了基于 `Rtm` 和 `环信` 的两种1v1信令呼叫场景，如果您只需要体验其中的一种呼叫场景，可以跳过另一种的申请流程**
+  - 进入声网控制台获取 APP ID 和 APP 证书 [控制台入口](https://console.shengwang.cn/overview)
+
+  - 点击创建项目
+
+    ![图片](https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/ent-full/sdhy_1.jpg)
+
+  - 选择项目基础配置, 鉴权机制需要选择**安全模式**
+
+    ![图片](https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/ent-full/sdhy_2.jpg)
+
+  - 在项目的功能配置中启用"实时消息 RTM"功能
+     ```json
+     注: 如果没有启动"实时消息 RTM"功能, 将无法体验项目完整功能
+     ```
+
+    ![图片](https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/ent-full/sdhy_7.jpg)
+
+  - 拿到项目 APP ID 与 APP 证书
+
+    ![图片](https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/ent-full/sdhy_3.jpg)
+  - [注册环信获取AppKey](https://doc.easemob.com/product/enable_and_configure_IM.html#%E5%88%9B%E5%BB%BA%E5%BA%94%E7%94%A8)
+    - 环信相关功能为Demo层的扩展功能，仅提供简单的实现消息收发，一些边缘case异常、版本升级等需要自行维护。
+    - CallApi Demo里的自定义环信信令管理使用的是 username + password 方式，如果需要使用更安全的token方式鉴权，需要自行实现
+
+- <a id="custom-report">开通声网自定义数据上报和分析服务</a>
+  > 该服务当前处于免费内测期，如需试用该服务，请联系 sales@agora.io
+
+- 在项目的[KeyCenter.swift](Example/CallAPI/KeyCenter.swift) 中填写声网 APP ID 和 APP 证书 以及环信 App Key (如果不需要体验环信自定义信令流程，IMAppKey可以设置为`""`)
+  ```swift
+  static var AppId: String = <#Your AppId#>
+  static var Certificate: String = <#Your Certificate#>
+  static var IMAppKey: String = <#Your EaseMob AppKey#>
+  ```
+
+
+- 打开终端，进入到[Podfile](Example/Podfile)目录下，执行`pod install`命令
+
+- 最后打开[CallAPI.xcworkspace](Example/CallAPI.xcworkspace)，运行即可开始您的体验
+
 
 ## 3. 项目介绍
 请参考官网文档 [项目介绍](https://doc.shengwang.cn/doc/one-to-one-live/ios/overview/product-overview)

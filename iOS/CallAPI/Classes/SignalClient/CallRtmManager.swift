@@ -32,10 +32,6 @@ public protocol ICallRtmManagerListener: NSObjectProtocol {
     /// rtm连接断开
     func onDisconnected()
     
-    /// rtm中断，需要重新login
-    func onConnectionLost()
-    
-    
     /// token即将过期，需要renew token
     /// - Parameter channelName: 即将过期的频道名
     func onTokenPrivilegeWillExpire(channelName: String)
@@ -169,10 +165,6 @@ extension CallRtmManager: AgoraRtmClientDelegate {
         callMessagePrint("rtm connectionChangedToState: \(state.rawValue) reason: \(reason.rawValue)")
         if reason == .changedTokenExpired {
             self.delegate?.onTokenPrivilegeWillExpire(channelName: channelName)
-        } else if reason == .changedChangedLost {
-            //TODO: 内部重试，rtm 2.2.0支持
-            self.isConnected = false
-            self.delegate?.onConnectionLost()
         } else if state == .connected {
             if self.isConnected == true { return }
             self.isConnected = true

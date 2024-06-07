@@ -43,7 +43,7 @@ class NetworkManager:NSObject {
     }()
 
     @objc static let shared = NetworkManager()
-    private let baseServerUrl: String = "https://service.agora.io/toolbox/"
+    private let baseServerUrl: String = "https://service.shengwang.cn/toolbox/"
     
     private func basicAuth(key: String, password: String) -> String {
         let loginString = String(format: "%@:%@", key, password)
@@ -66,7 +66,6 @@ class NetworkManager:NSObject {
                         tokenTypes: [AgoraTokenType],
                         success: @escaping ([Int: String]) -> Void)
     {
-        print("generateTokens start")
         let group = DispatchGroup()
         var tokenMap: [Int: String] = [Int:String]()
         
@@ -95,6 +94,7 @@ class NetworkManager:NSObject {
                        type: AgoraTokenType,
                        success: @escaping (String?) -> Void)
     {
+        let date = Date()
         let params = ["appCertificate": KeyCenter.Certificate ?? "",
                       "appId": KeyCenter.AppId,
                       "channelName": channelName,
@@ -112,6 +112,7 @@ class NetworkManager:NSObject {
                                           success: { response in
             let data = response["data"] as? [String: String]
             let token = data?["token"]
+            print("generateToken[\(type.rawValue)] cost: \(Int64(-date.timeIntervalSinceNow * 1000)) ms")
             print(response)
             success(token)
 //            ToastView.hidden()

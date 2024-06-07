@@ -273,8 +273,8 @@ extension ShowTo1v1RoomViewController {
         canvas.view = canvasView
         canvas.uid = uid
         canvas.mirrorMode = .auto
-        rtcEngine.enableAudio()
-        rtcEngine.enableVideo()
+        rtcEngine.enableLocalAudio(true)
+        rtcEngine.enableLocalVideo(true)
         rtcEngine.setDefaultAudioRouteToSpeakerphone(true)
         rtcEngine.setupLocalVideo(canvas)
         rtcEngine.startPreview()
@@ -356,6 +356,12 @@ extension ShowTo1v1RoomViewController {
         self.api.prepareForCall(prepareConfig: prepareConfig) { err in
             completion?(err == nil)
         }
+        
+        let cameraConfig = AgoraCameraCapturerConfiguration()
+        cameraConfig.cameraDirection = .front
+        cameraConfig.dimensions = videoEncoderConfig!.dimensions
+        cameraConfig.frameRate = Int32(videoEncoderConfig!.frameRate.rawValue)
+        rtcEngine.setCameraCapturerConfiguration(cameraConfig)
     }
     
     @objc func closeAction() {
@@ -389,11 +395,33 @@ extension ShowTo1v1RoomViewController {
         }
         
         publishMedia(false)
-        api.call(remoteUserId: showUserId) {[weak self] error in
-            guard let _ = error, self?.callState == .calling else {return}
-            self?.api.cancelCall(completion: { err in
-            })
+        let remoteUserId = showUserId
+        
+        let alertController = UIAlertController(title: "呼叫", message: "请选择呼叫类型", preferredStyle: .actionSheet)
+        // 添加操作按钮
+        let action1 = UIAlertAction(title: "视频呼叫", style: .default) {[weak self] _ in
+            self?.api.call(remoteUserId: remoteUserId) { error in
+                guard let error = error, self?.callState == .calling else {return}
+                self?.api.cancelCall { err in }
+                AUIToast.show(text: "呼叫失败: \(error.localizedDescription)")
+            }
         }
+        alertController.addAction(action1)
+
+        let action2 = UIAlertAction(title: "音频呼叫", style: .default) {[weak self] _ in
+            self?.api.call(remoteUserId: remoteUserId,
+                           callType: .audio,
+                           callExtension: ["test_call": 111]) { error in
+                guard let _ = error, self?.callState == .calling else {return}
+                self?.api.cancelCall { err in }
+            }
+        }
+        alertController.addAction(action2)
+
+        // 添加取消按钮
+        let cancelAction = UIAlertAction(title: "取消", style: .cancel, handler: nil)
+        alertController.addAction(cancelAction)
+        present(alertController, animated: true)
     }
     
     @objc func hangupAction() {
@@ -485,11 +513,12 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
             if currentUid == toUserId {
                 connectedUserId = fromUserId
                 self.api.accept(remoteUserId: fromUserId) {[weak self] err in
-                    if let err = err {
-                        //如果接受消息出错，则发起拒绝，回到初始状态
-                        self?.api.reject(remoteUserId: fromUserId, reason: err.localizedDescription, completion: { err in
-                        })
-                    }
+                    guard let err = err else { return }
+                    //如果接受消息出错，则发起拒绝，回到初始状态
+                    self?.api.reject(remoteUserId: fromUserId, reason: err.localizedDescription, completion: { err in
+                    })
+                    
+                    AUIToast.show(text: "接受呼叫失败: \(err.localizedDescription)")
                 }
             } else if currentUid == fromUserId {
                 connectedUserId = toUserId
@@ -513,12 +542,6 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
             
             //setup configuration after join channel
             rtcEngine.setVideoEncoderConfiguration(videoEncoderConfig!)
-
-            let cameraConfig = AgoraCameraCapturerConfiguration()
-            cameraConfig.cameraDirection = .front
-            cameraConfig.dimensions = videoEncoderConfig!.dimensions
-            cameraConfig.frameRate = Int32(videoEncoderConfig!.frameRate.rawValue)
-            rtcEngine.setCameraCapturerConfiguration(cameraConfig)
         case .prepared:
             AUIAlertManager.hiddenView()
             switch stateReason {
@@ -549,7 +572,7 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
     @objc func onCallEventChanged(with event: CallEvent, eventReason: String?) {
         NSLog("onCallEventChanged event: \(event.rawValue), eventReason: \(eventReason ?? "")")
         switch event {
-        case .remoteLeave:
+        case .remoteLeft:
             hangupAction()
         default:
             break
@@ -561,6 +584,11 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
                            errorCode: Int,
                            message: String?) {
         NSLog("onCallErrorOccur errorEvent:\(errorEvent.rawValue), errorType: \(errorType.rawValue), errorCode: \(errorCode), message: \(message ?? "")")
+        if errorEvent == .rtcOccurError, errorType == .rtc, errorCode == AgoraErrorCode.tokenExpired.rawValue {
+            //RTC加入频道失败，需要取消呼叫，并重新获取token
+            self.api.cancelCall { err in
+            }
+        }
     }
     
     @objc func callDebugInfo(message: String, logLevel: CallLogLevel) {
@@ -605,17 +633,7 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
     }
 }
 
-extension ShowTo1v1RoomViewController: ICallRtmManagerListener {
-    func onConnectionLost() {
-        NSLog("onConnectionLost")
-        AUIToast.show(text: "rtm连接错误，需要重新登录")
-        // 表示rtm超时断连了，需要重新登录，这里模拟了3s重新登录
-        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 3) {
-            self.rtmClient?.logout()
-            self.rtmClient?.login(self.rtmToken)
-        }
-    }
-    
+extension ShowTo1v1RoomViewController: ICallRtmManagerListener {    
     func onConnected() {
         NSLog("onConnected")
         AUIToast.show(text: "rtm已连接")

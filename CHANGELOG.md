@@ -1,11 +1,19 @@
 # Change Log
 
+## [2.1.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.1.0)
+
+- 升级 Rtm SDK 至 2.2.0。
+- 新增语音通话功能。
+- 呼叫时支持发送自定义扩展信息。
+- 在呼叫中状态（calling）时，增加返回的 CallStateReason 和 CallEvent 类型。
+- 改进事件上报和日志写入，提升异常定位能力。
+
+
 ## [2.0.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.0.0)
 
 - 新增自定义信令功能，支持使用非 Rtm 来发送消息。
 - 优化事件上报
 - 优化 Demo 层的异常处理。
-
 
 ## [1.1.3](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.3)
 
@@ -14,6 +22,7 @@
 - 优化画布清理逻辑。
 - 通话结束时关闭本地音视频采集
   
+
 ## [1.1.2](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.2)
 
 - 优化美颜接入后镜像问题。

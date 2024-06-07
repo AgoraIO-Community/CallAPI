@@ -273,11 +273,33 @@ extension EMPure1v1RoomViewController {
             AUIToast.show(text: "CallAPi初始化中")
             return
         }
-        api.call(remoteUserId: targetUserId) {[weak self] error in
-            guard let _ = error, self?.callState == .calling else {return}
-            self?.api.cancelCall(completion: { err in
-            })
+        
+        let remoteUserId = targetUserId
+        
+        let alertController = UIAlertController(title: "呼叫", message: "请选择呼叫类型", preferredStyle: .actionSheet)
+        // 添加操作按钮
+        let action1 = UIAlertAction(title: "视频呼叫", style: .default) {[weak self] _ in
+            self?.api.call(remoteUserId: remoteUserId) { error in
+                guard let _ = error, self?.callState == .calling else {return}
+                self?.api.cancelCall { err in }
+            }
         }
+        alertController.addAction(action1)
+
+        let action2 = UIAlertAction(title: "音频呼叫", style: .default) {[weak self] _ in
+            self?.api.call(remoteUserId: remoteUserId,
+                           callType: .audio,
+                           callExtension: ["test_call": 111]) { error in
+                guard let _ = error, self?.callState == .calling else {return}
+                self?.api.cancelCall { err in }
+            }
+        }
+        alertController.addAction(action2)
+
+        // 添加取消按钮
+        let cancelAction = UIAlertAction(title: "取消", style: .cancel, handler: nil)
+        alertController.addAction(cancelAction)
+        present(alertController, animated: true)
     }
     
     @objc func hangupAction() {
@@ -362,7 +384,7 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
 //                if prepareConfig.autoAccept == false {
                     AUIAlertView()
                         .isShowCloseButton(isShow: true)
-                        .title(title: "用户 \(fromUserId) 邀请您1对1通话")
+                        .title(title: "用户 \(fromUserId) 邀请您1对1\(stateReason == .remoteAudioCall ? "语音": "视频")通话")
                         .rightButton(title: "同意")
                         .leftButton(title: "拒绝")
                         .leftButtonTapClosure {[weak self] in
@@ -418,7 +440,7 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
                 AUIToast.show(text: "通话被拒绝")
             case .callingTimeout:
                 AUIToast.show(text: "无应答")
-            case .localCancel, .remoteCancel:
+            case .localCancelled, .remoteCancelled:
                 AUIToast.show(text: "通话被取消")
             case .remoteCallBusy:
                 AUIToast.show(text: "用户正忙")
@@ -442,7 +464,7 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
     @objc func onCallEventChanged(with event: CallEvent, eventReason: String?) {
         NSLog("onCallEventChanged: \(event.rawValue), eventReason: \(eventReason ?? "")")
         switch event {
-        case .remoteLeave:
+        case .remoteLeft:
             hangupAction()
         default:
             break

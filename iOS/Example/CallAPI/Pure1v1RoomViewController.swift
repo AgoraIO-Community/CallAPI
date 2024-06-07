@@ -82,7 +82,7 @@ class Pure1v1RoomViewController: UIViewController {
         config.audioScenario = .gameStreaming
         config.areaCode = .global
         let engine = AgoraRtcEngineKit.sharedEngine(with: config,
-                                                    delegate: self)
+                                                    delegate: nil)
         
         engine.setClientRole(.broadcaster)
         return engine
@@ -279,13 +279,20 @@ extension Pure1v1RoomViewController {
         api.prepareForCall(prepareConfig: prepareConfig) { err in
             completion(err == nil)
         }
+        
+        if let videoEncoderConfig = videoEncoderConfig {
+            let cameraConfig = AgoraCameraCapturerConfiguration()
+            cameraConfig.cameraDirection = .front
+            cameraConfig.dimensions = videoEncoderConfig.dimensions
+            cameraConfig.frameRate = Int32(videoEncoderConfig.frameRate.rawValue)
+            rtcEngine.setCameraCapturerConfiguration(cameraConfig)
+        }
     }
     
     @objc func closeAction() {
         api.deinitialize {
             self.api.removeListener(listener: self)
             self.rtcEngine.stopPreview()
-            self.rtcEngine.delegate = nil
             self.rtcEngine.leaveChannel()
             AgoraRtcEngineKit.destroy()
             self.rtmManager?.delegate = nil
@@ -305,11 +312,34 @@ extension Pure1v1RoomViewController {
             AUIToast.show(text: "CallAPi初始化中")
             return
         }
-        api.call(remoteUserId: targetUserId) {[weak self] error in
-            guard let _ = error, self?.callState == .calling else {return}
-            self?.api.cancelCall(completion: { err in
-            })
+        let remoteUserId = targetUserId
+        
+        let alertController = UIAlertController(title: "呼叫", message: "请选择呼叫类型", preferredStyle: .actionSheet)
+        // 添加操作按钮
+        let action1 = UIAlertAction(title: "视频呼叫", style: .default) {[weak self] _ in
+            self?.api.call(remoteUserId: remoteUserId) { error in
+                guard let error = error, self?.callState == .calling else {return}
+                self?.api.cancelCall { err in }
+                
+                AUIToast.show(text: "呼叫失败: \(error.localizedDescription)")
+            }
         }
+        alertController.addAction(action1)
+
+        let action2 = UIAlertAction(title: "音频呼叫", style: .default) {[weak self] _ in
+            self?.api.call(remoteUserId: remoteUserId, 
+                           callType: .audio,
+                           callExtension: ["test_call": 111]) { error in
+                guard let _ = error, self?.callState == .calling else {return}
+                self?.api.cancelCall { err in }
+            }
+        }
+        alertController.addAction(action2)
+
+        // 添加取消按钮
+        let cancelAction = UIAlertAction(title: "取消", style: .cancel, handler: nil)
+        alertController.addAction(cancelAction)
+        present(alertController, animated: true)
     }
     
     @objc func hangupAction() {
@@ -421,7 +451,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                 connectedUserId = fromUserId
                 AUIAlertView()
                     .isShowCloseButton(isShow: true)
-                    .title(title: "用户 \(fromUserId) 邀请您1对1通话")
+                    .title(title: "用户 \(fromUserId) 邀请您1对1\(stateReason == .remoteAudioCall ? "语音": "视频")通话")
                     .rightButton(title: "同意")
                     .leftButton(title: "拒绝")
                     .leftButtonTapClosure {[weak self] in
@@ -434,11 +464,11 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                         guard let self = self else { return }
                         guard self._checkConnectionAndNotify() else { return }
                         self.api.accept(remoteUserId: fromUserId) {[weak self] err in
-                            if let err = err {
-                                //如果接受消息出错，则发起拒绝，回到初始状态
-                                self?.api.reject(remoteUserId: fromUserId, reason: err.localizedDescription, completion: { err in
-                                })
-                            }
+                            guard let err = err else { return }
+                            //如果接受消息出错，则发起拒绝，回到初始状态
+                            self?.api.reject(remoteUserId: fromUserId, reason: err.localizedDescription, completion: { err in
+                            })
+                            AUIToast.show(text: "接受呼叫失败: \(err.localizedDescription)")
                         }
                     })
                     .show()
@@ -465,11 +495,6 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
             //setup configuration after join channel ex
             if let videoEncoderConfig = videoEncoderConfig {
                 rtcEngine.setVideoEncoderConfiguration(videoEncoderConfig)
-                let cameraConfig = AgoraCameraCapturerConfiguration()
-                cameraConfig.cameraDirection = .front
-                cameraConfig.dimensions = videoEncoderConfig.dimensions
-                cameraConfig.frameRate = Int32(videoEncoderConfig.frameRate.rawValue)
-                rtcEngine.setCameraCapturerConfiguration(cameraConfig)
             }
         case .prepared:
             switch stateReason {
@@ -479,7 +504,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                 AUIToast.show(text: "通话被拒绝")
             case .callingTimeout, .remoteCallingTimeout:
                 AUIToast.show(text: "无应答")
-            case .localCancel, .remoteCancel:
+            case .localCancelled, .remoteCancelled:
                 AUIToast.show(text: "通话被取消")
             case .remoteCallBusy:
                 AUIToast.show(text: "用户正忙")
@@ -503,7 +528,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
     @objc func onCallEventChanged(with event: CallEvent, eventReason: String?) {
         NSLog("onCallEventChanged event: \(event.rawValue), eventReason: \(eventReason ?? "")")
         switch event {
-        case .remoteLeave:
+        case .remoteLeft:
             hangupAction()
         default:
             break
@@ -514,6 +539,11 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                            errorType: CallErrorCodeType,
                            errorCode: Int,
                            message: String?) {
+        if errorEvent == .rtcOccurError, errorType == .rtc, errorCode == AgoraErrorCode.tokenExpired.rawValue {
+            //RTC加入频道失败，需要取消呼叫，并重新获取token
+            self.api.cancelCall { err in
+            }
+        }
         NSLog("onCallErrorOccur errorEvent:\(errorEvent.rawValue), errorType: \(errorType.rawValue), errorCode: \(errorCode), message: \(message ?? "")")
     }
     
@@ -560,16 +590,6 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
 }
 
 extension Pure1v1RoomViewController: ICallRtmManagerListener {
-    func onConnectionLost() {
-        NSLog("onConnectionLost")
-        AUIToast.show(text: "rtm连接错误，需要重新登录")
-        // 表示rtm超时断连了，需要重新登录，这里模拟了3s重新登录
-        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 3) {
-            self.rtmClient?.logout()
-            self.rtmClient?.login(self.rtmToken)
-        }
-    }
-    
     func onConnected() {
         NSLog("onConnected")
         AUIToast.show(text: "rtm已连接")
