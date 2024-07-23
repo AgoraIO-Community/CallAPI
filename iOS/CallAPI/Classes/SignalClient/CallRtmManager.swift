@@ -37,7 +37,7 @@ public protocol ICallRtmManagerListener: NSObjectProtocol {
     func onTokenPrivilegeWillExpire(channelName: String)
 }
 
-@objcMembers public class CallRtmManager: NSObject {
+public class CallRtmManager: NSObject {
     public var isConnected: Bool = false
     public weak var delegate: ICallRtmManagerListener?
     

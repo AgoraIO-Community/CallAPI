@@ -9,14 +9,14 @@ import Foundation
 import AgoraRtcKit
 
 /// 初始化配置信息
-@objcMembers public class CallConfig: NSObject {
+@objc public class CallConfig: NSObject {
     public var appId: String = ""                          //声网App Id
     public var userId: UInt = 0                            //用户id
     public var rtcEngine: AgoraRtcEngineKit!               //rtc engine实例
     public var signalClient: ISignalClient!                //信令通道对象实例
 }
 
-@objcMembers public class PrepareConfig: NSObject {
+@objc public class PrepareConfig: NSObject {
     public var roomId: String = ""                      //自己的Rtc频道名，用于呼叫对端用户时让对端用户加入这个RTC频道
     public var rtcToken: String = ""                    //rtc token，需要使用万能token，token创建的时候channel name为空字符串
     public var localView: UIView!                       //显示本地流的画布
