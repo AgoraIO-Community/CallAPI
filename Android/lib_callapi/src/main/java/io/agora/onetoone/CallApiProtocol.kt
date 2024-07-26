@@ -18,7 +18,6 @@ open class CallConfig(
 open class PrepareConfig(
     var roomId: String = "",                      // 自己的Rtc频道名，用于呼叫对端用户时让对端用户进入加入这个RTC频道
     var rtcToken: String = "",                    // rtc token，需要使用万能token，token创建的时候channel name为空字符串
-    var rtmToken: String = "",                    // rtm token
     var localView: ViewGroup? = null,             // 显示本地流的画布
     var remoteView: ViewGroup? = null,            // 显示远端流的画布
     var callTimeoutMillisecond: Long = 15000L,    // 呼叫超时时间，单位毫秒，如果传0内部将不做超时逻辑

@@ -102,7 +102,6 @@ class LivingActivity : AppCompatActivity(), ICallApiListener {
         }
         prepareConfig = PrepareConfig()
         prepareConfig.rtcToken = enterModel.rtcToken
-        prepareConfig.rtmToken = enterModel.rtmToken
 
         role = if (enterModel.isBrodCaster) CallRole.CALLEE else CallRole.CALLER
 
@@ -128,7 +127,7 @@ class LivingActivity : AppCompatActivity(), ICallApiListener {
             // 使用RtmManager管理RTM
             rtmManager = createRtmManager(BuildConfig.AG_APP_ID, enterModel.currentUid.toInt())
             // rtm login
-            rtmManager?.login(prepareConfig.rtmToken) {
+            rtmManager?.login(enterModel.rtmToken) {
                 if (it == null) {
                     // login 成功后初始化 call api
                     initCallApi(completion)
@@ -632,25 +631,18 @@ class LivingActivity : AppCompatActivity(), ICallApiListener {
                 }
             }
         }
-        HttpManager.token007("", enterModel.currentUid, 1) { rtcToken ->
+        HttpManager.token007("", enterModel.currentUid) { token ->
             runOnUiThread {
-                if (rtcToken != null) {
-                    rtcTokenTemp = rtcToken
-                    runnable.run()
-                }
-            }
-        }
-        HttpManager.token007("", enterModel.currentUid, 2) { rtmToken ->
-            runOnUiThread {
-                if (rtmToken != null) {
-                    rtmTokenTemp = rtmToken
+                if (token != null) {
+                    rtcTokenTemp = token
+                    rtmTokenTemp = token
                     runnable.run()
                 }
             }
         }
         //观众更新主播频道token
         if (!enterModel.isBrodCaster) {
-            HttpManager.token007(enterModel.showRoomId, enterModel.currentUid, 1) { rtcToken ->
+            HttpManager.token007(enterModel.showRoomId, enterModel.currentUid) { rtcToken ->
                 runOnUiThread {
                     if (rtcToken != null) {
                         enterModel.showRoomToken = rtcToken

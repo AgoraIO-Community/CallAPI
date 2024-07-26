@@ -136,28 +136,19 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        HttpManager.token007("", currentUserId, 1) { rtcToken ->
+        HttpManager.token007("", currentUserId) { token ->
             runOnUiThread {
-                if (rtcToken != null) {
+                if (token != null) {
                     if (isShowMode) {
-                        enterModel.rtcToken = rtcToken
-                        enterModel.showRoomToken = rtcToken
+                        enterModel.rtcToken = token
+                        enterModel.showRoomToken = token
                     } else {
-                        enterModel.rtcToken = rtcToken
+                        enterModel.rtcToken = token
                     }
+                    enterModel.rtmToken = token
                     runnable.run()
                 } else {
-                    Toasty.normal(this, "get RTC token failed", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-        HttpManager.token007("", currentUserId, 2) { rtmToken ->
-            runOnUiThread {
-                if (rtmToken != null) {
-                    enterModel.rtmToken = rtmToken
-                    runnable.run()
-                } else {
-                    Toasty.normal(this, "get RTM token failed", Toast.LENGTH_SHORT).show()
+                    Toasty.normal(this, "get token failed", Toast.LENGTH_SHORT).show()
                 }
             }
         }
