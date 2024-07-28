@@ -7,6 +7,7 @@ import io.agora.onetoone.BuildConfig
 import okhttp3.*
 import org.json.JSONException
 import org.json.JSONObject
+import org.json.JSONArray
 import java.io.IOException
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -39,8 +40,10 @@ object HttpManager {
     }
 
     // 1: RTC Token ; 2: RTM Token
-    fun token007(channelName: String, uid: String, type: Int, onCompletion: ((String?) -> Unit)?) {
+    fun token007(channelName: String, uid: String, onCompletion: ((String?) -> Unit)?) {
         val postBody = JSONObject()
+        val types = arrayOf(1,2)
+        val jsonArray = JSONArray(types)
         try {
             postBody.put("appId", BuildConfig.AG_APP_ID)
             postBody.put("appCertificate", BuildConfig.AG_APP_CERTIFICATE)
@@ -48,7 +51,7 @@ object HttpManager {
             postBody.put("expire", 1500) // s
             postBody.put("src", "Android")
             postBody.put("ts", System.currentTimeMillis())
-            postBody.put("type", type)
+            postBody.put("types", jsonArray)
             postBody.put("uid", uid)
         } catch (e: JSONException) {
             onCompletion?.invoke(null)

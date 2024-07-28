@@ -7,11 +7,6 @@
 import UIKit
 //import YYCategories
 
-@objc public enum TokenGeneratorType: Int {
-    case token006 = 0
-    case token007 = 1
-}
-
 @objc public enum AgoraTokenType: Int {
     case rtc = 1
     case rtm = 2
@@ -58,69 +53,35 @@ class NetworkManager:NSObject {
     /// - Parameters:
     ///   - channelName: <#channelName description#>
     ///   - uid: <#uid description#>
-    ///   - tokenGeneratorType: token types
-    ///   - tokenTypes: [token type :  token string]
-    func generateTokens(channelName: String,
-                        uid: String,
-                        tokenGeneratorType: TokenGeneratorType,
-                        tokenTypes: [AgoraTokenType],
-                        success: @escaping ([Int: String]) -> Void)
-    {
-        let group = DispatchGroup()
-        var tokenMap: [Int: String] = [Int:String]()
-        
-        tokenTypes.forEach { type in
-            group.enter()
-            generateToken(channelName: channelName,
-                          uid: uid,
-                          tokenType: tokenGeneratorType,
-                          type: type) { token in
-                if let token = token, token.count > 0 {
-                    tokenMap[type.rawValue] = token
-                }
-                group.leave()
-            }
-        }
-
-        group.notify(queue: DispatchQueue.main) {
-            success(tokenMap)
-        }
-    }
-
-    @objc
+    ///   - types: [token type :  token string]
     func generateToken(channelName: String,
                        uid: String,
-                       tokenType: TokenGeneratorType,
-                       type: AgoraTokenType,
+                       expire: Int = 1500,
+                       types: [AgoraTokenType],
                        success: @escaping (String?) -> Void)
     {
         let date = Date()
         let params = ["appCertificate": KeyCenter.Certificate ?? "",
                       "appId": KeyCenter.AppId,
                       "channelName": channelName,
-                      "expire": 1500,
+                      "expire": expire,
                       "src": "iOS",
                       "ts": 0,
-                      "type": type.rawValue,
+                      "types": types.map({NSNumber(value: $0.rawValue)}),
                       "uid": uid] as [String: Any]
 //        ToastView.showWait(text: "loading...", view: nil)
-        let url = tokenType == .token006 ?
-        "\(baseServerUrl)v2/token006/generate"
-        : "\(baseServerUrl)v2/token/generate"
+        let url = "\(baseServerUrl)v2/token/generate"
         NetworkManager.shared.postRequest(urlString: url,
-                                          params: params,
-                                          success: { response in
+                                          params: params) { response in
             let data = response["data"] as? [String: String]
-            let token = data?["token"]
-            print("generateToken[\(type.rawValue)] cost: \(Int64(-date.timeIntervalSinceNow * 1000)) ms")
+            let token = data?["token"] as? String
+            print("generateToken[\(types)] cost: \(Int64(-date.timeIntervalSinceNow * 1000)) ms")
             print(response)
             success(token)
-//            ToastView.hidden()
-        }, failure: { error in
+        } failure: { error in
             print(error)
             success(nil)
-//            ToastView.hidden()
-        })
+        }
     }
     
     func getRequest(urlString: String, success: SuccessClosure?, failure: FailClosure?) {
