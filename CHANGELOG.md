@@ -1,5 +1,10 @@
 # Change Log
 
+## [2.1.1](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.1.1)
+- 优化RTC和RTM Token获取，一次请求即可完成。
+- [iOS]解决Objective-C无法调用的问题。
+- [Android]移除无效属性
+
 ## [2.1.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.1.0)
 
 - 升级 Rtm SDK 至 2.2.0。

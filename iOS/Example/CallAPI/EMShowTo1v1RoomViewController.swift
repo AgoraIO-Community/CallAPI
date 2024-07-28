@@ -393,12 +393,11 @@ extension EMShowTo1v1RoomViewController: AgoraRtcEngineDelegate {
 
 extension EMShowTo1v1RoomViewController:CallApiListenerProtocol {
     func tokenPrivilegeWillExpire() {
-        NetworkManager.shared.generateTokens(channelName: "",
-                                             uid: "\(currentUid)",
-                                             tokenGeneratorType: .token007,
-                                             tokenTypes: [.rtc]) {[weak self] tokens in
+        NetworkManager.shared.generateToken(channelName: "",
+                                            uid: "\(currentUid)",
+                                            types: [.rtc]) {[weak self] token in
             guard let self = self else {return}
-            let rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
+            let rtcToken = token!
             self.prepareConfig.rtcToken = rtcToken
             self.api.renewToken(with: rtcToken)
             

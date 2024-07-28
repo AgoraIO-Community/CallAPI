@@ -461,14 +461,13 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
 //    }
     
     func tokenPrivilegeWillExpire() {
-        NetworkManager.shared.generateTokens(channelName: "",
-                                             uid: "\(currentUid)",
-                                             tokenGeneratorType: .token007,
-                                             tokenTypes: [.rtc, .rtm]) {[weak self] tokens in
+        NetworkManager.shared.generateToken(channelName: "",
+                                            uid: "\(currentUid)",
+                                            types: [.rtc, .rtm]) {[weak self] token in
             guard let self = self else {return}
-            let rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
+            let rtcToken = token!
             self.prepareConfig.rtcToken = rtcToken
-            let rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
+            let rtmToken = token!
             //rtc renew
             self.api.renewToken(with: rtcToken)
             

@@ -375,25 +375,20 @@ class ViewController: UIViewController {
         
         let prepareConfig = PrepareConfig()
         SVProgressHUD.show()
-        NetworkManager.shared.generateTokens(channelName: "",
-                                             uid: "\(currentUserId)",
-                                             tokenGeneratorType: .token007,
-                                             tokenTypes: [.rtc, .rtm]) {[weak self] tokens in
+        NetworkManager.shared.generateToken(channelName: "",
+                                            uid: "\(currentUserId)",
+                                            types: [.rtc, .rtm]) {[weak self] token in
             SVProgressHUD.dismiss()
             guard let self = self else {return}
             self.view.isUserInteractionEnabled = true
-            guard tokens.count == 2 else {
-                print("generateTokens fail")
-                return
-            }
-            prepareConfig.rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
+            prepareConfig.rtcToken = token!
             
             let targetUserId = role == .caller ? "\(callUserId)" : "\(currentUserId)"
             
             var showVc: UIViewController? = nil
             if modeIndex == 0 {
             #if canImport(AgoraRtmKit)
-                let rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
+                let rtmToken = token!
                 let vc = ShowTo1v1RoomViewController(showRoomId: "\(targetUserId)_live",
                                                      showUserId: role == .callee ? currentUserId : callUserId,
                                                      showRoomToken: prepareConfig.rtcToken,
@@ -427,23 +422,18 @@ class ViewController: UIViewController {
         
         let prepareConfig = PrepareConfig()
         SVProgressHUD.show()
-        NetworkManager.shared.generateTokens(channelName: "",
-                                             uid: "\(currentUserId)",
-                                             tokenGeneratorType: .token007,
-                                             tokenTypes: [.rtc, .rtm]) {[weak self] tokens in
+        NetworkManager.shared.generateToken(channelName: "",
+                                            uid: "\(currentUserId)",
+                                            types: [.rtc, .rtm]) {[weak self] token in
             SVProgressHUD.dismiss()
             guard let self = self else {return}
             self.view.isUserInteractionEnabled = true
-            guard tokens.count == 2 else {
-                print("generateTokens fail")
-                return
-            }
-            prepareConfig.rtcToken = tokens[AgoraTokenType.rtc.rawValue]!
+            prepareConfig.rtcToken = token!
             
             var showVc: UIViewController? = nil
             if modeIndex == 1 {
             #if canImport(AgoraRtmKit)
-                let rtmToken = tokens[AgoraTokenType.rtm.rawValue]!
+                let rtmToken = token!
                 let vc = Pure1v1RoomViewController(currentUid: currentUserId,
                                                    prepareConfig: prepareConfig,
                                                    rtmToken: rtmToken)
