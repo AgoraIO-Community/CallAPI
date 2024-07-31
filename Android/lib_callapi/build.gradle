@@ -54,7 +54,7 @@ dependencies {
     api 'com.google.code.gson:gson:2.9.0'
 
     // rtc
-    api 'io.agora.rtc:agora-special-full:4.1.1.26'
+    api 'io.agora.rtc:full-sdk:4.3.2'
     // rtm
     api 'io.agora:agora-rtm:2.2.0'
     // im
