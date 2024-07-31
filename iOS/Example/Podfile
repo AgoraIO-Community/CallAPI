@@ -9,6 +9,7 @@ target 'CallAPI_Example' do
   pod 'YYCategories'
   pod 'HyphenateChat'
   pod 'SVProgressHUD'
+  pod 'AgoraRtm', :path => 'AgoraRtm.podspec'
 
 end
 
