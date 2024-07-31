@@ -343,7 +343,11 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
                                             uid: "\(currentUid)",
                                             types: [.rtc]) {[weak self] token in
             guard let self = self else {return}
-            let rtcToken = token!
+            guard let token = token else {
+                print("generateTokens fail")
+                return
+            }
+            let rtcToken = token
             self.prepareConfig.rtcToken = rtcToken
             self.api.renewToken(with: rtcToken)
         }

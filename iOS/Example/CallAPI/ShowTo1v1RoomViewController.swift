@@ -465,9 +465,13 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
                                             uid: "\(currentUid)",
                                             types: [.rtc, .rtm]) {[weak self] token in
             guard let self = self else {return}
-            let rtcToken = token!
+            guard let token = token else {
+                print("generateTokens fail")
+                return
+            }
+            let rtcToken = token
             self.prepareConfig.rtcToken = rtcToken
-            let rtmToken = token!
+            let rtmToken = token
             //rtc renew
             self.api.renewToken(with: rtcToken)
             

@@ -381,14 +381,18 @@ class ViewController: UIViewController {
             SVProgressHUD.dismiss()
             guard let self = self else {return}
             self.view.isUserInteractionEnabled = true
-            prepareConfig.rtcToken = token!
+            guard let token = token else {
+                print("generateTokens fail")
+                return
+            }
+            prepareConfig.rtcToken = token
             
             let targetUserId = role == .caller ? "\(callUserId)" : "\(currentUserId)"
             
             var showVc: UIViewController? = nil
             if modeIndex == 0 {
             #if canImport(AgoraRtmKit)
-                let rtmToken = token!
+                let rtmToken = token
                 let vc = ShowTo1v1RoomViewController(showRoomId: "\(targetUserId)_live",
                                                      showUserId: role == .callee ? currentUserId : callUserId,
                                                      showRoomToken: prepareConfig.rtcToken,
@@ -428,12 +432,16 @@ class ViewController: UIViewController {
             SVProgressHUD.dismiss()
             guard let self = self else {return}
             self.view.isUserInteractionEnabled = true
-            prepareConfig.rtcToken = token!
+            guard let token = token else {
+                print("generateTokens fail")
+                return
+            }
+            prepareConfig.rtcToken = token
             
             var showVc: UIViewController? = nil
             if modeIndex == 1 {
             #if canImport(AgoraRtmKit)
-                let rtmToken = token!
+                let rtmToken = token
                 let vc = Pure1v1RoomViewController(currentUid: currentUserId,
                                                    prepareConfig: prepareConfig,
                                                    rtmToken: rtmToken)
