@@ -288,7 +288,11 @@ extension CallApiImpl {
     }
     
     private func checkConnectedSuccess(reason: CallStateReason) {
-        guard connectInfo.isRetrieveFirstFrame, state == .connecting else {return}
+        if prepareConfig?.disableFirstFrameWaitting == true {
+            guard state == .connecting else {return}
+        } else {
+            guard connectInfo.isRetrieveFirstFrame, state == .connecting else {return}
+        }
         /*
          1.因为被叫提前加频道并订阅流和推流，导致双端收到视频首帧可能会比被叫点accept(变成connecting)比更早
          2.由于匹配1v1时双端都会收到onCall，此时A发起accept，B收到了onAccept+A首帧，会导致B未接受即进入了connected状态
