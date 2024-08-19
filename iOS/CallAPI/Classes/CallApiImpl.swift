@@ -288,7 +288,7 @@ extension CallApiImpl {
     }
     
     private func checkConnectedSuccess(reason: CallStateReason) {
-        if prepareConfig?.disableFirstFrameWaitting == true {
+        if prepareConfig?.firstFrameWaittingDisabled == true {
             guard state == .connecting else {return}
         } else {
             guard connectInfo.isRetrieveFirstFrame, state == .connecting else {return}

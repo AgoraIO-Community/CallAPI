@@ -16,7 +16,7 @@ extension PrepareConfig {
         config.remoteView = remoteView
         config.callTimeoutMillisecond = callTimeoutMillisecond
         config.userExtension = userExtension
-        config.disableFirstFrameWaitting = disableFirstFrameWaitting
+        config.firstFrameWaittingDisabled = firstFrameWaittingDisabled
         return config
     }
 }
