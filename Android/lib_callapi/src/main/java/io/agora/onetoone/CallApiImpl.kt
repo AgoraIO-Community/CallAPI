@@ -56,7 +56,7 @@ class CallApiImpl constructor(
 ): ICallApi, ISignalClientListener, IRtcEngineEventHandler() {
 
     companion object {
-        const val kReportCategory = "2.1.0"
+        const val kReportCategory = "2.1.2"
         const val kPublisher = "publisher"
         const val kCostTimeMap = "costTimeMap"    //呼叫时的耗时信息，会在connected时抛出分步耗时
         const val kRemoteUserId = "remoteUserId"
