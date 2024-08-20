@@ -102,6 +102,7 @@ class LivingActivity : AppCompatActivity(), ICallApiListener {
         }
         prepareConfig = PrepareConfig()
         prepareConfig.rtcToken = enterModel.rtcToken
+        prepareConfig.firstFrameWaittingDisabled = enterModel.firstFrameWaittingDisabled
 
         role = if (enterModel.isBrodCaster) CallRole.CALLEE else CallRole.CALLER
 

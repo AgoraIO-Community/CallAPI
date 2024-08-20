@@ -125,6 +125,8 @@ class MainActivity : AppCompatActivity() {
         enterModel.autoAccept = mViewBinding.cbAutoAccept.isChecked
 //        enterModel.autoJoinRTC = mViewBinding.cbJoinRTC.isChecked
 
+        enterModel.firstFrameWaittingDisabled = !mViewBinding.firstFrameWaitting.isChecked
+
         val runnable = Runnable {
             if (isShowMode) {
                 if (enterModel.rtcToken.isNotEmpty() && enterModel.rtmToken.isNotEmpty() && enterModel.showRoomToken.isNotEmpty()) {

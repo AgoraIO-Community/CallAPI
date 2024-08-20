@@ -97,6 +97,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         }
         prepareConfig = PrepareConfig()
         prepareConfig.rtcToken = enterModel.rtcToken
+        prepareConfig.firstFrameWaittingDisabled = enterModel.firstFrameWaittingDisabled
 
         rtcEngine = _createRtcEngine()
         setupView()
