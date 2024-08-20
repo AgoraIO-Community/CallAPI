@@ -577,6 +577,7 @@ extension ShowTo1v1RoomViewController:CallApiListenerProtocol {
         NSLog("onCallEventChanged event: \(event.rawValue), eventReason: \(eventReason ?? "")")
         switch event {
         case .remoteLeft:
+            //Demo通过监听远端用户离开进行结束异常通话，真实业务场景推荐使用服务端监听RTC用户离线来进行踢人，客户端通过监听踢人来结束异常通话
             hangupAction()
         default:
             break

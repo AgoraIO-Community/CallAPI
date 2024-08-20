@@ -118,8 +118,10 @@ class LivingActivity : AppCompatActivity(), ICallApiListener {
             {
                 rtcJoinChannel()
             },
-            { finish() },
-            true
+            {
+                Toasty.normal(this@LivingActivity, "没给权限😯", Toast.LENGTH_SHORT).show()
+            },
+            false
         )
     }
 
@@ -576,6 +578,7 @@ class LivingActivity : AppCompatActivity(), ICallApiListener {
         Log.d(TAG, "onCallEventChanged: $event, eventReason: $eventReason")
         when(event) {
             CallEvent.RemoteLeft -> {
+                //Demo通过监听远端用户离开进行结束异常通话，真实业务场景推荐使用服务端监听RTC用户离线来进行踢人，客户端通过监听踢人来结束异常通话
                 hangupAction()
             } else -> {}
         }
