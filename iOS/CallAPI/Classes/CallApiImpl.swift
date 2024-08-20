@@ -8,7 +8,7 @@
 import Foundation
 import AgoraRtcKit
 
-let kApiVersion = "2.1.0"
+let kApiVersion = "2.1.2"
 
 let kMessageId: String = "messageId"     //发送的消息id
 
