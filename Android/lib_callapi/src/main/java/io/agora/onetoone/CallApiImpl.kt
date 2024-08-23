@@ -142,7 +142,10 @@ class CallApiImpl constructor(
                     _muteRemoteAudio(false)
                     tempRemoteCanvasView.alpha = 1f
                     connectInfo.scheduledTimer(null)
-                    val ext = mapOf("channelName" to (connectInfo.callingRoomId ?: ""))
+                    val ext = mapOf<String, Any>(
+                        "channelName" to (connectInfo.callingRoomId ?: ""),
+                        "userId" to (config?.userId ?: 0)
+                    )
                     reporter?.endDurationEvent(ApiCostEvent.FIRST_FRAME_PERCEIVED, ext)
                     reporter?.endDurationEvent(ApiCostEvent.FIRST_FRAME_ACTUAL, ext)
                 }
@@ -291,6 +294,10 @@ class CallApiImpl constructor(
     }
 
     private fun checkConnectedSuccess(reason: CallStateReason) {
+        if (rtcConnection == null) {
+            callWarningPrint("checkConnectedSuccess fail, connection not found")
+            return
+        }
         val firstFrameWaittingDisabled = prepareConfig?.firstFrameWaittingDisabled ?: false
         callPrint("checkConnectedSuccess: firstFrameWaittingDisabled: ${firstFrameWaittingDisabled}, isRetrieveFirstFrame: ${connectInfo.isRetrieveFirstFrame} state: $state")
         if (firstFrameWaittingDisabled == true) {
@@ -347,7 +354,7 @@ class CallApiImpl constructor(
             "state" to state.value,
             "stateReason" to stateReason.value,
             "eventReason" to eventReason,
-            "userId" to (config?.userId ?: ""),
+            "userId" to (config?.userId ?: 0),
             "callId" to connectInfo.callId
         )
         _reportCustomEvent(CallCustomEvent.stateChange, ext)
@@ -766,7 +773,9 @@ class CallApiImpl constructor(
         val cost = _getCost()
         connectInfo.callCostMap[type.value] = cost
         val ext = mapOf(
-            "channelName" to (connectInfo.callingRoomId ?: "")
+            "channelName" to (connectInfo.callingRoomId ?: ""),
+            "callId" to connectInfo.callId,
+            "userId" to (config?.userId ?: 0)
         )
         reporter?.reportCostEvent(type.value, cost.toInt(), ext)
     }
@@ -779,10 +788,15 @@ class CallApiImpl constructor(
         if (range != -1) {
             subEvent = event.substring(0, range)
         }
+
+        val ext = mapOf<String, Any>(
+            "callId" to connectInfo.callId,
+            "userId" to (config?.userId ?: 0)
+        )
         reporter?.reportFuncEvent(
             name = subEvent,
             value = value,
-            ext = mapOf("callId" to connectInfo.callId)
+            ext = ext
         )
     }
 
@@ -934,6 +948,11 @@ class CallApiImpl constructor(
         callPrint("[calling]defaultCalleeJoinRTCTiming: ${defaultCalleeJoinRTCTiming.value}")
         if(defaultCalleeJoinRTCTiming == CalleeJoinRTCTiming.Calling) {
             _joinRTCAsBroadcaster(fromRoomId)
+        }
+
+        if (connectInfo.isLocalAccepted && prepareConfig?.firstFrameWaittingDisabled == true) {
+            //如果首帧不关联，在秀场转1v1场景下，可能会自动接受，会导致么有加频道前变成connected，unmute声音无效
+            checkConnectedSuccess(CallStateReason.LocalAccepted)
         }
     }
 
