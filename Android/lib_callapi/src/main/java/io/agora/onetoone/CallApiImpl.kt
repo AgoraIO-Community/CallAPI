@@ -1020,7 +1020,7 @@ class CallApiImpl constructor(
 
         // 视频最佳实践
         // 3.API 开启音视频首帧加速渲染
-        config.rtcEngine.enableInstantMediaRendering()
+//        config.rtcEngine.enableInstantMediaRendering()
 
         // 4.私有参数或配置下发开启首帧 FEC
         config.rtcEngine.setParameters("{\"rtc.video.quickIntraHighFec\": true}")
