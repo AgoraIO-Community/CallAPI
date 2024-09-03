@@ -1,0 +1,50 @@
+html, body {
+  padding: 0;
+  margin: 0;
+}
+
+.item {
+  padding: 5px;
+}
+
+
+.hidden {
+  visibility: hidden;
+  z-index: 1;
+}
+
+button+button {
+  margin-left: 5px;
+}
+
+.stream-section {
+  display: flex;
+  height: 50vh;
+  width: 100%;
+}
+
+
+.local, .remote {
+  position: relative;
+  flex: 1 1 auto;
+  height: 100%;
+  background-color: black;
+}
+
+.text {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 999;
+  color: white;
+}
+
+
+/* 要撑开空间和父元素一样大小 */
+#local-view, #remote-view {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+}

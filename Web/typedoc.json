@@ -1,0 +1,13 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "out": "docs",
+  "entryPoints": [
+    "src/callApi/index.ts"
+  ],
+  "exclude": [],
+  "disableSources": true,
+  "includeVersion": true,
+  "excludeExternals": true,
+  "excludePrivate": true,
+  "hideGenerator": true
+}
