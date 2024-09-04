@@ -1,33 +1,76 @@
 const decoder = new TextDecoder()
 const encoder = new TextEncoder()
 
-export const genDivHtmlElement = () => {
-  const node = document.createElement("div")
-  node.style.width = "100%"
-  node.style.height = "100%"
-  node.style.position = "relative"
-
-  return node
-}
-
-export const LOCAL_VIEW_ELEMENT = genDivHtmlElement()
-export const REMOTE_VIEW_ELEMENT = genDivHtmlElement()
-
 function _pad(num: number) {
   return num.toString().padStart(2, "0")
 }
 
-export const genHTMLElement = (node: HTMLElement | string): HTMLElement => {
-  if (node instanceof HTMLElement) {
-    return node
+
+// -------------------- dom utils --------------------
+
+export const isInDOM = (element: string | HTMLElement): boolean => {
+  let finElement: HTMLElement
+  if (typeof element == "string") {
+    finElement = document.getElementById(element)!
   } else {
-    const res = document.querySelector(node)
-    if (!res) {
-      throw new Error(`can not find element by ${node}`)
+    finElement = element
+  }
+  return document.body.contains(finElement);
+}
+
+
+export const setElementVisibility = (element: string | HTMLElement, visible: boolean) => {
+  let finElement: HTMLElement
+  if (typeof element == "string") {
+    finElement = document.getElementById(element)!
+    if (!finElement) {
+      return
     }
-    return res as HTMLElement
+  } else {
+    finElement = element
+  }
+  finElement.style.visibility = visible ? "visible" : "hidden"
+}
+
+
+export const serializeHTMLElement = (
+  element: string | HTMLElement | undefined,
+): { id: string; className: string, tagName: string } | null => {
+  if (!element) {
+    return null
+  }
+  let finElement: HTMLElement | null
+  if (typeof element == "string") {
+    finElement = document.getElementById(element)
+    if (!finElement) {
+      return null
+    }
+  } else {
+    finElement = element
+  }
+  return {
+    id: finElement?.id,
+    className: finElement?.className,
+    tagName: finElement?.tagName,
   }
 }
+
+export const clearHTMLElement = (element: string | HTMLElement) => {
+  let finElement: HTMLElement
+  if (typeof element == "string") {
+    finElement = document.getElementById(element)!
+    if (!finElement) {
+      return
+    }
+  } else {
+    finElement = element
+  }
+  finElement.innerHTML = ""
+}
+
+
+// -------------------- dom utils --------------------
+
 
 export const decodeUint8Array = (array: Uint8Array) => {
   return decoder.decode(array)
@@ -52,21 +95,6 @@ export const formatTime = (date?: Date) => {
 export const isMobile = () =>
   /Mobile|iPhone|iPad|Android|Windows Phone/i.test(navigator.userAgent)
 
-export const serializeHTMLElement = (
-  element: any,
-): { id: string; className: string } | null => {
-  if (!element) {
-    return null
-  }
-  if (!(element instanceof HTMLElement)) {
-    throw new Error("Input is not an HTMLElement")
-  }
-  return {
-    id: element.id,
-    className: element.className,
-  }
-}
-
 
 export const uuidv4 = (): string => {
   if (crypto && crypto.randomUUID) {
@@ -78,4 +106,3 @@ export const uuidv4 = (): string => {
     return v.toString(16)
   })
 }
-

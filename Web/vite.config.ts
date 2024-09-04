@@ -12,6 +12,11 @@ const genBaseUrl = (mode: string) => {
 
 export default defineConfig(({ mode }) => {
   return {
+    resolve: {
+      alias: {
+        "@": "/src",
+      },
+    },
     base: genBaseUrl(mode),
     plugins: [
       react()

@@ -5,11 +5,10 @@ export const APPCERTIFICATE = import.meta.env.VITE_AGORA_APP_CERTIFICATE
 export const DEFAULT_VIDEO_ENCODER_CONFIG = "720p_2"
 export const CALL_TIMEOUT_MILLISECOND = 15 * 1000 // ms
 export const DEFAULT_RTM_CONFIG: RTMConfig = {
-  logLevel: "error",
+  logLevel: "info",
   logUpload: true,
   presenceTimeout: 30,
 }
-
 
 export const getRandomUid = () => {
   return Math.floor(1000 + Math.random() * 9000);
@@ -41,7 +40,6 @@ export const apiGenerateToken = async (
   return resp?.data?.token || null
 }
 
-
 export const uuidv4 = (): string => {
   if (crypto && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -55,3 +53,4 @@ export const uuidv4 = (): string => {
 
 export const isMobile = () =>
   /Mobile|iPhone|iPad|Android|Windows Phone/i.test(navigator.userAgent)
+
