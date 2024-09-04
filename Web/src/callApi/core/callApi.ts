@@ -375,6 +375,10 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
   }
 
   private async _receiveAccept(data: ICallMessage) {
+    const { fromUserId } = data
+    if (this.state !== CallStateType.calling || !this._isCallingUser(fromUserId)) {
+      return
+    }
     this._callInfo.add("acceptCall")
     this._callEventChange(CallEvent.remoteAccepted)
     this._callStateChange(
