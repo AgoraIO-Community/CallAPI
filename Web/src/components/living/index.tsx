@@ -189,15 +189,13 @@ const Living = () => {
         break
       case CallStateType.calling:
         setScene(Scene.One2One)
-        if (eventInfo?.remoteUserId == localUserId) {
+        if (rtcRole == RtcRole.Host) {
+          // 主播身份
           // eventInfo.fromUserId => 指向本次通话的主叫方
           // eventInfo.remoteUserId => 指向本次通话的被叫方
-          setRemoteUserId(eventInfo.fromUserId)
-        }
-        if (rtcRole == RtcRole.Host) {
-          // 主播
+          setRemoteUserId(eventInfo!.fromUserId)
           if (tracks) {
-            // 取消推流
+            // 主播取消推流
             await rtcLivingClient.unpublish(tracks)
             setHostUser({
               uid: localUserId,
@@ -205,6 +203,8 @@ const Living = () => {
               audioTrack: undefined
             })
           }
+          // 主播自动接听
+          await callApi.accept(eventInfo!.fromUserId)
         }
     }
   }
