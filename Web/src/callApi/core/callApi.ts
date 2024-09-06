@@ -237,6 +237,9 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       logger.error(message)
       throw new Error(message)
     }
+    if (remoteUserId !== this.remoteUserId) {
+      logger.warn(`accept uid:${remoteUserId} but not expected uid:${this.remoteUserId}`)
+    }
     this._callEventChange(CallEvent.localAccepted)
     this._callInfo.add("acceptCall")
     this._callStateChange(
