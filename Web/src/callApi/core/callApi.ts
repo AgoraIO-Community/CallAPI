@@ -187,17 +187,16 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
    * 取消呼叫 (主叫)
    */
   async cancelCall() {
+    await this.destroy()
     this._callStateChange(CallStateType.prepared, CallStateReason.localCancel)
     this._callEventChange(CallEvent.localCancelled)
-    await Promise.all([
-      this._publishMessage(this.remoteUserId, {
-        fromUserId: this.callConfig.userId,
-        remoteUserId: this.remoteUserId,
-        message_action: CallAction.Cancel,
-        cancelCallByInternal: RejectByInternal.External,
-      }),
-      this.destroy()
-    ])
+    this._publishMessage(this.remoteUserId, {
+      fromUserId: this.callConfig.userId,
+      remoteUserId: this.remoteUserId,
+      message_action: CallAction.Cancel,
+      cancelCallByInternal: RejectByInternal.External,
+    })
+    this._resetData()
     logger.debug(`cancelCall success`)
   }
 
@@ -207,22 +206,21 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
    * @param reason 原因
    */
   async reject(remoteUserId: number, reason?: string) {
+    await this.destroy()
     this._callStateChange(
       CallStateType.prepared,
       CallStateReason.localRejected,
       reason,
     )
     this._callEventChange(CallEvent.localRejected)
-    await Promise.all([
-      this._publishMessage(remoteUserId, {
-        fromUserId: this.callConfig.userId,
-        remoteUserId,
-        message_action: CallAction.Reject,
-        rejectReason: reason,
-        rejectByInternal: RejectByInternal.External,
-      }),
-      this.destroy()
-    ])
+    this._publishMessage(remoteUserId, {
+      fromUserId: this.callConfig.userId,
+      remoteUserId,
+      message_action: CallAction.Reject,
+      rejectReason: reason,
+      rejectByInternal: RejectByInternal.External,
+    })
+    this._resetData()
     logger.debug(`reject success,remoteUserId:${remoteUserId},reason:${reason}`)
   }
 
@@ -262,16 +260,15 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
    * @param remoteUserId 远端用户Id
    */
   async hangup(remoteUserId: number) {
+    await this.destroy()
     this._callStateChange(CallStateType.prepared, CallStateReason.localHangup)
     this._callEventChange(CallEvent.localHangup)
-    await Promise.all([
-      this._publishMessage(remoteUserId, {
-        fromUserId: this.callConfig.userId,
-        remoteUserId,
-        message_action: CallAction.Hangup,
-      }),
-      this.destroy()
-    ])
+    this._publishMessage(remoteUserId, {
+      fromUserId: this.callConfig.userId,
+      remoteUserId,
+      message_action: CallAction.Hangup,
+    })
+    this._resetData()
     logger.debug(`hangup success,remoteUserId:${remoteUserId}`)
   }
 
@@ -305,8 +302,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     } catch (e) {
       this._callError(CallErrorEvent.rtcOccurError, CallErrorCodeType.rtc, e)
       throw e
-    } finally {
-      this._resetData()
     }
     logger.debug(`destroy success`)
   }
@@ -352,6 +347,8 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     if (!this._isCallingUser(fromUserId)) {
       return
     }
+    await this.destroy()
+    this._resetData()
     this._callStateChange(
       CallStateType.prepared,
       CallStateReason.remoteCancel,
@@ -359,7 +356,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       { cancelCallByInternal },
     )
     this._callEventChange(CallEvent.remoteCancelled)
-    await this.destroy()
   }
 
   private async _receiveVideoCall(data: ICallMessage) {
@@ -408,9 +404,10 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     if (!this._isCallingUser(fromUserId)) {
       return
     }
+    await this.destroy()
+    this._resetData()
     this._callStateChange(CallStateType.prepared, CallStateReason.remoteHangup)
     this._callEventChange(CallEvent.remoteHangup)
-    await this.destroy()
   }
 
   private async _receiveReject(data: ICallMessage) {
@@ -426,6 +423,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       this._callEventChange(CallEvent.remoteCallBusy)
     }
     await this.destroy()
+    this._resetData()
     this._callStateChange(CallStateType.prepared, stateReason, "", {
       rejectReason,
     })
@@ -579,6 +577,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       this._callEventChange(CallEvent.remoteLeft)
       if (this.isBusy) {
         await this.destroy()
+        this._resetData()
         this._callStateChange(
           CallStateType.prepared,
           CallStateReason.remoteHangup,
@@ -656,20 +655,19 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
           this.state == CallStateType.calling ||
           this.state == CallStateType.connecting
         ) {
+          await this.destroy()
           this._callStateChange(
             CallStateType.prepared,
             CallStateReason.callingTimeout,
           )
           this._callEventChange(isLocal ? CallEvent.callingTimeout : CallEvent.remoteCallingTimeout)
-          await Promise.all([
-            this._publishMessage(this.remoteUserId, {
-              fromUserId: this.callConfig.userId,
-              remoteUserId: this.remoteUserId,
-              message_action: CallAction.Cancel,
-              cancelCallByInternal: RejectByInternal.Internal,
-            }),
-            this.destroy()
-          ])
+          this._publishMessage(this.remoteUserId, {
+            fromUserId: this.callConfig.userId,
+            remoteUserId: this.remoteUserId,
+            message_action: CallAction.Cancel,
+            cancelCallByInternal: RejectByInternal.Internal,
+          })
+          this._resetData()
           logger.debug(`auto cancelCall success`)
         }
       }, time)
