@@ -297,7 +297,9 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
    */
   async destroy() {
     try {
+      // stop remote audio track
       this.remoteTracks.audioTrack?.stop()
+      // clear local tracks 
       if (this.localTracks?.audioTrack) {
         logger.debug("local audio track close start")
         this.localTracks?.audioTrack.close()
@@ -308,6 +310,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
         this.localTracks?.videoTrack.close()
         logger.debug("local video track close success")
       }
+      // clear views
       if (this.prepareConfig.localView) {
         clearHTMLElement(this.prepareConfig.localView)
         logger.debug("localView clear success")
@@ -316,6 +319,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
         clearHTMLElement(this.prepareConfig.remoteView)
         logger.debug("remoteView clear success")
       }
+      // deal rtc leave
       if (this._rtcJoined) {
         logger.debug("rtc leave start")
         await this.rtcClient.leave()
@@ -494,12 +498,18 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
 
   private async _rtcLocalJoinPlayPublish() {
     try {
-      // parallel create track and rtc join
-      await Promise.all([this._createLocalTracks(), this._rtcJoin()])
+      await Promise.all([
+        this._createLocalTracks(),
+        this._rtcJoin()
+      ])
       // play local video track 
       this._playLocalVideo()
       // then publish track
       await this._rtcPublish()
+      if (this.state == CallStateType.prepared) {
+        // when call then fast cancelCall
+        await this.destroy()
+      }
     } catch (err) {
       this._callError(CallErrorEvent.rtcOccurError, CallErrorCodeType.rtc, err)
     }
@@ -736,7 +746,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
 
   private async _rtcPublish() {
     if (!this._rtcJoined) {
-      // when fast call then cancelCall
+      // when call then fast cancelCall
       return logger.warn("rtc not joined when publish")
     }
     if (this.localTracks.videoTrack && this.localTracks.audioTrack) {
