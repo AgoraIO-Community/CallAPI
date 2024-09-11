@@ -50,6 +50,7 @@ const Living = () => {
   const [remoteUserId, setRemoteUserId] = useState(0)
   const [rtcRole, setRtcRole] = useState(RtcRole.Host)
   const [state, setState] = useState(CallStateType.idle)
+  const [firstFrameWaittingDisabled, setFirstFrameWaittingDisabled] = useState(false)
   // 主播用户
   const [hostUser, setHostUser] = useState<IUser>()
   // 当前场景
@@ -127,7 +128,7 @@ const Living = () => {
       // must in dom
       remoteView: "remote-view",
       callTimeoutMillisecond: CALL_TIMEOUT_MILLISECOND,
-      firstFrameWaittingDisabled: false,
+      firstFrameWaittingDisabled,
       videoConfig: {
         encoderConfig: DEFAULT_VIDEO_ENCODER_CONFIG,
       },
@@ -376,6 +377,15 @@ const Living = () => {
 
 
 
+  const onClickFirstFrameWaittingDisabled = () => {
+    setFirstFrameWaittingDisabled(!firstFrameWaittingDisabled)
+    callApi.prepareForCall({
+      firstFrameWaittingDisabled: !firstFrameWaittingDisabled,
+    })
+  }
+
+
+
   return <div>
     <div className="item">
       <Radio.Group onChange={onChangeRole} value={rtcRole} disabled={scene !== Scene.None}>
@@ -385,6 +395,9 @@ const Living = () => {
     </div>
     <div className="item">
       localUserId: {localUserId}
+    </div>
+    <div className="item">
+      <button onClick={onClickFirstFrameWaittingDisabled}>音频首帧与接通相关 {String(!firstFrameWaittingDisabled)}</button>
     </div>
     {rtcRole == RtcRole.Audience ? <div className="item">
       主播Id: <input type="text" value={remoteUserId} onChange={onChangeRemoteUserId} />
