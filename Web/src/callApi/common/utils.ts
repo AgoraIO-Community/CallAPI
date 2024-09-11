@@ -1,3 +1,6 @@
+import { ICallMessage } from "../types"
+
+
 const decoder = new TextDecoder()
 const encoder = new TextEncoder()
 
@@ -106,3 +109,19 @@ export const uuidv4 = (): string => {
     return v.toString(16)
   })
 }
+
+
+
+export const encodeMessage = (message: Partial<ICallMessage>): string => {
+  const finMessage = {
+    ...message,
+    message_version: "1.0",
+    message_timestamp: new Date().getTime(),
+  }
+  return JSON.stringify(finMessage)
+}
+
+
+export const decodeMessage = (message: string): ICallMessage => {
+  return JSON.parse(message) as ICallMessage
+} 

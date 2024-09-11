@@ -7,7 +7,6 @@ import {
   createMicrophoneAndCameraTracks
 } from "agora-rtc-sdk-ng/esm"
 import { CallInfo } from "./callInfo"
-import { CallMessage } from "./callMessage"
 import {
   ICallConfig,
   IPrepareConfig,
@@ -32,11 +31,14 @@ import {
   uuidv4,
   setElementVisibility,
   clearHTMLElement,
-  isInDOM
+  isInDOM,
+  encodeMessage,
+  decodeMessage
 } from "../common"
 
 enableLogUpload()
-setLogLevel(1)
+// setLogLevel(1)
+setLogLevel(0)
 setParameter("ENABLE_INSTANT_VIDEO", true)
 
 export const VERSION = "1.0.0-beta.3"
@@ -47,13 +49,13 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
   prepareConfig: IPrepareConfig = {}
   state: CallStateType = CallStateType.idle
   remoteUserId: number = 0
+  callId: string = ""
   localTracks: ILocalTracks = {}
   remoteTracks: IRemoteTracks = {}
   rtcClient: IAgoraRTCClient
   callType: CallType = CallType.video
   // ------- private -------
   private _callInfo: CallInfo = new CallInfo()
-  private _callMessage = new CallMessage()
   private _rtcJoined: boolean = false
   private _receiveRemoteFirstFrameDecoded = false
   private _cancelCallTimer: any = null
@@ -110,7 +112,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
    * 获取通话Id
    */
   getCallId() {
-    return this._callMessage.getCallId()
+    return this.callId
   }
 
   /**
@@ -165,7 +167,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       fromUserId: this.callConfig.userId,
     })
     this._callEventChange(CallEvent.onCalling)
-    this._callMessage.setCallId(uuidv4())
+    this.callId = uuidv4()
     const callAction =
       this.callType == CallType.video
         ? CallAction.VideoCall
@@ -173,6 +175,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     this._autoCancelCall(true)
     this._rtcLocalJoinPlayPublish()
     await this._publishMessage(remoteUserId, {
+      callId: this.callId,
       fromUserId: this.callConfig.userId,
       remoteUserId,
       fromRoomId: this.prepareConfig?.roomId,
@@ -190,13 +193,19 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     await this.destroy()
     this._callStateChange(CallStateType.prepared, CallStateReason.localCancel)
     this._callEventChange(CallEvent.localCancelled)
-    this._publishMessage(this.remoteUserId, {
-      fromUserId: this.callConfig.userId,
-      remoteUserId: this.remoteUserId,
+    // temp data
+    const callId = this.callId
+    const remoteUserId = this.remoteUserId
+    const fromUserId = this.callConfig.userId
+    // then reset data
+    this._resetData()
+    await this._publishMessage(remoteUserId, {
+      callId: callId,
+      fromUserId: fromUserId,
+      remoteUserId: remoteUserId,
       message_action: CallAction.Cancel,
       cancelCallByInternal: RejectByInternal.External,
     })
-    this._resetData()
     logger.debug(`cancelCall success`)
   }
 
@@ -213,14 +222,19 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       reason,
     )
     this._callEventChange(CallEvent.localRejected)
-    this._publishMessage(remoteUserId, {
-      fromUserId: this.callConfig.userId,
+    // temp data
+    const callId = this.callId
+    const fromUserId = this.callConfig.userId
+    // reset data
+    this._resetData()
+    await this._publishMessage(remoteUserId, {
+      callId: callId,
+      fromUserId: fromUserId,
       remoteUserId,
       message_action: CallAction.Reject,
       rejectReason: reason,
       rejectByInternal: RejectByInternal.External,
     })
-    this._resetData()
     logger.debug(`reject success,remoteUserId:${remoteUserId},reason:${reason}`)
   }
 
@@ -246,6 +260,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     )
     await Promise.all([
       this._publishMessage(remoteUserId, {
+        callId: this.callId,
         fromUserId: this.callConfig.userId,
         remoteUserId,
         message_action: CallAction.Accept,
@@ -263,12 +278,17 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     await this.destroy()
     this._callStateChange(CallStateType.prepared, CallStateReason.localHangup)
     this._callEventChange(CallEvent.localHangup)
-    this._publishMessage(remoteUserId, {
-      fromUserId: this.callConfig.userId,
+    // temp data
+    const callId = this.callId
+    const fromUserId = this.callConfig.userId
+    // then reset data
+    this._resetData()
+    await this._publishMessage(remoteUserId, {
+      callId: callId,
+      fromUserId: fromUserId,
       remoteUserId,
       message_action: CallAction.Hangup,
     })
-    this._resetData()
     logger.debug(`hangup success,remoteUserId:${remoteUserId}`)
   }
 
@@ -279,10 +299,12 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     try {
       this.remoteTracks.audioTrack?.stop()
       if (this.localTracks?.audioTrack) {
+        logger.debug("local audio track close start")
         this.localTracks?.audioTrack.close()
         logger.debug("local audio track close success")
       }
       if (this.localTracks?.videoTrack) {
+        logger.debug("local video track close start")
         this.localTracks?.videoTrack.close()
         logger.debug("local video track close success")
       }
@@ -295,13 +317,14 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
         logger.debug("remoteView clear success")
       }
       if (this._rtcJoined) {
+        logger.debug("rtc leave start")
         await this.rtcClient.leave()
         logger.debug("rtc leave success")
+        this._rtcJoined = false
         this._callEventChange(CallEvent.localLeft)
       }
     } catch (e) {
       this._callError(CallErrorEvent.rtcOccurError, CallErrorCodeType.rtc, e)
-      throw e
     }
     logger.debug(`destroy success`)
   }
@@ -311,7 +334,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
   private _listenMessagerManagerEvents() {
     this.callMessageManager.on("messageReceive", async (message) => {
       logger.debug("message receive success:", message)
-      const data = this._callMessage.decode(message)
+      const data = decodeMessage(message)
       const { message_action } = data
       switch (message_action) {
         // receive video call
@@ -348,7 +371,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       return
     }
     await this.destroy()
-    this._resetData()
     this._callStateChange(
       CallStateType.prepared,
       CallStateReason.remoteCancel,
@@ -356,6 +378,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       { cancelCallByInternal },
     )
     this._callEventChange(CallEvent.remoteCancelled)
+    this._resetData()
   }
 
   private async _receiveVideoCall(data: ICallMessage) {
@@ -365,7 +388,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       return
     }
     this._callInfo.start()
-    this._callMessage.setCallId(callId)
+    this.callId = callId
     this.remoteUserId = Number(fromUserId)
     this.prepareConfig.roomId = fromRoomId
     this._autoCancelCall(false)
@@ -405,9 +428,9 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       return
     }
     await this.destroy()
-    this._resetData()
     this._callStateChange(CallStateType.prepared, CallStateReason.remoteHangup)
     this._callEventChange(CallEvent.remoteHangup)
+    this._resetData()
   }
 
   private async _receiveReject(data: ICallMessage) {
@@ -415,6 +438,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     if (!this._isCallingUser(fromUserId)) {
       return
     }
+    await this.destroy()
     const stateReason =
       rejectByInternal == RejectByInternal.Internal
         ? CallStateReason.remoteCallBusy
@@ -422,12 +446,11 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     if (stateReason == CallStateReason.remoteCallBusy) {
       this._callEventChange(CallEvent.remoteCallBusy)
     }
-    await this.destroy()
-    this._resetData()
     this._callStateChange(CallStateType.prepared, stateReason, "", {
       rejectReason,
     })
     this._callEventChange(CallEvent.remoteRejected)
+    this._resetData()
   }
 
   private _isCallingUser = (userId: string | number) => {
@@ -479,7 +502,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       await this._rtcPublish()
     } catch (err) {
       this._callError(CallErrorEvent.rtcOccurError, CallErrorCodeType.rtc, err)
-      throw err
     }
   }
 
@@ -577,11 +599,11 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       this._callEventChange(CallEvent.remoteLeft)
       if (this.isBusy) {
         await this.destroy()
-        this._resetData()
         this._callStateChange(
           CallStateType.prepared,
           CallStateReason.remoteHangup,
         )
+        this._resetData()
       }
     })
     this.rtcClient.on("user-published", async (user, mediaType) => {
@@ -631,6 +653,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
 
   private async _autoReject(remoteUserId: number) {
     await this._publishMessage(remoteUserId, {
+      callId: this.callId,
       fromUserId: this.callConfig.userId,
       remoteUserId,
       message_action: CallAction.Reject,
@@ -661,13 +684,19 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
             CallStateReason.callingTimeout,
           )
           this._callEventChange(isLocal ? CallEvent.callingTimeout : CallEvent.remoteCallingTimeout)
-          this._publishMessage(this.remoteUserId, {
-            fromUserId: this.callConfig.userId,
-            remoteUserId: this.remoteUserId,
+          // temp data 
+          const callId = this.callId
+          const remoteUserId = this.remoteUserId
+          const fromUserId = this.callConfig.userId
+          // then reset data
+          this._resetData()
+          await this._publishMessage(this.remoteUserId, {
+            callId: callId,
+            fromUserId: remoteUserId,
+            remoteUserId: fromUserId,
             message_action: CallAction.Cancel,
             cancelCallByInternal: RejectByInternal.Internal,
           })
-          this._resetData()
           logger.debug(`auto cancelCall success`)
         }
       }, time)
@@ -706,6 +735,10 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
   }
 
   private async _rtcPublish() {
+    if (!this._rtcJoined) {
+      // when fast call then cancelCall
+      return logger.warn("rtc not joined when publish")
+    }
     if (this.localTracks.videoTrack && this.localTracks.audioTrack) {
       await this.rtcClient.publish([
         this.localTracks.videoTrack,
@@ -725,9 +758,9 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     message: Partial<ICallMessage>,
   ) {
     try {
-      const encodeMessage = this._callMessage.encode(message)
-      await this.callMessageManager.sendMessage(uid.toString(), encodeMessage)
-      logger.debug(`message send success, uid:${uid} `, encodeMessage)
+      const finMessage = encodeMessage(message)
+      await this.callMessageManager.sendMessage(uid.toString(), finMessage)
+      logger.debug(`message send success, uid:${uid} `, finMessage)
     } catch (e) {
       this._callError(
         CallErrorEvent.sendMessageFail,
@@ -775,7 +808,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
   }
 
   private _resetData() {
-    this._callMessage.setCallId("")
+    this.callId = ""
     this.remoteUserId = 0
     this.localTracks = {}
     this.remoteTracks = {}
@@ -787,8 +820,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     }
     this._callInfo.end()
   }
-
-
 
   private _handleRemoteFirstFrameDecoded() {
     this._callEventChange(CallEvent.recvRemoteFirstFrame)
