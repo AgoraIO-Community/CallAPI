@@ -186,7 +186,7 @@ const Living = () => {
         } else if (stateReason == CallStateReason.remoteRejected) {
           message.info("对方已拒绝")
         } else if (stateReason == CallStateReason.remoteCallBusy) {
-          message.info("对方已拒绝")
+          message.info("用户正忙")
         } else if (stateReason == CallStateReason.callingTimeout) {
           message.info("对方已拒绝")
         }

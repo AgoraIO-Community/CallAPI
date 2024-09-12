@@ -607,14 +607,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       }
       logger.debug(`rtc remote user leave,uid:${user.uid}`)
       this._callEventChange(CallEvent.remoteLeft)
-      if (this.isBusy) {
-        await this.destroy()
-        this._callStateChange(
-          CallStateType.prepared,
-          CallStateReason.remoteHangup,
-        )
-        this._resetData()
-      }
     })
     this.rtcClient.on("user-published", async (user, mediaType) => {
       if (user.uid != this.remoteUserId) {
