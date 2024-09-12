@@ -17,6 +17,8 @@ import { message } from 'antd';
 import "./index.css"
 
 const { RTM } = AgoraRTM
+AgoraRTM.setParameter('LOG_UPLOAD_INTERVAL', 3 * 1000);
+
 let rtcClient: IAgoraRTCClient
 let rtmClient: any
 let callApi: CallApi

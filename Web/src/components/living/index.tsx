@@ -35,6 +35,9 @@ enum Scene {
 }
 
 const { RTM } = AgoraRTM
+AgoraRTM.setParameter('LOG_UPLOAD_INTERVAL', 3 * 1000);
+
+
 // 1v1 rtc client
 let rtc1v1Client: IAgoraRTCClient
 // living rtc client
