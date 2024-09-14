@@ -1,0 +1,16 @@
+.player-wrapper {
+  position: relative;
+  flex: 1 1 auto;
+  height: 100%;
+  background-color: black;
+}
+
+.player-text {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 999;
+  color: white;
+}
+
+

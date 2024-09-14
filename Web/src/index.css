@@ -1,16 +1,18 @@
 html, body {
   padding: 0;
   margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
+
 
 .item {
   padding: 5px;
 }
 
-
 .hidden {
   visibility: hidden;
-  z-index: 1;
 }
 
 button+button {
@@ -18,30 +20,19 @@ button+button {
 }
 
 .stream-section {
+  position: relative;
+  margin-top: 5px;
   display: flex;
   height: 50vh;
   width: 100%;
 }
 
 
-.local, .remote {
-  position: relative;
-  flex: 1 1 auto;
-  height: 100%;
-  background-color: black;
-}
-
-.text {
-  position: absolute;
-  left: 10px;
-  top: 10px;
-  z-index: 999;
-  color: white;
-}
-
-
-/* 要撑开空间和父元素一样大小 */
-#local-view, #remote-view {
+/* 
+ * TIP:
+ * 渲染视频的view要撑开空间和父元素一样大小
+*/
+#local-view, #remote-view, #living-player {
   position: absolute;
   left: 0;
   top: 0;

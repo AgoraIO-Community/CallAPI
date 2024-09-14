@@ -1,0 +1,26 @@
+.live, .one-one {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+}
+
+
+
+.player-wrapper {
+  position: relative;
+  flex: 1 1 auto;
+  height: 100%;
+}
+
+.player-text {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 999;
+  color: white;
+}
+
+
