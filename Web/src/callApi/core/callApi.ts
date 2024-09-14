@@ -37,8 +37,7 @@ import {
 } from "../common"
 
 enableLogUpload()
-// setLogLevel(1)
-setLogLevel(0)
+setLogLevel(1)
 setParameter("ENABLE_INSTANT_VIDEO", true)
 
 export const VERSION = "1.0.0-beta.3"

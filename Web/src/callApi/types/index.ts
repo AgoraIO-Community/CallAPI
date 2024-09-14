@@ -39,7 +39,7 @@ export interface IPrepareConfig {
    * */
   localView?: HTMLElement | string
   /** 
-   * 显示远端流的画布
+   * 显示远端视频流的画布
    * 
    * remoteView Specifies a DOM element. The SDK will create a `<video>` element under the specified DOM element to play the video track. 
    * You can specify a DOM element in either of following ways:
