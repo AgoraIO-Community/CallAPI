@@ -691,10 +691,10 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
           const fromUserId = this.callConfig.userId
           // then reset data
           this._resetData()
-          await this._publishMessage(this.remoteUserId, {
+          await this._publishMessage(remoteUserId, {
             callId: callId,
-            fromUserId: remoteUserId,
-            remoteUserId: fromUserId,
+            fromUserId: fromUserId,
+            remoteUserId: remoteUserId,
             message_action: CallAction.Cancel,
             cancelCallByInternal: RejectByInternal.Internal,
           })

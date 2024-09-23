@@ -116,7 +116,7 @@ const Pure1v1 = () => {
             } else if (stateReason == CallStateReason.remoteCallBusy) {
               message.info("用户正忙")
             } else if (stateReason == CallStateReason.callingTimeout) {
-              message.info("对方已拒绝")
+              message.info("呼叫超时")
             }
             break
           case CallStateType.calling:
