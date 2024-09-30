@@ -33,6 +33,8 @@ class ViewController: UIViewController {
     private lazy var modeControl: UISegmentedControl = {
         let items = ["RTM秀场1v1", "RTM纯1v1", "环信秀场1v1", "环信纯1v1"]
         let control = UISegmentedControl(items: items)
+        control.setTitleTextAttributes([.foregroundColor: UIColor.black], for: .normal)
+        control.setTitleTextAttributes([.foregroundColor: UIColor.blue], for: .selected)
         control.selectedSegmentIndex = 0
         control.addTarget(self, action: #selector(modeChanged), for: .valueChanged)
         return control
@@ -41,6 +43,8 @@ class ViewController: UIViewController {
     private lazy var roleControl: UISegmentedControl = {
         let items = ["主播", "观众"]
         let control = UISegmentedControl(items: items)
+        control.setTitleTextAttributes([.foregroundColor: UIColor.black], for: .normal)
+        control.setTitleTextAttributes([.foregroundColor: UIColor.blue], for: .selected)
         control.selectedSegmentIndex = 0
         control.addTarget(self, action: #selector(roleChanged), for: .valueChanged)
         return control
@@ -119,6 +123,16 @@ class ViewController: UIViewController {
             return uid
         } set {
             UserDefaults.standard.set(newValue, forKey: "currentUserId")
+        }
+    }
+    
+    private var firstFrameConnectedDisable: Bool {
+        get {
+            let disable = UserDefaults.standard.bool(forKey: "firstFrameConnectedDisable")
+            return disable
+        } set {
+            UserDefaults.standard.set(newValue, forKey: "firstFrameConnectedDisable")
+            firstFrameDisableButton.isSelected = newValue
         }
     }
     
@@ -225,6 +239,19 @@ class ViewController: UIViewController {
         return button
     }()
     
+    private lazy var firstFrameDisableButton: UIButton = {
+        let button = UIButton()
+        button.backgroundColor = .blue
+        button.setTitle("音视频首帧与接通相关", for: .normal)
+        button.setTitleColor(.white, for: .normal)
+        button.setTitle("音视频首帧与接通不相关", for: .selected)
+        button.setTitleColor(.white, for: .selected)
+        button.titleLabel?.textAlignment = .left
+        button.layer.cornerRadius = 5
+        button.addTarget(self, action: #selector(firstFrameDisable), for: .touchUpInside)
+        return button
+    }()
+    
     private lazy var dimensionsLabel: UILabel = {
         let label = UILabel()
         label.text = "分辨率"
@@ -273,6 +300,7 @@ class ViewController: UIViewController {
         view.addSubview(callUserTextField)
         
         view.addSubview(fpsButton)
+        view.addSubview(firstFrameDisableButton)
         view.addSubview(dimensionsLabel)
         view.addSubview(dimensionsWTf)
         view.addSubview(dimensionsHTf)
@@ -289,6 +317,7 @@ class ViewController: UIViewController {
         dimW = dimW
         dimH = dimH
         fpsIndex = fpsIndex
+        firstFrameConnectedDisable = firstFrameConnectedDisable
     }
     
     private func updateUI() {
@@ -316,7 +345,9 @@ class ViewController: UIViewController {
             topEdge += 50
         }
         
-        fpsButton.frame = CGRect(x: 10, y: topEdge, width: 100, height: 40)
+        fpsButton.frame = CGRect(x: 10, y: topEdge, width: 80, height: 40)
+        firstFrameDisableButton.sizeToFit()
+        firstFrameDisableButton.frame = CGRect(x: 100, y: topEdge, width: 220, height: 40)
         topEdge += 50
         dimensionsLabel.sizeToFit()
         dimensionsLabel.frame = CGRect(x: 10, y: topEdge, width: dimensionsLabel.frame.width, height: 40)
@@ -327,6 +358,11 @@ class ViewController: UIViewController {
     @objc func currentUserChanged() {
         currentUserId = UInt(userTextField.text ?? "") ?? 0
         print("currentUserId: \(currentUserId)")
+    }
+    
+    @objc func firstFrameDisable() {
+        firstFrameDisableButton.isSelected = !firstFrameDisableButton.isSelected
+        firstFrameConnectedDisable = firstFrameDisableButton.isSelected
     }
     
     @objc func callUserTfChanged() {
@@ -374,6 +410,7 @@ class ViewController: UIViewController {
         view.isUserInteractionEnabled = false
         
         let prepareConfig = PrepareConfig()
+        prepareConfig.firstFrameWaittingDisabled = firstFrameConnectedDisable
         SVProgressHUD.show()
         NetworkManager.shared.generateToken(channelName: "",
                                             uid: "\(currentUserId)",
@@ -381,14 +418,18 @@ class ViewController: UIViewController {
             SVProgressHUD.dismiss()
             guard let self = self else {return}
             self.view.isUserInteractionEnabled = true
-            prepareConfig.rtcToken = token!
+            guard let token = token else {
+                print("generateTokens fail")
+                return
+            }
+            prepareConfig.rtcToken = token
             
             let targetUserId = role == .caller ? "\(callUserId)" : "\(currentUserId)"
             
             var showVc: UIViewController? = nil
             if modeIndex == 0 {
             #if canImport(AgoraRtmKit)
-                let rtmToken = token!
+                let rtmToken = token
                 let vc = ShowTo1v1RoomViewController(showRoomId: "\(targetUserId)_live",
                                                      showUserId: role == .callee ? currentUserId : callUserId,
                                                      showRoomToken: prepareConfig.rtcToken,
@@ -421,6 +462,7 @@ class ViewController: UIViewController {
         view.isUserInteractionEnabled = false
         
         let prepareConfig = PrepareConfig()
+        prepareConfig.firstFrameWaittingDisabled = firstFrameConnectedDisable
         SVProgressHUD.show()
         NetworkManager.shared.generateToken(channelName: "",
                                             uid: "\(currentUserId)",
@@ -428,12 +470,16 @@ class ViewController: UIViewController {
             SVProgressHUD.dismiss()
             guard let self = self else {return}
             self.view.isUserInteractionEnabled = true
-            prepareConfig.rtcToken = token!
+            guard let token = token else {
+                print("generateTokens fail")
+                return
+            }
+            prepareConfig.rtcToken = token
             
             var showVc: UIViewController? = nil
             if modeIndex == 1 {
             #if canImport(AgoraRtmKit)
-                let rtmToken = token!
+                let rtmToken = token
                 let vc = Pure1v1RoomViewController(currentUid: currentUserId,
                                                    prepareConfig: prepareConfig,
                                                    rtmToken: rtmToken)

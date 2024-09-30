@@ -1,6 +1,11 @@
 # Change Log
 
+## [2.1.2](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.1.2)
+
+- 呼叫接通支持与音视频首帧接收状态无关。
+
 ## [2.1.1](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.1.1)
+
 - 优化RTC和RTM Token获取，一次请求即可完成。
 - [iOS]解决Objective-C无法调用的问题。
 - [Android]移除无效属性

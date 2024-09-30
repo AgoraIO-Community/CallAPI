@@ -44,7 +44,7 @@ public protocol ICallRtmManagerListener: NSObjectProtocol {
     private var rtmClient: AgoraRtmClientKit
 
     /// RTM是否已经登录
-    private var isLoginedRtm: Bool = false
+    public var isLoginedRtm: Bool = false
     
     /// 是否外部传入的rtm，如果是则不需要手动logout
     private var isExternalRtmClient: Bool = false

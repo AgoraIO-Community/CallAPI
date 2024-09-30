@@ -9,7 +9,7 @@ fun Long.getCostMilliseconds(): Long {
 }
 
 fun PrepareConfig.cloneConfig(): PrepareConfig {
-    return PrepareConfig(roomId, rtcToken, localView, remoteView, callTimeoutMillisecond, userExtension)
+    return PrepareConfig(roomId, rtcToken, localView, remoteView, callTimeoutMillisecond, userExtension, firstFrameWaittingDisabled)
 }
 
 fun CallConfig.cloneConfig(): CallConfig {

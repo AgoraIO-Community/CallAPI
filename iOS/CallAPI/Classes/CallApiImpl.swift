@@ -8,7 +8,7 @@
 import Foundation
 import AgoraRtcKit
 
-let kApiVersion = "2.1.0"
+let kApiVersion = "2.1.2"
 
 let kMessageId: String = "messageId"     //发送的消息id
 
@@ -124,7 +124,7 @@ public class CallApiImpl: NSObject {
                 } else {
                     callWarningPrint("remote view not found in connected state!")
                 }
-                let ext: [String: Any] = ["channelName": connectInfo.callingRoomId ?? ""]
+                let ext: [String: Any] = ["channelName": connectInfo.callingRoomId ?? "", "userId": config?.userId ?? 0]
                 reporter?.endDurationEvent(name: APICostEvent.firstFramePerceived, ext: ext)
                 reporter?.endDurationEvent(name: APICostEvent.firstFrameActual, ext: ext)
             case .idle, .failed:
@@ -288,7 +288,16 @@ extension CallApiImpl {
     }
     
     private func checkConnectedSuccess(reason: CallStateReason) {
-        guard connectInfo.isRetrieveFirstFrame, state == .connecting else {return}
+        guard let rtcConnection = rtcConnection else {
+            callWarningPrint("checkConnectedSuccess fail, connection not found")
+            return
+        }
+        callPrint("checkConnectedSuccess: firstFrameWaittingDisabled: \(prepareConfig?.firstFrameWaittingDisabled ?? false), isRetrieveFirstFrame: \(connectInfo.isRetrieveFirstFrame) state: \(state.rawValue)")
+        if prepareConfig?.firstFrameWaittingDisabled == true {
+            guard state == .connecting else {return}
+        } else {
+            guard connectInfo.isRetrieveFirstFrame, state == .connecting else {return}
+        }
         /*
          1.因为被叫提前加频道并订阅流和推流，导致双端收到视频首帧可能会比被叫点accept(变成connecting)比更早
          2.由于匹配1v1时双端都会收到onCall，此时A发起accept，B收到了onAccept+A首帧，会导致B未接受即进入了connected状态
@@ -342,7 +351,7 @@ extension CallApiImpl {
         var ext: [String: Any] = ["state": state.rawValue,
                                   "stateReason": stateReason.rawValue,
                                   "eventReason": eventReason,
-                                  "userId": config?.userId ?? "",
+                                  "userId": config?.userId ?? 0,
                                   "callId": connectInfo.callId]
         if let roomId = connectInfo.callingRoomId {
             ext["roomId"] = roomId
@@ -743,7 +752,9 @@ extension CallApiImpl {
     private func _reportCostEvent(type: CallConnectCostType) {
         let cost = _getCost()
         connectInfo.callCostMap[type.rawValue] = cost
-        let ext: [String: Any] = ["channelName": connectInfo.callingRoomId ?? ""]
+        let ext: [String: Any] = ["channelName": connectInfo.callingRoomId ?? "",
+                                  "callId": connectInfo.callId,
+                                  "userId": config?.userId ?? 0]
         reporter?.reportCostEvent(name: type.rawValue, cost: cost, ext: ext)
     }
     
@@ -754,7 +765,11 @@ extension CallApiImpl {
         if let range = event.range(of: "(") {
             subEvent = String(event[..<range.lowerBound])
         }
-        reporter?.reportFuncEvent(name: subEvent, value: value, ext: ["callId": connectInfo.callId])
+        let ext: [String: Any] = ["callId": connectInfo.callId, 
+                                  "userId": config?.userId ?? 0]
+        reporter?.reportFuncEvent(name: subEvent,
+                                  value: value,
+                                  ext: ext)
     }
     
     private func _reportCustomEvent(event: String, ext: [String: Any]) {
@@ -927,6 +942,11 @@ extension CallApiImpl {
         if defaultCalleeJoinRTCTiming == .calling {
             // join操作需要在calling抛出之后执行，因为秀场转1v1等场景，需要通知外部先关闭外部采集，否则内部推流会失败导致对端看不到画面
             _joinRTCAsBroadcaster(roomId: fromRoomId)
+        }
+        
+        if connectInfo.isLocalAccepted, prepareConfig?.firstFrameWaittingDisabled == true {
+            //如果首帧不关联，在秀场转1v1场景下，可能会自动接受，会导致么有加频道前变成connected，unmute声音无效
+            checkConnectedSuccess(reason: .localAccepted)
         }
     }
     

@@ -23,6 +23,7 @@ import AgoraRtcKit
     public var remoteView: UIView!                      //显示远端流的画布
     public var callTimeoutMillisecond: UInt64 = 15000   //呼叫超时时间，单位毫秒，0表示内部不处理超时
     public var userExtension: [String: Any]?            //[可选]用户扩展字段，收到对端消息而改变状态(例如calling/connecting)时可以通过kFromUserExtension字段获取
+    public var firstFrameWaittingDisabled: Bool = false  //接通状态是否禁止等待首帧,true:是，主叫收到接受消息即认为通话成功，被叫点击接受即认为通话成功，注意，使用该方式可能会造成无音视频权限时也能接通，以及接通时由于弱网等情况看不到画面，false: 否，会等待音频首帧（音频呼叫）或视频首帧(视频呼叫)
 }
 
 

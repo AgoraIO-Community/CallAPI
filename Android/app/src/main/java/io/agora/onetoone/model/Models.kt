@@ -21,5 +21,7 @@ data class EnterRoomInfoModel (
     var bitrate: String = "0",
 
     var autoAccept: Boolean = true,
-    var autoJoinRTC: Boolean = false
+    var autoJoinRTC: Boolean = false,
+
+    var firstFrameWaittingDisabled: Boolean = false
 ) : Serializable

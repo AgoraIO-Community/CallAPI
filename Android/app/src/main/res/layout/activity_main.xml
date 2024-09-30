@@ -259,6 +259,16 @@
         app:layout_constraintStart_toStartOf="parent"
         />
 
+    <com.google.android.material.checkbox.MaterialCheckBox
+        android:id="@+id/firstFrameWaitting"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="音视频首帧与接通相关"
+        android:checked="true"
+        app:layout_constraintTop_toBottomOf="@+id/layoutFrameRate"
+        app:layout_constraintStart_toStartOf="parent"
+        />
+
 <!--    <com.google.android.material.checkbox.MaterialCheckBox-->
 <!--        android:id="@+id/cbJoinRTC"-->
 <!--        android:layout_width="match_parent"-->

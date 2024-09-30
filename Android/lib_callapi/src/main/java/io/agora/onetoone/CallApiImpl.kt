@@ -56,7 +56,7 @@ class CallApiImpl constructor(
 ): ICallApi, ISignalClientListener, IRtcEngineEventHandler() {
 
     companion object {
-        const val kReportCategory = "2.1.0"
+        const val kReportCategory = "2.1.2"
         const val kPublisher = "publisher"
         const val kCostTimeMap = "costTimeMap"    //呼叫时的耗时信息，会在connected时抛出分步耗时
         const val kRemoteUserId = "remoteUserId"
@@ -142,7 +142,10 @@ class CallApiImpl constructor(
                     _muteRemoteAudio(false)
                     tempRemoteCanvasView.alpha = 1f
                     connectInfo.scheduledTimer(null)
-                    val ext = mapOf("channelName" to (connectInfo.callingRoomId ?: ""))
+                    val ext = mapOf<String, Any>(
+                        "channelName" to (connectInfo.callingRoomId ?: ""),
+                        "userId" to (config?.userId ?: 0)
+                    )
                     reporter?.endDurationEvent(ApiCostEvent.FIRST_FRAME_PERCEIVED, ext)
                     reporter?.endDurationEvent(ApiCostEvent.FIRST_FRAME_ACTUAL, ext)
                 }
@@ -291,7 +294,17 @@ class CallApiImpl constructor(
     }
 
     private fun checkConnectedSuccess(reason: CallStateReason) {
-        if (connectInfo.isRetrieveFirstFrame && state == CallStateType.Connecting) else {return}
+        if (rtcConnection == null) {
+            callWarningPrint("checkConnectedSuccess fail, connection not found")
+            return
+        }
+        val firstFrameWaittingDisabled = prepareConfig?.firstFrameWaittingDisabled ?: false
+        callPrint("checkConnectedSuccess: firstFrameWaittingDisabled: ${firstFrameWaittingDisabled}, isRetrieveFirstFrame: ${connectInfo.isRetrieveFirstFrame} state: $state")
+        if (firstFrameWaittingDisabled == true) {
+            if (state == CallStateType.Connecting) else {return}
+        } else {
+            if (connectInfo.isRetrieveFirstFrame && state == CallStateType.Connecting) else {return}
+        }
         /*
          1.因为被叫提前加频道并订阅流和推流，导致双端收到视频首帧可能会比被叫点accept(变成connecting)比更早
          2.由于匹配1v1时双端都会收到onCall，此时A发起accept，B收到了onAccept+A首帧，会导致B未接受即进入了connected状态
@@ -341,7 +354,7 @@ class CallApiImpl constructor(
             "state" to state.value,
             "stateReason" to stateReason.value,
             "eventReason" to eventReason,
-            "userId" to (config?.userId ?: ""),
+            "userId" to (config?.userId ?: 0),
             "callId" to connectInfo.callId
         )
         _reportCustomEvent(CallCustomEvent.stateChange, ext)
@@ -760,7 +773,9 @@ class CallApiImpl constructor(
         val cost = _getCost()
         connectInfo.callCostMap[type.value] = cost
         val ext = mapOf(
-            "channelName" to (connectInfo.callingRoomId ?: "")
+            "channelName" to (connectInfo.callingRoomId ?: ""),
+            "callId" to connectInfo.callId,
+            "userId" to (config?.userId ?: 0)
         )
         reporter?.reportCostEvent(type.value, cost.toInt(), ext)
     }
@@ -773,10 +788,15 @@ class CallApiImpl constructor(
         if (range != -1) {
             subEvent = event.substring(0, range)
         }
+
+        val ext = mapOf<String, Any>(
+            "callId" to connectInfo.callId,
+            "userId" to (config?.userId ?: 0)
+        )
         reporter?.reportFuncEvent(
             name = subEvent,
             value = value,
-            ext = mapOf("callId" to connectInfo.callId)
+            ext = ext
         )
     }
 
@@ -929,6 +949,11 @@ class CallApiImpl constructor(
         if(defaultCalleeJoinRTCTiming == CalleeJoinRTCTiming.Calling) {
             _joinRTCAsBroadcaster(fromRoomId)
         }
+
+        if (connectInfo.isLocalAccepted && prepareConfig?.firstFrameWaittingDisabled == true) {
+            //如果首帧不关联，在秀场转1v1场景下，可能会自动接受，会导致么有加频道前变成connected，unmute声音无效
+            checkConnectedSuccess(CallStateReason.LocalAccepted)
+        }
     }
 
     private fun _onCancel(message: Map<String, Any>) {
@@ -995,7 +1020,7 @@ class CallApiImpl constructor(
 
         // 视频最佳实践
         // 3.API 开启音视频首帧加速渲染
-        config.rtcEngine.enableInstantMediaRendering()
+//        config.rtcEngine.enableInstantMediaRendering()
 
         // 4.私有参数或配置下发开启首帧 FEC
         config.rtcEngine.setParameters("{\"rtc.video.quickIntraHighFec\": true}")
