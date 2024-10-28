@@ -403,7 +403,7 @@ class ViewController: UIViewController {
     
     @objc func enterShowTo1v1(_ button: UIButton) {
         if role == .caller, currentUserId == callUserId {
-            AUIToast.show(text: "直播频道名和1v1频道名不能相同")
+            AUIToast.show(text: "The live stream channel name and the 1v1 channel name cannot be the same.")
             return
         }
         
@@ -440,7 +440,7 @@ class ViewController: UIViewController {
                 vc.videoEncoderConfig = videoEncoderConfig
                 showVc = vc
             #else
-                AUIToast.show(text: "CallAPI未包含RTM，请检查集成方式")
+                AUIToast.show(text: "CallAPI does not include RTM, please check the integration method.")
             #endif
             } else {
                 let vc = EMShowTo1v1RoomViewController(showRoomId: "\(targetUserId)_live",

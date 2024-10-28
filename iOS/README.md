@@ -11,9 +11,26 @@ This document mainly describes how to quickly run the CallAPI sample project.
   - [3. Project Introduction](#3-project-introduction)
     - [3.1 Overview](#31-overview)
     - [3.2 Role Introduction](#32-role-introduction)
-    - [3.3 Core Capabilities:](#33-core-capabilities)
-    - [3.4 Gameplay Description](#34-gameplay-description)
+    - [3.3 Core Capabilities](#33-core-capabilities)
+    - [3.4 Gameplay Introduction](#34-gameplay-introduction)
   - [4. Quick Integration](#4-quick-integration)
+    - [Add dependencies](#add-dependencies)
+    - [Implement a 1v1 call](#implement-a-1v1-call)
+      - [Initialize CallRtmManager](#initialize-callrtmmanager)
+      - [Add and listen for CallRtmManager state callbacks.](#add-and-listen-for-callrtmmanager-state-callbacks)
+      - [Initialize CallRtmSignalClient](#initialize-callrtmsignalclient)
+      - [Initialize CallAPI](#initialize-callapi)
+      - [Add and listen for CallAPI callbacks.](#add-and-listen-for-callapi-callbacks)
+      - [Handle CallRtmManager login](#handle-callrtmmanager-login)
+      - [prepare call environment](#prepare-call-environment)
+      - [Caller makes a call](#caller-makes-a-call)
+      - [listens for call events and processes](#listens-for-call-events-and-processes)
+      - [Receives call success](#receives-call-success)
+      - [Ends call](#ends-call)
+      - [Receives hang-up message](#receives-hang-up-message)
+      - [Updates channel id](#updates-channel-id)
+      - [Leaves and releases resources](#leaves-and-releases-resources)
+    - [Sequence diagram for calling CallAPI scenarios:](#sequence-diagram-for-calling-callapi-scenarios)
   - [5. Advanced Integration](#5-advanced-integration)
     - [5.1 Using an Initialized rtmClient](#51-using-an-initialized-rtmclient)
     - [5.2 Switching the Timing of Publishing and Subscribing for the Callee to Save Costs](#52-switching-the-timing-of-publishing-and-subscribing-for-the-callee-to-save-costs)
@@ -31,7 +48,7 @@ This document mainly describes how to quickly run the CallAPI sample project.
 
 ## 1. Enable Service
 - Follow [the Account Document](https://docs.agora.io/en/video-calling/reference/manage-agora-account) to Access the **App ID** and **App Certificate**.
-- Follow Signaling Beginner's guide to enable signaling in Agora Console. 
+- Follow Signaling(Agora Rtm) Beginner's guide to enable signaling in Agora Console. 
 - [Options]Enable and Configure [Agora Chat](https://docs.agora.io/en/agora-chat/get-started/enable?platform=ios) to Access Your **AppKey**.
 
 
@@ -66,19 +83,19 @@ This document mainly describes how to quickly run the CallAPI sample project.
 - Caller: The party that initiates the call and invites the other party to join the conversation. The caller actively sends a call request to establish a video call connection and sends an invitation to the callee.
 - Callee: The party that receives the call request and is invited to join the conversation. Upon receiving the caller's invitation, the callee can either accept or decline the call. If the call is accepted, a video call connection is established with the caller.
 
-### 3.3 Core Capabilities:
+### 3.3 Core Capabilities
 - **Call**: The caller initiates a call.
 - **Cancel Call**: The caller can cancel the call to interrupt the current call before it is successfully connected.
 - **Accept Call**: The callee can accept the call after receiving the caller's request.
 - **Reject Call**: The callee can decline the call after receiving the caller's request.
 - **Hang Up**: Either the caller or callee can initiate a hang-up request to end the current call during the conversation.
 
-### 3.4 Gameplay Description
+### 3.4 Gameplay Introduction
 - 1v1 Scenario: Typically in stranger social scenarios, users can filter potential matches based on photos and personal profiles, or randomly match with other users through location and tags, allowing two users to engage in a private 1v1 video call. During the call, both users are defaulted to have their cameras and microphones on, sending and receiving audio and video streams bidirectionally.
 - Showroom to 1v1 Scenario: During a live broadcast, users can pay to initiate a 1v1 video call with the host. Once the call is connected, the host's original live stream does not close but stops broadcasting, allowing the host to transition to the 1v1 video call with the paying user. After the 1v1 video call ends, the host transitions back to the original live stream to continue broadcasting.
   
 ## 4. Quick Integration
-- Add dependencies
+### Add dependencies
   - Copy the example code from the [iOS](/iOS/) directory to your own project, for example, at the same level as the Podfile.
   - Add the following line to your Podfile:
     ```
@@ -95,261 +112,255 @@ This document mainly describes how to quickly run the CallAPI sample project.
     ```
   - Open the terminal and execute the `pod install` command to integrate the CallAPI code into your project.
 
-- Implement a 1v1 call
-  - Initialize CallRtmManager
-    ```swift
-    let rtmManager = CallRtmManager(appId: <#AppId#>,
-                                    userId: <#UserId#>,
-                                    rtmClient: nil)
-    ```
-  - Add and listen for CallRtmManager state callbacks.
-    ```swift
-    rtmManager.delegate = self
+### Implement a 1v1 call
+#### Initialize CallRtmManager
+  ```swift
+  let rtmManager = CallRtmManager(appId: <#AppId#>,
+                                  userId: <#UserId#>,
+                                  rtmClient: nil)
+  ```
+#### Add and listen for CallRtmManager state callbacks.
+  ```swift
+  rtmManager.delegate = self
 
-    extension ViewController: ICallRtmManagerListener {
-        func onConnected() {
-          // Network connected, signaling can be sent and received normally.
-        }
+  extension ViewController: ICallRtmManagerListener {
+      func onConnected() {
+        // Network connected, signaling can be sent and received normally.
+      }
 
-        func onDisconnected() {
-          // Network not connected, signaling cannot be sent or received at this time; the business layer can handle exceptions based on the current status.
-        }
+      func onDisconnected() {
+        // Network not connected, signaling cannot be sent or received at this time; the business layer can handle exceptions based on the current status.
+      }
 
-        func onTokenPrivilegeWillExpire(channelName: String) {
-          // Token expired, need to refresh the RTM Token.
-        }
-    }
-    ```
+      func onTokenPrivilegeWillExpire(channelName: String) {
+        // Token expired, need to refresh the RTM Token.
+      }
+  }
+  ```
 
-  - Initialize CallRtmSignalClient
-    ```swift
-    let signalClient = CallRtmSignalClient(rtmClient: rtmManager.getRtmClient())
-    ```
+#### Initialize CallRtmSignalClient
+  ```swift
+  let signalClient = CallRtmSignalClient(rtmClient: rtmManager.getRtmClient())
+  ```
 
-  - Initialize CallAPI
-    ```swift
-    let config = CallConfig()
-    config.appId = <#AppId#>
-    config.userId = <#UserId#>
-    config.rtcEngine = rtcEngine
-    config.signalClient = signalClient
+#### Initialize CallAPI
+  ```swift
+  let config = CallConfig()
+  config.appId = <#AppId#>
+  config.userId = <#UserId#>
+  config.rtcEngine = rtcEngine
+  config.signalClient = signalClient
 
-    callApi.initialize(config: config)
-    ```
+  callApi.initialize(config: config)
+  ```
 
-  - Add and listen for CallAPI callbacks.
-    ```swift
-    callApi.addListener(listener: self)
+#### Add and listen for CallAPI callbacks.
+  ```swift
+  callApi.addListener(listener: self)
 
-    extension ViewController: CallApiListenerProtocol {
-        func onCallStateChanged(with state: CallStateType,
-                                stateReason: CallStateReason,
-                                eventReason: String,
-                                eventInfo: [String : Any]) {
-            // ...
-        }
-    }
-    ```
+  extension ViewController: CallApiListenerProtocol {
+      func onCallStateChanged(with state: CallStateType,
+                              stateReason: CallStateReason,
+                              eventReason: String,
+                              eventInfo: [String : Any]) {
+          // ...
+      }
+  }
+  ```
 
-  - Handle CallRtmManager login
-    ```swift
-    rtmManager?.login(rtmToken: rtmToken, completion: { err in
-        if let _ = err { return }
-        // Login successful, you can start preparing the call environment.
-    })
-    ```
+#### Handle CallRtmManager login
+  ```swift
+  rtmManager?.login(rtmToken: rtmToken, completion: { err in
+      if let _ = err { return }
+      // Login successful, you can start preparing the call environment.
+  })
+  ```
 
-  - prepare call environment
-    ```swift
-    // Prepare the call environment
-    let prepareConfig = PrepareConfig()
-    prepareConfig.rtcToken = <#Universal RTC Token#>
-    prepareConfig.roomId = <#Channel ID to call#>
-    prepareConfig.localView = callVC.localCanvasView.canvasView
-    prepareConfig.remoteView = callVC.remoteCanvasView.canvasView
-    // If you want to send extension information to the other party, you can achieve this through this parameter
-    prepareConfig.userExtension = nil
+#### prepare call environment
+  ```swift
+  // Prepare the call environment
+  let prepareConfig = PrepareConfig()
+  prepareConfig.rtcToken = <#Universal RTC Token#>
+  prepareConfig.roomId = <#Channel ID to call#>
+  prepareConfig.localView = callVC.localCanvasView.canvasView
+  prepareConfig.remoteView = callVC.remoteCanvasView.canvasView
+  // If you want to send extension information to the other party, you can achieve this through this parameter
+  prepareConfig.userExtension = nil
 
-    callApi.prepareForCall(prepareConfig: prepareConfig) { err in
-        // Success means you can start making the call
-    }
-    ```
+  callApi.prepareForCall(prepareConfig: prepareConfig) { err in
+      // Success means you can start making the call
+  }
+  ```
     
-  - Caller makes a call
-    - Video call
-      ```swift
-      private func _call(remoteUserId: UInt) {
-          // Check if the call can be made; the CallAPI state should be "prepared"
-          if callState == .idle || callState == .failed {
-              // The call environment is not prepared or has encountered an error; need to reprepare the call environment
+  #### Caller makes a call
+  - Video call
+    ```swift
+    private func _call(remoteUserId: UInt) {
+        // Check if the call can be made; the CallAPI state should be "prepared"
+        if callState == .idle || callState == .failed {
+            // The call environment is not prepared or has encountered an error; need to reprepare the call environment
 
-              // Error message
+            // Error message
 
-              return
-          }
-          
-          callApi.call(remoteUserId: remoteUserId) { [weak self] err in
-              guard let err = err, self?.callState == .calling else { return }
-              // Call failed, cancel the call and return to idle state
-              self?.callApi.cancelCall(completion: { err in
-              })
-          }
-      }
+            return
+        }
+        
+        callApi.call(remoteUserId: remoteUserId) { [weak self] err in
+            guard let err = err, self?.callState == .calling else { return }
+            // Call failed, cancel the call and return to idle state
+            self?.callApi.cancelCall(completion: { err in
+            })
+        }
+    }
       ```
-    - Audio call
-      ```swift
-      private func _call(remoteUserId: UInt) {
-          // Need to check if the call can be made; if the CallAPI is complete, the state will be "prepared"
-          if callState == .idle || callState == .failed {
-              // The call environment is not prepared or has encountered an error; need to reprepare the call environment
+  - Audio call
+    ```swift
+    private func _call(remoteUserId: UInt) {
+        // Need to check if the call can be made; if the CallAPI is complete, the state will be "prepared"
+        if callState == .idle || callState == .failed {
+            // The call environment is not prepared or has encountered an error; need to reprepare the call environment
 
-              // Error message
+            // Error message
 
-              return
+            return
+        }
+        
+        callApi.call(remoteUserId: remoteUserId, callType: .audio, callExtension: [:]) { [weak self] err in
+            guard let err = err, self?.callState == .calling else { return }
+            // Call failed, cancel the call and return to idle state
+            self?.callApi.cancelCall(completion: { err in
+            })
+        }
+    }
+    ```
+#### listens for call events and processes
+  ```swift
+  func onCallStateChanged(with state: CallStateType,
+                        stateReason: CallStateReason,
+                        eventReason: String,
+                        eventInfo: [String: Any]) {
+      switch state {
+      case .calling:
+          let fromUserId = eventInfo[kFromUserId] as? UInt ?? 0
+          let fromRoomId = eventInfo[kFromRoomId] as? String ?? ""
+          let toUserId = eventInfo[kRemoteUserId] as? UInt ?? 0
+
+          if currentUid == "\(toUserId)" {
+              // The current user is the callee
+
+              // Get user information for displaying in the popup
+              let user = userList.first { \$0.userId == "\(fromUserId)" }
+              let dialog = CalleeDialog.show(user: user)
+              // Accept the call
+              dialog?.acceptClosure = { [weak self] in
+                  guard let self = self else { return }
+                  self.callApi.accept(remoteUserId: fromUserId) { [weak self] err in
+                      guard let err = err else { return }
+                      // If there is an error accepting the call, reject it and return to the initial state
+                      self?.api.reject(remoteUserId: fromUserId, reason: err.localizedDescription, completion: { err in
+                      })
+                  }
+              }
+              // Reject the call
+              dialog?.rejectClosure = { [weak self] in
+                  self?.callApi.reject(remoteUserId: fromUserId, reason: "reject by user") { err in
+                  }
+              }
+          } else if currentUid == "\(fromUserId)" {
+              // The current user is the caller
+
+              // Get user information for displaying in the popup
+              let user = userList.first { \$0.userId == "\(toUserId)" }
+              let dialog = CallerDialog.show(user: user)
+              // Cancel the call
+              dialog?.cancelClosure = { [weak self] in
+                  self?.callApi.cancelCall(completion: { err in
+                  })
+              }
           }
-          
-          callApi.call(remoteUserId: remoteUserId, callType: .audio, callExtension: [:]) { [weak self] err in
-              guard let err = err, self?.callState == .calling else { return }
-              // Call failed, cancel the call and return to idle state
-              self?.callApi.cancelCall(completion: { err in
-              })
-          }
+      default:
+          break
       }
-      ```
-  - listens for call events and processes
-    ```swift
-    func onCallStateChanged(with state: CallStateType,
-                          stateReason: CallStateReason,
-                          eventReason: String,
-                          eventInfo: [String: Any]) {
-        switch state {
-        case .calling:
-            let fromUserId = eventInfo[kFromUserId] as? UInt ?? 0
-            let fromRoomId = eventInfo[kFromRoomId] as? String ?? ""
-            let toUserId = eventInfo[kRemoteUserId] as? UInt ?? 0
+  }
+  ```
+#### Receives call success
+  ```swift
+  func onCallStateChanged(with state: CallStateType,
+                        stateReason: CallStateReason,
+                        eventReason: String,
+                        eventInfo: [String : Any]) {
+      switch state {
+      case .connected:
 
-            if currentUid == "\(toUserId)" {
-                // The current user is the callee
+          // Display the call page.
+          present(callVC, animated: false)
+          break
+      default:
+          break
+      }
+  }
+  ```
+#### Ends call
+  ```swift
+  func _hangupAction() {
+      callApi?.hangup(remoteUserId: UInt(targetUser?.userId ?? "") ?? 0, reason: nil, completion: { err in
+      })
+  ...
+  ```
 
-                // Get user information for displaying in the popup
-                let user = userList.first { \$0.userId == "\(fromUserId)" }
-                let dialog = CalleeDialog.show(user: user)
-                // Accept the call
-                dialog?.acceptClosure = { [weak self] in
-                    guard let self = self else { return }
-                    self.callApi.accept(remoteUserId: fromUserId) { [weak self] err in
-                        guard let err = err else { return }
-                        // If there is an error accepting the call, reject it and return to the initial state
-                        self?.api.reject(remoteUserId: fromUserId, reason: err.localizedDescription, completion: { err in
-                        })
-                    }
-                }
-                // Reject the call
-                dialog?.rejectClosure = { [weak self] in
-                    self?.callApi.reject(remoteUserId: fromUserId, reason: "reject by user") { err in
-                    }
-                }
-            } else if currentUid == "\(fromUserId)" {
-                // The current user is the caller
+#### Receives hang-up message
+  ```swift
+  func onCallStateChanged(with state: CallStateType,
+                        stateReason: CallStateReason,
+                        eventReason: String,
+                        eventInfo: [String: Any]) {
+      let currentUid = userInfo?.userId ?? ""
 
-                // Get user information for displaying in the popup
-                let user = userList.first { \$0.userId == "\(toUserId)" }
-                let dialog = CallerDialog.show(user: user)
-                // Cancel the call
-                dialog?.cancelClosure = { [weak self] in
-                    self?.callApi.cancelCall(completion: { err in
-                    })
-                }
-            }
-        default:
-            break
-        }
-    }
-    ```
-  - Receives call success
-    ```swift
-    func onCallStateChanged(with state: CallStateType,
-                          stateReason: CallStateReason,
-                          eventReason: String,
-                          eventInfo: [String : Any]) {
-        switch state {
-        case .connected:
+      switch state {
+      case .prepared:
+          switch stateReason {
+          case .localHangup, .remoteHangup:
+              // Remove the call page
+              callVC.dismiss(animated: false)
+              // Display rejection information
 
-            // Display the call page.
-            present(callVC, animated: false)
-            break
-        default:
-            break
-        }
-    }
-    ```
-  - Ends call
-    ```swift
-    func _hangupAction() {
-        callApi?.hangup(remoteUserId: UInt(targetUser?.userId ?? "") ?? 0, reason: nil, completion: { err in
-        })
-    ...
-    ```
+          default:
+              break
+          }
+      default:
+          break
+      }
+  }
+  ```
 
-  - Receives hang-up message
-    ```swift
-    func onCallStateChanged(with state: CallStateType,
-                          stateReason: CallStateReason,
-                          eventReason: String,
-                          eventInfo: [String: Any]) {
-        let currentUid = userInfo?.userId ?? ""
+#### Updates channel id
+  ```swift
+  // Prepare the call environment
+  let prepareConfig = PrepareConfig()
+  // Set the new channel ID
+  prepareConfig.roomId = <#Channel ID to call#>
+  // Other property settings are omitted here. Please ensure to synchronize the settings for other properties.
 
-        switch state {
-        case .prepared:
-            switch stateReason {
-            case .localHangup, .remoteHangup:
-                // Remove the call page
-                callVC.dismiss(animated: false)
-                // Display rejection information
+  callApi.prepareForCall(prepareConfig: prepareConfig) { err in
+      // Success means you can start making the call
+  }
+  ```
 
-            default:
-                break
-            }
-        default:
-            break
-        }
-    }
-    ```
+#### Leaves and releases resources
+  ```swift
+  // Clear CallAPI cache
+  callApi.deinitialize {
+      // Destroy RTC instance
+      AgoraRtcEngineKit.destroy()
 
-  - Updates channel id
-    ```swift
-    // Prepare the call environment
-    let prepareConfig = PrepareConfig()
-    // Set the new channel ID
-    prepareConfig.roomId = <#Channel ID to call#>
-    // Other property settings are omitted here. Please ensure to synchronize the settings for other properties.
+      // Logout from RTM service
+      self.rtmManager.logout()
 
-    callApi.prepareForCall(prepareConfig: prepareConfig) { err in
-        // Success means you can start making the call
-    }
-    ```
+      // Other business logic
+  }
+  ```
 
-  - Leaves and releases resources
-    ```swift
-    // Clear CallAPI cache
-    callApi.deinitialize {
-        // Destroy RTC instance
-        AgoraRtcEngineKit.destroy()
-
-        // Logout from RTM service
-        self.rtmManager.logout()
-
-        // Other business logic
-    }
-    ```
-
-
-
-
-
-
-
-- Sequence diagram for calling CallAPI scenarios:
+### Sequence diagram for calling CallAPI scenarios:
   - 1v1 scenario
    <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_pure1v1.en.png" width="500px"><br><br>
   - Show to 1v1
@@ -452,11 +463,12 @@ The ID of the current RTC call channel (the `roomId` parameter) can be parsed fr
 You can update the expired tokens for signaling and RTC in the following way.
 
 **Signaling Token**
-1. Monitor whether the RTM token has expired. You can do this by adding and listening to the CallRtmManager state callback, specifically the `onTokenPrivilegeWillExpire` method of ICallRtmManagerListener``.
+1. Monitor whether the RTM token has expired. You can do this by [adding and listening to the CallRtmManager state callback](#add-and-listen-for-callrtmmanager-state-callbacks)
+, specifically the `onTokenPrivilegeWillExpire` method of ICallRtmManagerListener``.
    ```swift
    extension Pure1v1RoomViewController: ICallRtmManagerListener {
       func onTokenPrivilegeWillExpire(channelName: String) {
-          // Token 过期，需要重新获取 Token
+          // The token is about to expire; a new token needs to be obtained.
       }
    }
    ```
@@ -499,7 +511,7 @@ You can update the expired tokens for signaling and RTC in the following way.
 
 2. Update Token.
    ```swift
-   / Update RTC Token
+   // Update RTC Token
    self.api.renewToken(with: rtcToken)
 
    // Update RTM Token
@@ -508,8 +520,8 @@ You can update the expired tokens for signaling and RTC in the following way.
    // To ensure that both RTM and RTC Tokens are valid simultaneously, it is recommended to update both tokens at the same time.
    ```
 ## 6. API Reference
-Please refer to the [link](./CallAPI/Classes/CallApiProtocol.swift) to review CallAPI.
-Please refer to the [link](./CallAPI/Classes/SignalClient/ISignalClient.swift) to review SignalClient.
+- Refer to the [link](./CallAPI/Classes/CallApiProtocol.swift) to review the API for CallAPI.
+- Refer to the [link](./CallAPI/Classes/SignalClient/ISignalClient.swift) to review the API for SignalClient.
 
 
 ## 7. Implementation Principles
