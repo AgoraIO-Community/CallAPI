@@ -8,7 +8,7 @@
 import Foundation
 import AgoraRtmKit
 
-/// RTM信令管理类
+/// RTM Signaling Management Class
 @objcMembers public class CallRtmSignalClient: CallBaseSignalClient {
     private var rtmClient: AgoraRtmClientKit
     
@@ -71,8 +71,8 @@ extension CallRtmSignalClient {
 
 //MARK: AgoraRtmClientDelegate
 extension CallRtmSignalClient: AgoraRtmClientDelegate {
-    //收到RTM消息
-    public func rtmKit(_ rtmKit: AgoraRtmClientKit, 
+    //recv rtm message
+    public func rtmKit(_ rtmKit: AgoraRtmClientKit,
                        didReceiveMessageEvent event: AgoraRtmMessageEvent) {
         guard let data = event.message.rawData,
               let message = String(data: data, encoding: .utf8) else {

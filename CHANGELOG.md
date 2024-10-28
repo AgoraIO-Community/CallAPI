@@ -1,95 +1,94 @@
 # Change Log
 
+*English | [中文](CHANGELOG.zh.md)* 
+
 ## [2.1.2](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.1.2)
 
-- 呼叫接通支持与音视频首帧接收状态无关。
+- Call connected state support is independent of the audio and video first frame reception status.
 
 ## [2.1.1](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.1.1)
 
-- 优化RTC和RTM Token获取，一次请求即可完成。
-- [iOS]解决Objective-C无法调用的问题。
-- [Android]移除无效属性
+- Optimized RTC and RTM token acquisition, allowing it to be completed in a single request.
+- [iOS] Resolved issues with Objective-C calls.
+- [Android] Removed invalid properties.
 
 ## [2.1.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.1.0)
 
-- 升级 Rtm SDK 至 2.2.0。
-- 新增语音通话功能。
-- 呼叫时支持发送自定义扩展信息。
-- 在呼叫中状态（calling）时，增加返回的 CallStateReason 和 CallEvent 类型。
-- 改进事件上报和日志写入，提升异常定位能力。
-
+- Upgraded RTM SDK to version 2.2.0.
+- Added voice call functionality.
+- Supported sending custom extension information during calls.
+- Added returned `CallStateReason` and `CallEvent` types during the calling state.
+- Improved event reporting and log writing to enhance exception localization capabilities.
 
 ## [2.0.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.0.0)
 
-- 新增自定义信令功能，支持使用非 Rtm 来发送消息。
-- 优化事件上报
-- 优化 Demo 层的异常处理。
+- Added custom signaling functionality, allowing messages to be sent without using RTM.
+- Optimized event reporting.
+- Improved exception handling in the demo layer.
 
 ## [1.1.3](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.3)
 
-- 升级 Rtm SDK 至 2.1.10。
-- 修复收到 calling 时直接调用 accpet 方法建立通话导致的音频异常问题。
-- 优化画布清理逻辑。
-- 通话结束时关闭本地音视频采集
-  
+- Upgraded RTM SDK to version 2.1.10.
+- Fixed audio issues caused by directly calling the accept method when receiving a calling notification.
+- Optimized canvas clearing logic.
+- Closed local audio and video capture at the end of the call.
 
 ## [1.1.2](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.2)
 
-- 优化美颜接入后镜像问题。
-- 关闭采集逻辑优化。
-- 呼叫取消返回原因。
-- 支持外部本地采集画面展示与CallApi内部展示共存。
+- Optimized mirroring issues after beauty filter integration.
+- Optimized capture logic closure.
+- Returned reasons for call cancellations.
+- Supported coexistence of external local capture display and internal CallApi display.
 
 ## [1.1.1](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.1)
 
-- 新增 canJoinRTC 方法，用于外部控制加入 RTC 的时机。
-- 新增事件类型，当对端因为超时取消呼叫时事件通知从 callingTimeout 变更为 remoteCallingTimeout
+- Added `canJoinRTC` method for external control of joining RTC timing.
+- Added event type: when the other party cancels the call due to timeout, the event notification changes from `callingTimeout` to `remoteCallingTimeout`.
 
 ## [1.1.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.1.0)
 
-- 增加通话开始/结束的回调。
-- onCallEventChanged 回调方法增加 eventReason 参数。
+- Added callbacks for call start/end.
+- Added `eventReason` parameter to `onCallEventChanged` callback method.
 
 ## [1.0.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/1.0.0)
 
-- 优化API接口，增加易用性。
-- 适配 RTM 2.1.8，使用点对点消息。
-- 优化日志上报策略，通话质量定位更准确。
-- 优化过期消息过滤策略。
-- 移除 autoAccept 配置项。
-- 新增异常错误回调
-- 新增匹配玩法的后端服务模块
+- Optimized API interface for improved usability.
+- Adapted to RTM 2.1.8, using peer-to-peer messaging.
+- Optimized log reporting strategy for more accurate call quality localization.
+- Optimized expired message filtering strategy.
+- Removed `autoAccept` configuration option.
+- Added exception error callbacks.
+- Added backend service module for matching gameplay.
 
 ## [0.3.1](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.3.1)
 
-- 修复时间戳获取异常。
+- Fixed timestamp retrieval exceptions.
 
 ## [0.3.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.3.0)
 
-- 更新 RTM SDK 至2.1.7。
-- CallConfig 支持外部传入 AgoraRtmClientKit 实例。
-- 纯1v1模式下 initialize 方法隐式调用 prepareForCall。
-- 增加 RTM 断连回调。
+- Updated RTM SDK to version 2.1.7.
+- `CallConfig` supports externally passing in `AgoraRtmClientKit` instances.
+- In pure 1v1 mode, the `initialize` method implicitly calls `prepareForCall`.
+- Added RTM disconnection callbacks.
 
 ## [0.2.2](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.2.2)
 
-- 更新消息发送和订阅的 channelName 从频道id改为用户id。
-- 移除 RTM Presence 及接口相关属性和回调。
-- 更新部分接口名称。
-- [Android]回调同步到主线程。
-- 其他Bug修复。
+- Updated message sending and subscription's `channelName` from channel ID to user ID.
+- Removed RTM Presence and related properties and callbacks.
+- Updated some interface names.
+- [Android] Callbacks synchronized to the main thread.
+- Other bug fixes.
 
 ## [0.2.1](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.2.1)
 
-- [Android]更新RTM的 gradle 下载脚本。
+- [Android] Updated RTM's Gradle download script.
 
 ## [0.2.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.2.0)
 
-- 增加 RTC 回调接口。
-- 更新 RTM 为独立版本。
-- 优化事件上报。
-- Bug修复。
+- Added RTC callback interfaces.
+- Updated RTM to an independent version.
+- Optimized event reporting.
+- Bug fixes.
 
 ## [0.1.0](https://github.com/AgoraIO-Community/CallAPI/releases/tag/0.1.0)
-
 

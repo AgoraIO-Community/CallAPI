@@ -8,272 +8,256 @@
 import Foundation
 import AgoraRtcKit
 
-/// 初始化配置信息
+/// Initializes configuration information
 @objcMembers public class CallConfig: NSObject {
-    public var appId: String = ""                          //声网App Id
-    public var userId: UInt = 0                            //用户id
-    public var rtcEngine: AgoraRtcEngineKit!               //rtc engine实例
-    public var signalClient: ISignalClient!                //信令通道对象实例
+    public var appId: String = ""                          // Agora App Id
+    public var userId: UInt = 0                            // User ID
+    public var rtcEngine: AgoraRtcEngineKit!               // RTC engine instance
+    public var signalClient: ISignalClient!                // Signaling channel object instance
 }
 
 @objcMembers public class PrepareConfig: NSObject {
-    public var roomId: String = ""                      //自己的Rtc频道名，用于呼叫对端用户时让对端用户加入这个RTC频道
-    public var rtcToken: String = ""                    //rtc token，需要使用万能token，token创建的时候channel name为空字符串
-    public var localView: UIView!                       //显示本地流的画布
-    public var remoteView: UIView!                      //显示远端流的画布
-    public var callTimeoutMillisecond: UInt64 = 15000   //呼叫超时时间，单位毫秒，0表示内部不处理超时
-    public var userExtension: [String: Any]?            //[可选]用户扩展字段，收到对端消息而改变状态(例如calling/connecting)时可以通过kFromUserExtension字段获取
-    public var firstFrameWaittingDisabled: Bool = false  //接通状态是否禁止等待首帧,true:是，主叫收到接受消息即认为通话成功，被叫点击接受即认为通话成功，注意，使用该方式可能会造成无音视频权限时也能接通，以及接通时由于弱网等情况看不到画面，false: 否，会等待音频首帧（音频呼叫）或视频首帧(视频呼叫)
+    public var roomId: String = ""                      // Own RTC channel name, used to let the remote user join this RTC channel when calling
+    public var rtcToken: String = ""                    // RTC token, needs to use a universal token, the channel name is empty when the token is created
+    public var localView: UIView!                       // Canvas for displaying local stream
+    public var remoteView: UIView!                      // Canvas for displaying remote stream
+    public var callTimeoutMillisecond: UInt64 = 15000   // Call timeout duration in milliseconds, 0 means no internal timeout handling
+    public var userExtension: [String: Any]?            // [Optional] User extension fields, can be used to retrieve the kFromUserExtension field when the state changes due to receiving a message from the remote user (e.g., calling/connecting)
+    public var firstFrameWaittingDisabled: Bool = false  // Whether to disable waiting for the first frame in connected state, true: yes, the caller considers the call successful upon receiving the acceptance message, the callee clicking accept also considers the call successful. Note that using this method may allow the call to connect without audio/video permissions, and during connection, due to weak network conditions, the screen may not be visible. false: no, will wait for the first audio frame (audio call) or the first video frame (video call)
 }
 
-
-/// 呼叫类型
+/// Call types
 @objc public enum CallType: UInt {
-    case video = 0    //视频呼叫
-    case audio        //音频呼叫
+    case video = 0    // Video call
+    case audio        // Audio call
 }
 
-/// 呼叫状态
+/// Call states
 @objc public enum CallStateType: UInt {
-    case idle = 0            //未知
-    case prepared = 1        //空闲
-    case calling = 2         //呼叫中
-    case connecting = 3      //连接中
-    case connected = 4       //通话中
-    case failed = 10         //出现错误
+    case idle = 0            // Unknown
+    case prepared = 1        // Idle
+    case calling = 2         // Calling
+    case connecting = 3      // Connecting
+    case connected = 4       // In call
+    case failed = 10         // Error occurred
 }
 
-/// 呼叫状态变迁原因
+/// Reasons for call state transitions
 @objc public enum CallStateReason: UInt {
     case none = 0
-    case joinRTCFailed = 1         //加入RTC失败
-//    case rtmSetupFailed = 2        //设置RTM失败[2.0.0已废弃, prepareForCall失败reason变更为none]
-//    case rtmSetupSuccessed = 3     //设置RTM成功[2.0.0已废弃，信令成功通过ISignalClient自行维护]
-    case messageFailed = 4         //消息发送失败
-    case localRejected = 5         //本地用户拒绝
-    case remoteRejected = 6        //远端用户拒绝
-    case remoteAccepted = 7        //远端用户接受
-    case localAccepted = 8         //本地用户接受
-    case localHangup = 9           //本地用户挂断
-    case remoteHangup = 10         //远端用户挂断
-    case localCancelled = 11        //本地用户取消呼叫
-    case remoteCancelled = 12       //远端用户取消呼叫
-    case recvRemoteFirstFrame = 13 //收到远端首帧
-    case callingTimeout = 14       //本地呼叫超时
-    case cancelByCallerRecall = 15 //同样的主叫呼叫不同频道导致取消
-//    case rtmLost = 16              //rtm超时断连[2.0.0废弃，请从信令管理中实现中处理相关的异常]
-    case remoteCallBusy = 17       //远端用户忙
-    case remoteCallingTimeout = 18 //远端呼叫超时
-    case localVideoCall = 30       //本地发起视频呼叫
-    case localAudioCall = 31       //本地发起音频呼叫
-    case remoteVideoCall = 32      //远端发起视频呼叫
-    case remoteAudioCall = 33      //远端发起音频呼叫
+    case joinRTCFailed = 1         // Failed to join RTC
+    case messageFailed = 4         // Message sending failed
+    case localRejected = 5         // Local user rejected
+    case remoteRejected = 6        // Remote user rejected
+    case remoteAccepted = 7        // Remote user accepted
+    case localAccepted = 8         // Local user accepted
+    case localHangup = 9           // Local user hung up
+    case remoteHangup = 10         // Remote user hung up
+    case localCancelled = 11       // Local user canceled the call
+    case remoteCancelled = 12      // Remote user canceled the call
+    case recvRemoteFirstFrame = 13 // Received remote first frame
+    case callingTimeout = 14       // Local call timed out
+    case cancelByCallerRecall = 15 // The same caller calling different channels leads to cancellation
+    case remoteCallBusy = 17       // Remote user is busy
+    case remoteCallingTimeout = 18 // Remote call timed out
+    case localVideoCall = 30       // Local initiated video call
+    case localAudioCall = 31       // Local initiated audio call
+    case remoteVideoCall = 32      // Remote initiated video call
+    case remoteAudioCall = 33      // Remote initiated audio call
 }
 
-/// 呼叫事件
+/// Call events
 @objc public enum CallEvent: UInt {
     case none = 0
-    case deinitialize = 1                         //调用了deinitialize
-    case callingTimeout = 3                       //本地呼叫超时
-    case remoteCallingTimeout = 4                 //远端呼叫超时
-    case joinRTCSuccessed = 5                     //加入RTC成功
-//    case rtmSetupFailed = 6                       //设置RTM失败[已废弃，请使用onCallErrorOccur(state: rtmSetupFail)]
-//    case rtmSetupSuccessed = 7                    //设置RTM成功[2.0.0已废弃，Rtm是否成功请通过CallRtmSignalClient的login显式调用]
-//    case messageFailed = 8                        //消息发送失败[已废弃，请使用onCallErrorOccur(state: sendMessageFail)]
-    case stateMismatch = 9                        //状态流转异常
-    case joinRTCStart = 10                        //本地已经加入Rtc频道，但是还未成功(调用了JoinChannelEx)
-    case remoteUserRecvCall = 99                  //主叫呼叫成功
-    case localRejected = 100                      //本地用户拒绝
-    case remoteRejected = 101                     //远端用户拒绝
-//    case onCalling = 102                          //变成呼叫中[2.1.0废弃，请参考localVideoCall/localAudioCall/remoteVideoCall/remoteAudioCall]
-    case remoteAccepted = 103                     //远端用户接收
-    case localAccepted = 104                      //本地用户接收
-    case localHangup = 105                        //本地用户挂断
-    case remoteHangup = 106                       //远端用户挂断
-    case remoteJoined = 107                       //远端用户加入RTC频道
-    case remoteLeft = 108                         //远端用户离开RTC频道(eventReason请参考AgoraUserOfflineReason)
-    case localCancelled = 109                      //本地用户取消呼叫
-    case remoteCancelled = 110                     //远端用户取消呼叫
-    case localJoined = 111                        //本地用户加入RTC频道
-    case localLeft = 112                          //本地用户离开RTC频道
-    case recvRemoteFirstFrame = 113               //收到远端首帧(视频呼叫为视频帧首帧，音频呼叫为音频帧首帧)
-//    case cancelByCallerRecall = 114               //同样的主叫呼叫不同频道导致取消[已废弃]
-//    case rtmLost = 115                            //rtm超时断连[2.0.0废弃，请从信令管理中实现中处理相关的异常]
-//    case rtcOccurError = 116                      //rtc出现错误[已废弃，请使用onCallErrorOccur(state: rtcOccurError)]
-    case remoteCallBusy = 117                     //远端用户忙
-    case captureFirstLocalVideoFrame = 119        //采集到首帧视频帧
-    case publishFirstLocalVideoFrame = 120        //推送首帧视频帧成功
-    case publishFirstLocalAudioFrame = 130        //推送首帧音频帧成功[2.1.0开始支持]
-    case localVideoCall = 140                     //本地发起视频呼叫
-    case localAudioCall = 141                     //本地发起音频呼叫
-    case remoteVideoCall = 142                    //远端发起视频呼叫
-    case remoteAudioCall = 143                    //远端发起音频呼叫
+    case deinitialize = 1                         // Called deinitialize
+    case callingTimeout = 3                       // Local call timed out
+    case remoteCallingTimeout = 4                 // Remote call timed out
+    case joinRTCSuccessed = 5                     // Successfully joined RTC
+    case stateMismatch = 9                        // State transition anomaly
+    case joinRTCStart = 10                        // Local has joined RTC channel but not yet successfully (called JoinChannelEx)
+    case remoteUserRecvCall = 99                  // Caller call succeeded
+    case localRejected = 100                      // Local user rejected
+    case remoteRejected = 101                     // Remote user rejected
+    case remoteAccepted = 103                     // Remote user accepted
+    case localAccepted = 104                      // Local user accepted
+    case localHangup = 105                        // Local user hung up
+    case remoteHangup = 106                       // Remote user hung up
+    case remoteJoined = 107                       // Remote user joined RTC channel
+    case remoteLeft = 108                         // Remote user left RTC channel (eventReason refers to AgoraUserOfflineReason)
+    case localCancelled = 109                      // Local user canceled the call
+    case remoteCancelled = 110                     // Remote user canceled the call
+    case localJoined = 111                        // Local user joined RTC channel
+    case localLeft = 112                          // Local user left RTC channel
+    case recvRemoteFirstFrame = 113               // Received remote first frame (video call for video frame first frame, audio call for audio frame first frame)
+    case remoteCallBusy = 117                     // Remote user is busy
+    case captureFirstLocalVideoFrame = 119        // Captured first video frame
+    case publishFirstLocalVideoFrame = 120        // Successfully published first video frame
+    case publishFirstLocalAudioFrame = 130        // Successfully published first audio frame [supported since 2.1.0]
+    case localVideoCall = 140                     // Local initiated video call
+    case localAudioCall = 141                     // Local initiated audio call
+    case remoteVideoCall = 142                    // Remote initiated video call
+    case remoteAudioCall = 143                    // Remote initiated audio call
 }
 
-/// 呼叫错误事件
+/// Call error events
 @objc public enum CallErrorEvent: UInt {
-    case normalError = 0              //通用错误
-    case rtcOccurError = 100          //rtc出现错误
-    case startCaptureFail = 110       //rtc开启采集失败
-//    case rtmSetupFail = 200           //rtm初始化失败[已废弃，改为signalClient自己手动初始化]
-    case sendMessageFail = 210        //消息发送失败
+    case normalError = 0              // General error
+    case rtcOccurError = 100          // RTC error occurred
+    case startCaptureFail = 110       // Failed to start capture
+    case sendMessageFail = 210        // Message sending failed
 }
 
-/// 呼叫错误事件的错误码类型
+/// Error code types for call error events
 @objc public enum CallErrorCodeType: UInt {
-    case normal = 0   //业务类型的错误，暂无
-    case rtc          //rtc的错误，使用AgoraErrorCode
-    case message      //消息的错误，使用如果使用CallRtmSignalClient则是AgoraRtmErrorCode，自定义信道则是对应信道的error code
+    case normal = 0   // Business type error, none at present
+    case rtc          // RTC error, use AgoraErrorCode
+    case message      // Message error, if using CallRtmSignalClient then it is AgoraRtmErrorCode, if using custom channel then it is the corresponding channel error code
 }
 
-/// 日志等级
+/// Log levels
 @objc public enum CallLogLevel: Int {
     case normal = 0
     case warning = 1
     case error = 2
 }
 
-
-
 @objc public protocol CallApiListenerProtocol: NSObjectProtocol {
-    /// 状态响应回调
+    /// State response callback
     /// - Parameters:
-    ///   - state: 状态类型
-    ///   - stateReason: 状态变更的原因
-    ///   - eventReason: 事件类型描述
-    ///   - eventInfo: 扩展信息，不同事件类型参数不同
+    ///   - state: State type
+    ///   - stateReason: Reason for state change
+    ///   - eventReason: Description of event type
+    ///   - eventInfo: Extended information, different event types have different parameters
     func onCallStateChanged(with state: CallStateType,
                             stateReason: CallStateReason,
                             eventReason: String,
                             eventInfo: [String: Any])
 
-    /// 内部详细事件变更回调
+    /// Internal detailed event change callback
     /// - Parameters:
-    ///   - event: 事件
-    ///   - eventReason: 事件原因，默认nil，根据不同event表示不同的含义
+    ///   - event: Event
+    ///   - eventReason: Event reason, default nil, different events represent different meanings
     @objc optional func onCallEventChanged(with event: CallEvent, eventReason: String?)
     
-    /// 发生错误的回调
+    /// Callback for errors that occur
     /// - Parameters:
-    ///   - errorEvent: 错误事件
-    ///   - errorType: 错误码类型
-    ///   - errorCode: 错误码
-    ///   - message: 错误信息
+    ///   - errorEvent: Error event
+    ///   - errorType: Error code type
+    ///   - errorCode: Error code
+    ///   - message: Error message
     @objc optional func onCallError(with errorEvent: CallErrorEvent,
                                     errorType: CallErrorCodeType,
                                     errorCode: Int,
                                     message: String?)
     
-    /// 通话开始的回调
+    /// Callback for when the call starts
     /// - Parameters:
-    ///   - roomId: 通话的频道id
-    ///   - callerUserId: 发起呼叫的用户id
-    ///   - currentUserId: 自己的id
-    ///   - timestamp: 通话开始的时间戳，和19700101的差值，单位ms
+    ///   - roomId: Channel ID of the call
+    ///   - callerUserId: User ID of the caller
+    ///   - currentUserId: Your own ID
+    ///   - timestamp: Timestamp when the call started, difference from 19700101, in ms
     @objc optional func onCallConnected(roomId: String,
                                         callUserId: UInt,
                                         currentUserId: UInt,
                                         timestamp: UInt64)
     
-    /// 通话结束的回调
+    /// Callback for when the call ends
     /// - Parameters:
-    ///   - roomId: 通话的频道id
-    ///   - hangupUserId: 挂断的用户id
-    ///   - currentUserId: 自己的用户id
-    ///   - timestamp: 通话结束的时间戳，和19700101的差值，单位ms
-    ///   - duration: 通话时长，单位ms
+    ///   - roomId: Channel ID of the call
+    ///   - hangupUserId: User ID of the user who hung up
+    ///   - currentUserId: Your own user ID
+    ///   - timestamp: Timestamp when the call ended, difference from 19700101, in ms
+    ///   - duration: Duration of the call, in ms
     @objc optional func onCallDisconnected(roomId: String,
                                            hangupUserId: UInt,
                                            currentUserId: UInt,
                                            timestamp: UInt64,
                                            duration: UInt64)
     
-    /// 当收到呼叫时判断是否可以加入Rtc
-    /// - Parameter eventInfo: 收到呼叫时的扩展信息
-    /// - Returns: true: 可以加入 false: 不可以加入
+    /// When receiving a call, determine if you can join RTC
+    /// - Parameter eventInfo: Extended information when receiving the call
+    /// - Returns: true: can join false: cannot join
     @objc optional func canJoinRtcOnCalling(eventInfo: [String: Any]) -> Bool
     
-    /// token即将要过期(需要外部获取新token调用renewToken更新)
+    /// Token is about to expire (requires external retrieval of new token and calling renewToken to update)
     @objc optional func tokenPrivilegeWillExpire()
     
-    /// 打印日志
+    /// Print logs
     /// - Parameters:
-    ///   - message: 日志信息
-    ///   - logLevel: 日志优先级: 0: 普通日志，1: 警告日志, 2: 错误日志
+    ///   - message: Log information
+    ///   - logLevel: Log priority: 0: normal log, 1: warning log, 2: error log
     @objc optional func callDebugInfo(message: String, logLevel: CallLogLevel)
 }
 
 @objc public protocol CallApiProtocol: NSObjectProtocol {
-    /// 初始化配置
+    /// Initialize configuration
     /// - Parameters:
     ///   - config: <#config description#>
     func initialize(config: CallConfig)
     
-    /// 释放缓存
+    /// Release cache
     func deinitialize(completion: @escaping (()->()))
     
-    /// 更新rtc token
+    /// Update RTC token
     /// - Parameter config: <#config description#>
     func renewToken(with rtcToken: String)
     
-    /// 准备通话环境，需要调用成功才可以进行呼叫，如需要更换通话的RTC 频道号可以重复调用，确保调用时必须是非通话状态(非calling、connecting、connected)才可调用成功
+    /// Prepare the call environment, must be called successfully to make a call. If you need to change the RTC channel number for the call, you can call it repeatedly. Ensure that it must be non-call state (not calling, connecting, connected) for it to succeed.
     /// - Parameters:
     ///   - config: <#config description#>
     ///   - completion: completion description
     func prepareForCall(prepareConfig: PrepareConfig, completion: ((NSError?)->())?)
     
-    /// 添加回调的listener
+    /// Add a listener for callbacks
     /// - Parameter listener: <#listener description#>
     func addListener(listener: CallApiListenerProtocol)
     
-    /// 移除回调的listener
+    /// Remove a listener for callbacks
     /// - Parameter listener: <#listener description#>
     func removeListener(listener: CallApiListenerProtocol)
     
-    /// 发起呼叫邀请(为视频呼叫)，主叫调用，通过prepareForCall设置的RTC频道号和远端用户建立RTC通话连接
+    /// Initiate a call invitation (for video calls), the caller calls, establishing an RTC call connection with the remote user using the RTC channel number set by prepareForCall
     /// - Parameters:
-    ///   - remoteUserId: 呼叫的用户id
+    ///   - remoteUserId: User ID being called
     ///   - completion: <#completion description#>
     func call(remoteUserId: UInt, completion: ((NSError?)->())?)
     
-    
-    /// 发起呼叫邀请，主叫调用，通过prepareForCall设置的RTC频道号和远端用户建立RTC通话连接
+    /// Initiate a call invitation, the caller calls, establishing an RTC call connection with the remote user using the RTC channel number set by prepareForCall
     /// - Parameters:
-    ///   - remoteUserId: 呼叫的用户id
-    ///   - callType: 呼叫类型： 0: 视频呼叫， 1: 音频呼叫
-    ///   - callExtension: 呼叫需要扩展的字段，收到对端消息而改变状态(例如calling/connecting)时可以通过kFromUserExtension字段获取
+    ///   - remoteUserId: User ID being called
+    ///   - callType: Call type: 0: video call, 1: audio call
+    ///   - callExtension: Fields that need to be extended for the call. The kFromUserExtension field can be used to retrieve the state change when receiving a message from the remote user (e.g., calling/connecting)
     ///   - completion: <#completion description#>
-    func call(remoteUserId: UInt, 
+    func call(remoteUserId: UInt,
               callType: CallType,
-              callExtension: [String: Any], 
+              callExtension: [String: Any],
               completion: ((NSError?)->())?)
     
-    
-    /// 取消正在发起的呼叫邀请，主叫调用
+    /// Cancel an ongoing call invitation, the caller calls
     /// - Parameter completion: <#completion description#>
     func cancelCall(completion: ((NSError?)->())?)
     
-    /// 接受呼叫邀请，被叫调用
+    /// Accept a call invitation, the callee calls
     /// - Parameters:
-    ///   - remoteUserId: 接受的用户id
+    ///   - remoteUserId: User ID being accepted
     ///   - completion: <#completion description#>
     func accept(remoteUserId: UInt, completion: ((NSError?)->())?)
     
-    /// 拒绝呼叫邀请，被叫调用
+    /// Reject a call invitation, the callee calls
     /// - Parameters:
-    ///   - remoteUserId: 拒绝的用户id
-    ///   - reason: 拒绝原因
+    ///   - remoteUserId: User ID being rejected
+    ///   - reason: Reason for rejection
     ///   - completion: <#completion description#>
     func reject(remoteUserId: UInt, reason: String?, completion: ((NSError?)->())?)
     
-    /// 挂断通话，主叫和被叫均可调用
+    /// Hang up the call, both caller and callee can call
     /// - Parameters:
-    ///   - userId: 挂断的用户id
-    ///   - reason: 挂断原因
+    ///   - userId: User ID of the user hanging up
+    ///   - reason: Reason for hanging up
     ///   - completion: <#completion description#>
     func hangup(remoteUserId: UInt, reason: String?, completion: ((NSError?)->())?)
     
-    /// 获取当前通话的callId，callId为当次通话过程中唯一标识，通过该标识声网后台服务可以查询到当前通话的关键节点耗时和状态变迁的时间节点
-    /// - Returns: callId，非呼叫到通话之外的消息为空
+    /// Get the current call's callId, callId is a unique identifier during the call process, through which Agora backend services can query the key node duration and the time points of state changes for the current call
+    /// - Returns: callId, empty for messages not related to the call
     func getCallId() -> String
 }
