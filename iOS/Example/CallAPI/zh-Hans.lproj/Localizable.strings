@@ -27,7 +27,7 @@
 "select_height"="高";
 
 "first_frame_related_connected"="音视频首帧与接通相关";
-"first_frame_not_related_connected"="音视频首帧与接通相关";
+"first_frame_not_related_connected"="音视频首帧与接通不相关";
 
 "rtm_not_found"="CallAPI未包含RTM，请检查集成方式";
 
