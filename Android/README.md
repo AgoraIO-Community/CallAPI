@@ -47,7 +47,7 @@ This document mainly describes how to quickly run the CallAPI sample project.
 
 ## 1. Enable Service
 - Follow [the Account Document](https://docs.agora.io/en/video-calling/reference/manage-agora-account) to Access the **App ID** and **App Certificate**.
-- Follow Signaling Beginner's guide to enable signaling in Agora Console. 
+- Follow Signaling(Agora Rtm) Beginner's guide to enable signaling in Agora Console. 
 - [Options]Enable and Configure [Agora Chat](https://docs.agora.io/en/agora-chat/get-started/enable?platform=ios) to Access Your **AppKey**.
 
 ## 2. Run the Example
