@@ -91,14 +91,14 @@ class Pure1v1RoomViewController: UIViewController {
     private lazy var currentUserLabel: UILabel = {
         let label = UILabel()
         label.textColor = .white
-        label.text = "当前用户id: \(currentUid)"
+        label.text = "\(NSLocalizedString("current_user_id", comment: "")): \(currentUid)"
         return label
     }()
     
     private lazy var targetUserLabel: UILabel = {
         let label = UILabel()
         label.textColor = .white
-        label.text = "目标用户id"
+        label.text = NSLocalizedString("target_user_id", comment: "")
         return label
     }()
     
@@ -106,7 +106,7 @@ class Pure1v1RoomViewController: UIViewController {
         let tf = UITextField()
         tf.backgroundColor = .white
         tf.borderStyle = .roundedRect
-        tf.placeholder = "需要呼叫的用户id"
+        tf.placeholder = NSLocalizedString("call_user_id", comment: "")
         tf.textColor = .black
         tf.keyboardType = .numberPad
         tf.addTarget(self, action: #selector(targetUserChanged), for: .editingChanged)
@@ -221,7 +221,7 @@ class Pure1v1RoomViewController: UIViewController {
             guard let self = self else {return}
             if let err = err {
                 NSLog("login error = \(err.localizedDescription)")
-                AUIToast.show(text: "rtm登录失败: \(err.localizedDescription)")
+                AUIToast.show(text: "\(NSLocalizedString("rtm_login_fail", comment: "")): \(err.localizedDescription)")
                 completion(false)
                 return
             }
@@ -240,7 +240,7 @@ extension Pure1v1RoomViewController {
     private func _checkConnectionAndNotify() -> Bool{
         //如果信令状态异常，不允许执行callapi操作
         guard rtmManager?.isConnected == true else {
-            AUIToast.show(text: "rtm未登录或连接异常")
+            AUIToast.show(text: NSLocalizedString("rtm_connect_fail", comment: ""))
             return false
         }
         
@@ -309,35 +309,39 @@ extension Pure1v1RoomViewController {
         if callState == .idle || callState == .failed {
             initCallApi { err in
             }
-            AUIToast.show(text: "CallAPi初始化中")
+            AUIToast.show(text: NSLocalizedString("callapi_initialize", comment: ""))
             return
         }
         let remoteUserId = targetUserId
         
-        let alertController = UIAlertController(title: "呼叫", message: "请选择呼叫类型", preferredStyle: .actionSheet)
+        let alertController = UIAlertController(title: NSLocalizedString("call", comment: ""),
+                                                message: NSLocalizedString("select_call_type", comment: ""),
+                                                preferredStyle: .actionSheet)
         // 添加操作按钮
-        let action1 = UIAlertAction(title: "视频呼叫", style: .default) {[weak self] _ in
+        let action1 = UIAlertAction(title: NSLocalizedString("video_call", comment: ""), style: .default) {[weak self] _ in
             self?.api.call(remoteUserId: remoteUserId) { error in
                 guard let error = error, self?.callState == .calling else {return}
                 self?.api.cancelCall { err in }
                 
-                AUIToast.show(text: "呼叫失败: \(error.localizedDescription)")
+                AUIToast.show(text: "\(NSLocalizedString("call_fail", comment: "")): \(error.localizedDescription)")
             }
         }
         alertController.addAction(action1)
 
-        let action2 = UIAlertAction(title: "音频呼叫", style: .default) {[weak self] _ in
-            self?.api.call(remoteUserId: remoteUserId, 
+        let action2 = UIAlertAction(title: NSLocalizedString("audio_call", comment: ""), style: .default) {[weak self] _ in
+            self?.api.call(remoteUserId: remoteUserId,
                            callType: .audio,
                            callExtension: ["test_call": 111]) { error in
-                guard let _ = error, self?.callState == .calling else {return}
+                guard let error = error, self?.callState == .calling else {return}
                 self?.api.cancelCall { err in }
+                
+                AUIToast.show(text: "\(NSLocalizedString("call_fail", comment: "")): \(error.localizedDescription)")
             }
         }
         alertController.addAction(action2)
 
         // 添加取消按钮
-        let cancelAction = UIAlertAction(title: "取消", style: .cancel, handler: nil)
+        let cancelAction = UIAlertAction(title: NSLocalizedString("cancel", comment: ""), style: .cancel, handler: nil)
         alertController.addAction(cancelAction)
         present(alertController, animated: true)
     }
@@ -455,8 +459,8 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                 AUIAlertView()
                     .isShowCloseButton(isShow: true)
                     .title(title: "用户 \(fromUserId) 邀请您1对1\(stateReason == .remoteAudioCall ? "语音": "视频")通话")
-                    .rightButton(title: "同意")
-                    .leftButton(title: "拒绝")
+                    .rightButton(title: NSLocalizedString("accept", comment: ""))
+                    .leftButton(title: NSLocalizedString("reject", comment: ""))
                     .leftButtonTapClosure {[weak self] in
                         guard let self = self else { return }
                         guard self._checkConnectionAndNotify() else { return }
@@ -471,7 +475,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                             //如果接受消息出错，则发起拒绝，回到初始状态
                             self?.api.reject(remoteUserId: fromUserId, reason: err.localizedDescription, completion: { err in
                             })
-                            AUIToast.show(text: "接受呼叫失败: \(err.localizedDescription)")
+                            AUIToast.show(text: "\(NSLocalizedString("accept_fail", comment: "")): \(err.localizedDescription)")
                         }
                     })
                     .show()
@@ -479,8 +483,8 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                 connectedUserId = toUserId
                 AUIAlertView()
                     .isShowCloseButton(isShow: true)
-                    .title(title: "呼叫用户 \(toUserId) 中")
-                    .rightButton(title: "取消")
+                    .title(title: "\(NSLocalizedString("calling_to_user", comment: "")): \(toUserId)")
+                    .rightButton(title: NSLocalizedString("cancel", comment: ""))
                     .rightButtonTapClosure(onTap: {[weak self] text in
                         guard let self = self else { return }
                         guard self._checkConnectionAndNotify() else { return }
@@ -502,15 +506,15 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
         case .prepared:
             switch stateReason {
             case .localHangup, .remoteHangup:
-                AUIToast.show(text: "通话结束", postion: .bottom)
+                AUIToast.show(text: NSLocalizedString("call_did_finish", comment: ""), postion: .bottom)
             case .localRejected, .remoteRejected:
-                AUIToast.show(text: "通话被拒绝")
+                AUIToast.show(text: NSLocalizedString("call_did_reject", comment: ""))
             case .callingTimeout, .remoteCallingTimeout:
-                AUIToast.show(text: "无应答")
+                AUIToast.show(text: NSLocalizedString("call_timeout", comment: ""))
             case .localCancelled, .remoteCancelled:
-                AUIToast.show(text: "通话被取消")
+                AUIToast.show(text: NSLocalizedString("call_is_cancel", comment: ""))
             case .remoteCallBusy:
-                AUIToast.show(text: "用户正忙")
+                AUIToast.show(text: NSLocalizedString("call_is_busy", comment: ""))
             default:
                 break
             }
@@ -568,7 +572,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                                timestamp: UInt64) {
         NSLog("onCallConnected roomId: \(roomId) callUserId: \(callUserId) currentUserId: \(currentUserId) timestamp: \(timestamp)")
         
-        connectStatusLabel.text = "通话开始 \nRTC 频道号: \(roomId) \n呼叫用户id: \(callUserId) \n当前用户id: \(currentUserId) \n开始时间戳: \(timestamp)"
+        connectStatusLabel.text = "Call started \nRTC Channel ID: \(roomId) \nCalling User ID: \(callUserId) \nCurrent User ID: \(currentUserId) \nStart Timestamp: \(timestamp)"
         layoutConnectStatus()
     }
     
@@ -579,7 +583,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                                   duration: UInt64) {
         NSLog("onCallDisconnected roomId: \(roomId) hangupUserId: \(hangupUserId) currentUserId: \(currentUserId) timestamp: \(timestamp) duration: \(duration)ms")
         
-        connectStatusLabel.text = "通话结束 \nRTC 频道号: \(roomId) \n挂断用户id: \(hangupUserId) \n当前用户id: \(currentUserId) \n结束时间戳: \(timestamp) \n通话时长: \(duration)ms"
+        connectStatusLabel.text = "Call ended \nRTC Channel ID: \(roomId) \nHangup User ID: \(hangupUserId) \nCurrent User ID: \(currentUserId) \nEnd Timestamp: \(timestamp) \nCall Duration: \(duration) ms"
         layoutConnectStatus()
     }
     
@@ -596,13 +600,13 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
 extension Pure1v1RoomViewController: ICallRtmManagerListener {
     func onConnected() {
         NSLog("onConnected")
-        AUIToast.show(text: "rtm已连接")
+        AUIToast.show(text: NSLocalizedString("rtm_did_connected", comment: ""))
         //表示连接成功，可以进行连接了
     }
     
     func onDisconnected() {
         NSLog("onDisconnected")
-        AUIToast.show(text: "rtm未连接")
+        AUIToast.show(text: NSLocalizedString("rtm_not_connected", comment: ""))
         //表示连接没有成功，此时发送callapi消息会失败
     }
     

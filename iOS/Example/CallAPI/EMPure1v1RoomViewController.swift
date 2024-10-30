@@ -94,14 +94,14 @@ class EMPure1v1RoomViewController: UIViewController {
     private lazy var currentUserLabel: UILabel = {
         let label = UILabel()
         label.textColor = .white
-        label.text = "当前用户id: \(currentUid)"
+        label.text = "\(NSLocalizedString("current_user_id", comment: "")): \(currentUid)"
         return label
     }()
     
     private lazy var targetUserLabel: UILabel = {
         let label = UILabel()
         label.textColor = .white
-        label.text = "目标用户id"
+        label.text = NSLocalizedString("target_user_id", comment: "")
         return label
     }()
     
@@ -109,7 +109,7 @@ class EMPure1v1RoomViewController: UIViewController {
         let tf = UITextField()
         tf.backgroundColor = .white
         tf.borderStyle = .roundedRect
-        tf.placeholder = "需要呼叫的用户id"
+        tf.placeholder = NSLocalizedString("call_user_id", comment: "")
         tf.textColor = .black
         tf.keyboardType = .numberPad
         tf.addTarget(self, action: #selector(targetUserChanged), for: .editingChanged)
@@ -244,7 +244,7 @@ extension EMPure1v1RoomViewController {
     private func _checkConnectionAndNotify() -> Bool{
         //如果信令状态异常，不允许执行callapi操作
         guard signalClient.isConnected == true else {
-            AUIToast.show(text: "环信未登录或连接异常")
+            AUIToast.show(text: NSLocalizedString("easemob_connect_fail", comment: ""))
             return false
         }
         
@@ -270,15 +270,17 @@ extension EMPure1v1RoomViewController {
         guard self.callState == .prepared else {
             initCallApi { err in
             }
-            AUIToast.show(text: "CallAPi初始化中")
+            AUIToast.show(text: NSLocalizedString("callapi_initialize", comment: ""))
             return
         }
         
         let remoteUserId = targetUserId
         
-        let alertController = UIAlertController(title: "呼叫", message: "请选择呼叫类型", preferredStyle: .actionSheet)
+        let alertController = UIAlertController(title: NSLocalizedString("call", comment: ""),
+                                                message: NSLocalizedString("select_call_type", comment: ""),
+                                                preferredStyle: .actionSheet)
         // 添加操作按钮
-        let action1 = UIAlertAction(title: "视频呼叫", style: .default) {[weak self] _ in
+        let action1 = UIAlertAction(title: NSLocalizedString("video_call", comment: ""), style: .default) {[weak self] _ in
             self?.api.call(remoteUserId: remoteUserId) { error in
                 guard let _ = error, self?.callState == .calling else {return}
                 self?.api.cancelCall { err in }
@@ -286,7 +288,7 @@ extension EMPure1v1RoomViewController {
         }
         alertController.addAction(action1)
 
-        let action2 = UIAlertAction(title: "音频呼叫", style: .default) {[weak self] _ in
+        let action2 = UIAlertAction(title: NSLocalizedString("audio_call", comment: ""), style: .default) {[weak self] _ in
             self?.api.call(remoteUserId: remoteUserId,
                            callType: .audio,
                            callExtension: ["test_call": 111]) { error in
@@ -297,7 +299,7 @@ extension EMPure1v1RoomViewController {
         alertController.addAction(action2)
 
         // 添加取消按钮
-        let cancelAction = UIAlertAction(title: "取消", style: .cancel, handler: nil)
+        let cancelAction = UIAlertAction(title: NSLocalizedString("cancel", comment: ""), style: .cancel, handler: nil)
         alertController.addAction(cancelAction)
         present(alertController, animated: true)
     }
@@ -388,8 +390,8 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
                     AUIAlertView()
                         .isShowCloseButton(isShow: true)
                         .title(title: "用户 \(fromUserId) 邀请您1对1\(stateReason == .remoteAudioCall ? "语音": "视频")通话")
-                        .rightButton(title: "同意")
-                        .leftButton(title: "拒绝")
+                        .rightButton(title: NSLocalizedString("accept", comment: ""))
+                        .leftButton(title: NSLocalizedString("reject", comment: ""))
                         .leftButtonTapClosure {[weak self] in
                             guard let self = self else { return }
                             guard self._checkConnectionAndNotify() else { return }
@@ -409,8 +411,8 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
 //                if prepareConfig.autoAccept == false {
                     AUIAlertView()
                         .isShowCloseButton(isShow: true)
-                        .title(title: "呼叫用户 \(toUserId) 中")
-                        .rightButton(title: "取消")
+                        .title(title: "\(NSLocalizedString("calling_to_user", comment: "")): \(toUserId)")
+                        .rightButton(title: NSLocalizedString("cancel", comment: ""))
                         .rightButtonTapClosure(onTap: {[weak self] text in
                             guard let self = self else { return }
                             guard self._checkConnectionAndNotify() else { return }
@@ -438,15 +440,15 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
         case .prepared:
             switch stateReason {
             case .localHangup, .remoteHangup:
-                AUIToast.show(text: "通话结束", postion: .bottom)
+                AUIToast.show(text: NSLocalizedString("call_did_finish", comment: ""), postion: .bottom)
             case .localRejected, .remoteRejected:
-                AUIToast.show(text: "通话被拒绝")
+                AUIToast.show(text: NSLocalizedString("call_did_reject", comment: ""))
             case .callingTimeout:
-                AUIToast.show(text: "无应答")
+                AUIToast.show(text: NSLocalizedString("call_timeout", comment: ""))
             case .localCancelled, .remoteCancelled:
-                AUIToast.show(text: "通话被取消")
+                AUIToast.show(text: NSLocalizedString("call_is_cancel", comment: ""))
             case .remoteCallBusy:
-                AUIToast.show(text: "用户正忙")
+                AUIToast.show(text: NSLocalizedString("call_is_busy", comment: ""))
             default:
                 break
             }
@@ -497,11 +499,11 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
 extension EMPure1v1RoomViewController: ICallEasemobSignalClientListener {
     func onConnected() {
         NSLog("onConnected")
-        AUIToast.show(text: "环信已连接")
+        AUIToast.show(text: NSLocalizedString("easemob_did_connected", comment: ""))
     }
     
     func onDisconnected() {
         NSLog("onDisconnected")
-        AUIToast.show(text: "环信未连接")
+        AUIToast.show(text: NSLocalizedString("easemob_not_connected", comment: ""))
     }
 }

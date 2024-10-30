@@ -176,7 +176,7 @@ class EMShowTo1v1RoomViewController: UIViewController {
         
         view.addSubview(connectStatusLabel)
         
-        roomInfoLabel.text = " 房间Id: \(showRoomId) "
+        roomInfoLabel.text = " \(NSLocalizedString("room_id", comment: "")): \(showRoomId) "
         roomInfoLabel.sizeToFit()
         closeButton.frame = CGRect(x: view.frame.width - 50, y: UIDevice.current.safeDistanceTop, width: 40, height: 40)
         roomInfoLabel.frame = CGRect(x: 10, y: UIDevice.current.safeDistanceTop, width: roomInfoLabel.frame.width, height: 40)
@@ -302,7 +302,7 @@ extension EMShowTo1v1RoomViewController {
     private func _checkConnectionAndNotify() -> Bool{
         //如果信令状态异常，不允许执行callapi操作
         guard signalClient.isConnected == true else {
-            AUIToast.show(text: "环信未登录或连接异常")
+            AUIToast.show(text: NSLocalizedString("easemob_connect_fail", comment: ""))
             return false
         }
         
@@ -332,9 +332,11 @@ extension EMShowTo1v1RoomViewController {
         
         let remoteUserId = showUserId
         
-        let alertController = UIAlertController(title: "呼叫", message: "请选择呼叫类型", preferredStyle: .actionSheet)
+        let alertController = UIAlertController(title: NSLocalizedString("call", comment: ""),
+                                                message: NSLocalizedString("select_call_type", comment: ""),
+                                                preferredStyle: .actionSheet)
         // 添加操作按钮
-        let action1 = UIAlertAction(title: "视频呼叫", style: .default) {[weak self] _ in
+        let action1 = UIAlertAction(title: NSLocalizedString("video_call", comment: ""), style: .default) {[weak self] _ in
             self?.publishMedia(false)
             self?.api.call(remoteUserId: remoteUserId) { error in
                 guard let _ = error, self?.callState == .calling else { return }
@@ -343,7 +345,7 @@ extension EMShowTo1v1RoomViewController {
         }
         alertController.addAction(action1)
 
-        let action2 = UIAlertAction(title: "音频呼叫", style: .default) {[weak self] _ in
+        let action2 = UIAlertAction(title: NSLocalizedString("audio_call", comment: ""), style: .default) {[weak self] _ in
             self?.publishMedia(false)
             self?.api.call(remoteUserId: remoteUserId,
                            callType: .audio,
@@ -355,7 +357,7 @@ extension EMShowTo1v1RoomViewController {
         alertController.addAction(action2)
 
         // 添加取消按钮
-        let cancelAction = UIAlertAction(title: "取消", style: .cancel, handler: nil)
+        let cancelAction = UIAlertAction(title: NSLocalizedString("cancel", comment: ""), style: .cancel, handler: nil)
         alertController.addAction(cancelAction)
         present(alertController, animated: true)
     }
@@ -450,8 +452,8 @@ extension EMShowTo1v1RoomViewController:CallApiListenerProtocol {
 //                if prepareConfig.autoAccept == false {
                     AUIAlertView()
                         .isShowCloseButton(isShow: true)
-                        .title(title: "呼叫用户 \(toUserId) 中")
-                        .rightButton(title: "取消")
+                        .title(title: "\(NSLocalizedString("calling_to_user", comment: "")): \(toUserId)")
+                        .rightButton(title: NSLocalizedString("cancel", comment: ""))
                         .rightButtonTapClosure(onTap: {[weak self] text in
                             guard let self = self else { return }
                             self.api.cancelCall { err in
@@ -478,13 +480,13 @@ extension EMShowTo1v1RoomViewController:CallApiListenerProtocol {
             AUIAlertManager.hiddenView()
             switch stateReason {
             case .localHangup, .remoteHangup:
-                AUIToast.show(text: "通话结束", postion: .bottom)
+                AUIToast.show(text: NSLocalizedString("call_did_finish", comment: ""), postion: .bottom)
             case .localRejected, .remoteRejected:
-                AUIToast.show(text: "通话被拒绝")
+                AUIToast.show(text: NSLocalizedString("call_did_reject", comment: ""))
             case .callingTimeout:
-                AUIToast.show(text: "无应答")
+                AUIToast.show(text: NSLocalizedString("call_timeout", comment: ""))
             case .remoteCallBusy:
-                AUIToast.show(text: "用户正忙")
+                AUIToast.show(text: NSLocalizedString("call_is_busy", comment: ""))
             default:
                 break
             }
@@ -536,7 +538,7 @@ extension EMShowTo1v1RoomViewController:CallApiListenerProtocol {
                                timestamp: UInt64) {
         NSLog("onCallConnected roomId: \(roomId) callUserId: \(callUserId) currentUserId: \(currentUserId) timestamp: \(timestamp)")
         
-        connectStatusLabel.text = "通话开始 \nRTC 频道号: \(roomId) \n呼叫用户id: \(callUserId) \n当前用户id: \(currentUserId) \n开始时间戳: \(timestamp)"
+        connectStatusLabel.text = "Call started \nRTC Channel ID: \(roomId) \nCalling User ID: \(callUserId) \nCurrent User ID: \(currentUserId) \nStart Timestamp: \(timestamp)"
         layoutConnectStatus()
     }
     
@@ -547,7 +549,7 @@ extension EMShowTo1v1RoomViewController:CallApiListenerProtocol {
                                   duration: UInt64) {
         NSLog("onCallDisconnected roomId: \(roomId) hangupUserId: \(hangupUserId) currentUserId: \(currentUserId) timestamp: \(timestamp) duration: \(duration)ms")
         
-        connectStatusLabel.text = "通话结束 \nRTC 频道号: \(roomId) \n挂断用户id: \(hangupUserId) \n当前用户id: \(currentUserId) \n结束时间戳: \(timestamp) \n通话时长: \(duration)ms"
+        connectStatusLabel.text = "Call ended \nRTC Channel ID: \(roomId) \nHangup User ID: \(hangupUserId) \nCurrent User ID: \(currentUserId) \nEnd Timestamp: \(timestamp) \nCall Duration: \(duration) ms"
         layoutConnectStatus()
     }
     
@@ -564,11 +566,11 @@ extension EMShowTo1v1RoomViewController:CallApiListenerProtocol {
 extension EMShowTo1v1RoomViewController: ICallEasemobSignalClientListener {
     func onConnected() {
         NSLog("onConnected")
-        AUIToast.show(text: "环信已连接")
+        AUIToast.show(text: NSLocalizedString("easemob_did_connected", comment: ""))
     }
     
     func onDisconnected() {
         NSLog("onDisconnected")
-        AUIToast.show(text: "环信未连接")
+        AUIToast.show(text: NSLocalizedString("easemob_not_connected", comment: ""))
     }
 }

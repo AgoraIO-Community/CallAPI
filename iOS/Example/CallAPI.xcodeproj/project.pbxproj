@@ -18,6 +18,7 @@
 		DD3667582A38428200969395 /* AUIAlertView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD3667542A38428200969395 /* AUIAlertView.swift */; };
 		DD3667592A38428200969395 /* AUIAlertManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD3667552A38428200969395 /* AUIAlertManager.swift */; };
 		DD36675A2A38428200969395 /* AUIToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD3667572A38428200969395 /* AUIToast.swift */; };
+		DD404EF02CD1E63E009CCE8F /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = DD404EEE2CD1E63E009CCE8F /* Localizable.strings */; };
 		DD66E46E2B876F8300D3AFB4 /* EMShowTo1v1RoomViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD66E46D2B876F8300D3AFB4 /* EMShowTo1v1RoomViewController.swift */; };
 		DDCB25CE2B832C000068F62F /* EMPure1v1RoomViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDCB25CD2B832C000068F62F /* EMPure1v1RoomViewController.swift */; };
 		DDE090782A24E8A700752E62 /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDE090762A24E8A700752E62 /* NetworkManager.swift */; };
@@ -46,6 +47,10 @@
 		DD3667542A38428200969395 /* AUIAlertView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AUIAlertView.swift; sourceTree = "<group>"; };
 		DD3667552A38428200969395 /* AUIAlertManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AUIAlertManager.swift; sourceTree = "<group>"; };
 		DD3667572A38428200969395 /* AUIToast.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AUIToast.swift; sourceTree = "<group>"; };
+		DD404EEF2CD1E63E009CCE8F /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		DD404EF12CD1E64C009CCE8F /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Main.strings"; sourceTree = "<group>"; };
+		DD404EF22CD1E64C009CCE8F /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/LaunchScreen.strings"; sourceTree = "<group>"; };
+		DD404EF32CD1E64C009CCE8F /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		DD66E46D2B876F8300D3AFB4 /* EMShowTo1v1RoomViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EMShowTo1v1RoomViewController.swift; sourceTree = "<group>"; };
 		DDCB25CD2B832C000068F62F /* EMPure1v1RoomViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EMPure1v1RoomViewController.swift; sourceTree = "<group>"; };
 		DDE090762A24E8A700752E62 /* NetworkManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
@@ -112,6 +117,7 @@
 				607FACDC1AFB9204008FA782 /* Images.xcassets */,
 				607FACDE1AFB9204008FA782 /* LaunchScreen.xib */,
 				607FACD31AFB9204008FA782 /* Supporting Files */,
+				DD404EEE2CD1E63E009CCE8F /* Localizable.strings */,
 			);
 			name = "Example for CallAPI";
 			path = CallAPI;
@@ -228,12 +234,12 @@
 			};
 			buildConfigurationList = 607FACCB1AFB9204008FA782 /* Build configuration list for PBXProject "CallAPI" */;
 			compatibilityVersion = "Xcode 3.2";
-			developmentRegion = English;
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				English,
 				en,
 				Base,
+				"zh-Hans",
 			);
 			mainGroup = 607FACC71AFB9204008FA782;
 			productRefGroup = 607FACD11AFB9204008FA782 /* Products */;
@@ -251,6 +257,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				607FACDB1AFB9204008FA782 /* Main.storyboard in Resources */,
+				DD404EF02CD1E63E009CCE8F /* Localizable.strings in Resources */,
 				607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */,
 				607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */,
 			);
@@ -375,6 +382,7 @@
 			isa = PBXVariantGroup;
 			children = (
 				607FACDA1AFB9204008FA782 /* Base */,
+				DD404EF12CD1E64C009CCE8F /* zh-Hans */,
 			);
 			name = Main.storyboard;
 			sourceTree = "<group>";
@@ -383,8 +391,18 @@
 			isa = PBXVariantGroup;
 			children = (
 				607FACDF1AFB9204008FA782 /* Base */,
+				DD404EF22CD1E64C009CCE8F /* zh-Hans */,
 			);
 			name = LaunchScreen.xib;
+			sourceTree = "<group>";
+		};
+		DD404EEE2CD1E63E009CCE8F /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				DD404EEF2CD1E63E009CCE8F /* en */,
+				DD404EF32CD1E64C009CCE8F /* zh-Hans */,
+			);
+			name = Localizable.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -499,7 +517,7 @@
 				CURRENT_PROJECT_VERSION = 0;
 				DEVELOPMENT_TEAM = YS397FG5PA;
 				INFOPLIST_FILE = CallAPI/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "一对一秒开";
+				INFOPLIST_KEY_CFBundleDisplayName = "One to One";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 2.1.2;
 				MODULE_NAME = ExampleApp;
@@ -521,7 +539,7 @@
 				CURRENT_PROJECT_VERSION = 0;
 				DEVELOPMENT_TEAM = YS397FG5PA;
 				INFOPLIST_FILE = CallAPI/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "一对一秒开";
+				INFOPLIST_KEY_CFBundleDisplayName = "One to One";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 2.1.2;
 				MODULE_NAME = ExampleApp;
