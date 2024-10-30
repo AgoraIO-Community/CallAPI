@@ -63,13 +63,12 @@ class AUIAlertManager: NSObject {
         } else {
             showAlertPostion(alertPostion: alertPostion, view: view)
         }
-        //注册键盘出现通知
+        
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(keyboardWillShow(notification:)),
                                                name: UIApplication.keyboardWillShowNotification,
                                                object: nil)
         
-        //注册键盘隐藏通知
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(keyboardWillHide(notification:)),
                                                name: UIApplication.keyboardWillHideNotification,
@@ -155,7 +154,7 @@ class AUIAlertManager: NSObject {
     }
     
     private static var originFrame:CGRect = .zero
-    // 键盘显示
+    
     @objc private static func keyboardWillShow(notification: Notification) {
         let keyboardHeight = (notification.userInfo?["UIKeyboardBoundsUserInfoKey"] as? CGRect)?.height
         let y = cl_screenHeight - (keyboardHeight ?? 304) - containerView!.frame.height
@@ -164,7 +163,7 @@ class AUIAlertManager: NSObject {
         }
         containerView?.frame.origin.y = y * 0.5
     }
-    // 键盘隐藏
+    
     @objc private static func keyboardWillHide(notification: Notification) {
         containerView?.frame = originFrame
         if currentPosition == .bottom {

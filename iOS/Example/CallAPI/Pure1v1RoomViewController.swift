@@ -13,7 +13,7 @@ import AgoraRtcKit
 import AgoraRtmKit
 
 class Pure1v1RoomViewController: UIViewController {
-    private var currentUid: UInt             //当前用户UID
+    private var currentUid: UInt             //Current user UID
     private var prepareConfig: PrepareConfig
     var videoEncoderConfig: AgoraVideoEncoderConfiguration?
     
@@ -208,14 +208,14 @@ class Pure1v1RoomViewController: UIViewController {
         rightView.frame = CGRect(x: view.frame.width / 2, y: 50, width: view.frame.width / 2, height: view.frame.height / 2)
         
         self.callState = .idle
-        //外部创建rtmClient
+        // External creation of rtmClient
         rtmClient = _createRtmClient()
         initCallApi { success in
         }
     }
     
     private func initCallApi(completion: @escaping ((Bool)->())) {
-        //外部创建需要自行管理login
+        // External creation requires managing login by oneself
         NSLog("login")
         rtmClient?.login(rtmToken) {[weak self] resp, err in
             guard let self = self else {return}
@@ -238,7 +238,7 @@ class Pure1v1RoomViewController: UIViewController {
 
 extension Pure1v1RoomViewController {
     private func _checkConnectionAndNotify() -> Bool{
-        //如果信令状态异常，不允许执行callapi操作
+        // If the signaling state is abnormal, callapi operations are not allowed
         guard rtmManager?.isConnected == true else {
             AUIToast.show(text: NSLocalizedString("rtm_connect_fail", comment: ""))
             return false
@@ -317,7 +317,7 @@ extension Pure1v1RoomViewController {
         let alertController = UIAlertController(title: NSLocalizedString("call", comment: ""),
                                                 message: NSLocalizedString("select_call_type", comment: ""),
                                                 preferredStyle: .actionSheet)
-        // 添加操作按钮
+        // Add video call button
         let action1 = UIAlertAction(title: NSLocalizedString("video_call", comment: ""), style: .default) {[weak self] _ in
             self?.api.call(remoteUserId: remoteUserId) { error in
                 guard let error = error, self?.callState == .calling else {return}
@@ -328,6 +328,7 @@ extension Pure1v1RoomViewController {
         }
         alertController.addAction(action1)
 
+        // Add audio call button
         let action2 = UIAlertAction(title: NSLocalizedString("audio_call", comment: ""), style: .default) {[weak self] _ in
             self?.api.call(remoteUserId: remoteUserId,
                            callType: .audio,
@@ -340,7 +341,7 @@ extension Pure1v1RoomViewController {
         }
         alertController.addAction(action2)
 
-        // 添加取消按钮
+        // Add cancel button
         let cancelAction = UIAlertAction(title: NSLocalizedString("cancel", comment: ""), style: .cancel, handler: nil)
         alertController.addAction(cancelAction)
         present(alertController, animated: true)
@@ -362,7 +363,7 @@ extension Pure1v1RoomViewController {
         rtcEngine.updateChannelEx(with: mediaOptions, connection: connection)
     }
     
-    //创建RTM
+    // Create RTM
     private func _createRtmClient() -> AgoraRtmClientKit {
         let rtmConfig = AgoraRtmClientConfig(appId: KeyCenter.AppId, userId: "\(currentUid)")
         if rtmConfig.userId.count == 0 {
@@ -403,7 +404,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
 //    }
     
     func tokenPrivilegeWillExpire() {
-        //更新token，这里rtc和rtm一起更新
+        // Update token; both RTC and RTM are updated together here
         NetworkManager.shared.generateToken(channelName: "",
                                             uid: "\(currentUid)",
                                             types: [.rtc, .rtm]) {[weak self] token in
@@ -453,7 +454,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                 return
             }
             connectedRoomId = fromRoomId
-            // 触发状态的用户是自己才处理
+            // Only handle if the user triggering the state is oneself
             if currentUid == toUserId {
                 connectedUserId = fromUserId
                 let title = String(format: NSLocalizedString("calling_format", comment: ""),
@@ -475,7 +476,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                         guard self._checkConnectionAndNotify() else { return }
                         self.api.accept(remoteUserId: fromUserId) {[weak self] err in
                             guard let err = err else { return }
-                            //如果接受消息出错，则发起拒绝，回到初始状态
+                            // If there is an error accepting the message, initiate a rejection and return to the initial state
                             self?.api.reject(remoteUserId: fromUserId, reason: err.localizedDescription, completion: { err in
                             })
                             AUIToast.show(text: "\(NSLocalizedString("accept_fail", comment: "")): \(err.localizedDescription)")
@@ -539,7 +540,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
         NSLog("onCallEventChanged event: \(event.rawValue), eventReason: \(eventReason ?? "")")
         switch event {
         case .remoteLeft:
-            //Demo通过监听远端用户离开进行结束异常通话，真实业务场景推荐使用服务端监听RTC用户离线来进行踢人，客户端通过监听踢人来结束异常通话
+            // The demo ends abnormal calls by listening for remote user departures. In real business scenarios, it is recommended to use the server to monitor RTC user disconnections for kicking users, while the client listens for kicks to end abnormal calls.
             hangupAction()
         default:
             break
@@ -550,12 +551,12 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                            errorType: CallErrorCodeType,
                            errorCode: Int,
                            message: String?) {
+        NSLog("onCallErrorOccur errorEvent:\(errorEvent.rawValue), errorType: \(errorType.rawValue), errorCode: \(errorCode), message: \(message ?? "")")
         if errorEvent == .rtcOccurError, errorType == .rtc, errorCode == AgoraErrorCode.tokenExpired.rawValue {
-            //RTC加入频道失败，需要取消呼叫，并重新获取token
+            // Failed to join RTC channel, need to cancel the call and re-obtain the token
             self.api.cancelCall { err in
             }
         }
-        NSLog("onCallErrorOccur errorEvent:\(errorEvent.rawValue), errorType: \(errorType.rawValue), errorCode: \(errorCode), message: \(message ?? "")")
     }
     
     @objc func callDebugInfo(message: String, logLevel: CallLogLevel) {
@@ -604,17 +605,17 @@ extension Pure1v1RoomViewController: ICallRtmManagerListener {
     func onConnected() {
         NSLog("onConnected")
         AUIToast.show(text: NSLocalizedString("rtm_did_connected", comment: ""))
-        //表示连接成功，可以进行连接了
+        // Indicates that the connection is successful, and callapi can be used to initiate a call
     }
     
     func onDisconnected() {
         NSLog("onDisconnected")
         AUIToast.show(text: NSLocalizedString("rtm_not_connected", comment: ""))
-        //表示连接没有成功，此时发送callapi消息会失败
+        // Indicates that the connection was not successful, and calling callapi will fail
     }
     
     func onTokenPrivilegeWillExpire(channelName: String) {
-        //token过期，需要重新renew
+        // Token has expired, needs to be renewed
         tokenPrivilegeWillExpire()
     }
 }

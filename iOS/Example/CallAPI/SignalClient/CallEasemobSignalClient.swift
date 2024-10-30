@@ -9,18 +9,18 @@ import Foundation
 import HyphenateChat
 import CallAPI
 
-/// CallRtmManager回调协议
+/// CallRtmManager listener
 public protocol ICallEasemobSignalClientListener: NSObjectProtocol {
     
-    /// rtm连接成功
+    /// AgoraChat connected
     func onConnected()
     
-    /// rtm连接断开
+    /// AgoraChat disconnected
     func onDisconnected()
 }
 
 
-/// 环信信令实现模块，注意⚠️：此示例提供参考，不保证其可用性和完整性。
+/// AgoraChat signaling implementation module. Note ⚠️: This example is for reference only and does not guarantee its availability and completeness.
 public class CallEasemobSignalClient: CallBaseSignalClient {
     public var isConnected: Bool = false
     public weak var delegate: ICallEasemobSignalClientListener? = nil
@@ -107,7 +107,7 @@ extension CallEasemobSignalClient {
         let emMessage = EMChatMessage(conversationID: userId, from: self.userId, to: userId, body: body, ext: nil)
         emMessage.deliverOnlineOnly = true
         let date = Date()
-        //TODO: 环信不在线不会返回错误，如果需要判断对方不在线，需要额外处理
+        //TODO: If the user is offline, AgoraChat will not return an error. Additional handling is required to determine if the other party is offline.
         EMClient.shared().chatManager?.send(emMessage, progress: nil, completion: {[weak self] msg, err in
             guard let self = self else {return}
             if let err = err {

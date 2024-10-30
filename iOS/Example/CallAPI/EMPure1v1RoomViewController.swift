@@ -12,7 +12,7 @@ import CallAPI
 import AgoraRtcKit
 
 class EMPure1v1RoomViewController: UIViewController {
-    private var currentUid: UInt             //当前用户UID
+    private var currentUid: UInt             //Current user UID
     private var prepareConfig: PrepareConfig
     var videoEncoderConfig: AgoraVideoEncoderConfiguration?
     
@@ -205,7 +205,7 @@ class EMPure1v1RoomViewController: UIViewController {
     }
     
     private func initCallApi(completion: @escaping ((Bool)->())) {
-        //外部创建需要自行管理login
+        // External creation requires managing login by oneself
         self.signalClient.login() {[weak self] err in
             guard let self = self else {return}
             if let err = err {
@@ -242,7 +242,7 @@ extension EMPure1v1RoomViewController {
     }
     
     private func _checkConnectionAndNotify() -> Bool{
-        //如果信令状态异常，不允许执行callapi操作
+        // If the signaling state is abnormal, callapi operations are not allowed
         guard signalClient.isConnected == true else {
             AUIToast.show(text: NSLocalizedString("easemob_connect_fail", comment: ""))
             return false
@@ -279,26 +279,31 @@ extension EMPure1v1RoomViewController {
         let alertController = UIAlertController(title: NSLocalizedString("call", comment: ""),
                                                 message: NSLocalizedString("select_call_type", comment: ""),
                                                 preferredStyle: .actionSheet)
-        // 添加操作按钮
+        // Add video call button
         let action1 = UIAlertAction(title: NSLocalizedString("video_call", comment: ""), style: .default) {[weak self] _ in
             self?.api.call(remoteUserId: remoteUserId) { error in
-                guard let _ = error, self?.callState == .calling else {return}
+                guard let error = error, self?.callState == .calling else {return}
                 self?.api.cancelCall { err in }
+                
+                AUIToast.show(text: "\(NSLocalizedString("call_fail", comment: "")): \(error.localizedDescription)")
             }
         }
         alertController.addAction(action1)
 
+        // Add audio call button
         let action2 = UIAlertAction(title: NSLocalizedString("audio_call", comment: ""), style: .default) {[weak self] _ in
             self?.api.call(remoteUserId: remoteUserId,
                            callType: .audio,
                            callExtension: ["test_call": 111]) { error in
-                guard let _ = error, self?.callState == .calling else {return}
+                guard let error = error, self?.callState == .calling else {return}
                 self?.api.cancelCall { err in }
+                
+                AUIToast.show(text: "\(NSLocalizedString("call_fail", comment: "")): \(error.localizedDescription)")
             }
         }
         alertController.addAction(action2)
 
-        // 添加取消按钮
+        // Add cancel action
         let cancelAction = UIAlertAction(title: NSLocalizedString("cancel", comment: ""), style: .cancel, handler: nil)
         alertController.addAction(cancelAction)
         present(alertController, animated: true)
@@ -340,7 +345,7 @@ extension EMPure1v1RoomViewController: AgoraRtcEngineDelegate {
 
 extension EMPure1v1RoomViewController:CallApiListenerProtocol {
     func tokenPrivilegeWillExpire() {
-        //更新token
+        // Update token; 
         NetworkManager.shared.generateToken(channelName: "",
                                             uid: "\(currentUid)",
                                             types: [.rtc]) {[weak self] token in
@@ -383,7 +388,7 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
                 return
             }
             connectedRoomId = fromRoomId
-            // 触发状态的用户是自己才处理
+            // Only handle if the user triggering the state is oneself
             if currentUid == toUserId {
                 connectedUserId = fromUserId
                 let title = String(format: NSLocalizedString("calling_format", comment: ""),
@@ -404,7 +409,13 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
                         .rightButtonTapClosure(onTap: {[weak self] text in
                             guard let self = self else { return }
                             guard self._checkConnectionAndNotify() else { return }
-                            self.api.accept(remoteUserId: fromUserId) { err in
+                            self.api.accept(remoteUserId: fromUserId) {[weak self] err in
+                                guard let err = err else { return }
+                                // If there is an error accepting the message, initiate a rejection and return to the initial state
+                                self?.api.reject(remoteUserId: fromUserId, reason: err.localizedDescription, completion: { err in
+                                })
+                                
+                                AUIToast.show(text: "\(NSLocalizedString("accept_fail", comment: "")): \(err.localizedDescription)")
                             }
                         })
                         .show()
@@ -473,7 +484,7 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
         NSLog("onCallEventChanged: \(event.rawValue), eventReason: \(eventReason ?? "")")
         switch event {
         case .remoteLeft:
-            //Demo通过监听远端用户离开进行结束异常通话，真实业务场景推荐使用服务端监听RTC用户离线来进行踢人，客户端通过监听踢人来结束异常通话
+            // The demo ends abnormal calls by listening for remote user departures. In real business scenarios, it is recommended to use the server to monitor RTC user disconnections for kicking users, while the client listens for kicks to end abnormal calls.
             hangupAction()
         default:
             break
@@ -485,6 +496,11 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
                            errorCode: Int,
                            message: String?) {
         NSLog("onCallErrorOccur errorEvent:\(errorEvent.rawValue), errorType: \(errorType.rawValue), errorCode: \(errorCode), message: \(message ?? "")")
+        if errorEvent == .rtcOccurError, errorType == .rtc, errorCode == AgoraErrorCode.tokenExpired.rawValue {
+            // Failed to join RTC channel, need to cancel the call and re-obtain the token
+            self.api.cancelCall { err in
+            }
+        }
     }
     
     @objc func callDebugInfo(message: String, logLevel: CallLogLevel) {
