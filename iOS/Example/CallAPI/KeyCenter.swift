@@ -21,7 +21,7 @@ struct KeyCenter {
      则应使用不同的 App ID。如果应用程序需要相互通信，则应使用同一个App ID。
      进入声网控制台(https://console.shengwang.cn/)，创建一个项目，进入项目配置页，即可看到APP ID。
      */
-    static let AppId: String = "925dd81d763a42919862fee9f3f204a7"
+    static let AppId: String = <#Your AppId#>
     
     /**
      Certificate.
@@ -36,7 +36,7 @@ struct KeyCenter {
      注意：如果项目没有开启证书鉴权，这个字段留空。
      */
     
-    static let Certificate: String? = "69fbf5bbd8594fa0a6348798eeae35d0"
+    static let Certificate: String? = <#Your Certificate#>
     
     /**
      Easemob APPKEY
@@ -49,5 +49,5 @@ struct KeyCenter {
      详见获取环信即时通讯IM的信息(http://docs-im-beta.easemob.com/product/enable_and_configure_IM.html#%E8%8E%B7%E5%8F%96%E7%8E%AF%E4%BF%A1%E5%8D%B3%E6%97%B6%E9%80%9A%E8%AE%AF-im-%E7%9A%84%E4%BF%A1%E6%81%AF)。
      */
     
-    static var IMAppKey: String = "1129210531094378#auikit-voiceroom"
+    static var IMAppKey: String = <#Your EaseMob AppKey#>
 }
