@@ -44,11 +44,16 @@
 "accept"="同意";
 "reject"="拒绝";
 
+"video"="视频";
+"audio"="音频";
+
 "video_call"="视频呼叫";
 "audio_call"="音频呼叫";
 "call_fail"="呼叫失败";
 "accept_fail"="接受呼叫失败";
 "select_call_type"="请选择呼叫类型";
+
+"calling_format"="用户 %ld 邀请您1对1%@通话";
 
 "calling_to_user"="正在呼叫用户";
 "call_did_finish"="通话结束";

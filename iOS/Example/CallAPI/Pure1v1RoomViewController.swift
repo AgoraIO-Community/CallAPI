@@ -456,9 +456,12 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
             // 触发状态的用户是自己才处理
             if currentUid == toUserId {
                 connectedUserId = fromUserId
+                let title = String(format: NSLocalizedString("calling_format", comment: ""),
+                                   fromUserId,
+                                   NSLocalizedString(stateReason == .remoteAudioCall ? "audio": "video", comment: ""))
                 AUIAlertView()
                     .isShowCloseButton(isShow: true)
-                    .title(title: "用户 \(fromUserId) 邀请您1对1\(stateReason == .remoteAudioCall ? "语音": "视频")通话")
+                    .title(title: title)
                     .rightButton(title: NSLocalizedString("accept", comment: ""))
                     .leftButton(title: NSLocalizedString("reject", comment: ""))
                     .leftButtonTapClosure {[weak self] in

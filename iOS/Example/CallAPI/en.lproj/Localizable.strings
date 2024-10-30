@@ -43,11 +43,16 @@
 "accept"="Accept";
 "reject"="Reject";
 
+"video"="Video";
+"audio"="Audio";
+
 "video_call"="Video Call";
 "audio_call"="Audio Call";
 "call_fail"="Call failed";
 "accept_fail"="Accept call failed";
 "select_call_type"="Please select call type";
+
+"calling_format"="User %ld invites you to a 1-on-1 %@ call";
 
 "calling_to_user"="Calling user";
 "call_did_finish"="Call ended";
