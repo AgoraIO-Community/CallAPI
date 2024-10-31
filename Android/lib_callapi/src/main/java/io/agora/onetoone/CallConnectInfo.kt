@@ -4,42 +4,42 @@ import android.os.Handler
 import android.os.Looper
 
 enum class CallConnectCostType(val value: String) {
-    RemoteUserRecvCall("remoteUserRecvCall"),       //主叫呼叫成功，收到呼叫成功表示已经送达对端(被叫)
-    AcceptCall("acceptCall"),                       //主叫收到被叫接受呼叫(onAccept)/被叫点击接受(accept)
-    LocalUserJoinChannel("localUserJoinChannel"),   //本地用户加入频道
-    LocalFirstFrameDidCapture("localFirstFrameDidCapture"), //本地视频首帧被采集到(仅限视频呼叫)
-    LocalFirstFrameDidPublish("localFirstFrameDidPublish"), //本地用户推送首帧（音频或者视频）成功
-    RemoteUserJoinChannel("remoteUserJoinChannel"), //远端用户加入频道
-    RecvFirstFrame("recvFirstFrame")                //收到对端首帧
+    RemoteUserRecvCall("remoteUserRecvCall"),       // Caller successfully calls, received call success indicates it has been delivered to the callee
+    AcceptCall("acceptCall"),                       // Caller receives the callee's acceptance of the call (onAccept) / callee clicks accept (accept)
+    LocalUserJoinChannel("localUserJoinChannel"),   // Local user joins the channel
+    LocalFirstFrameDidCapture("localFirstFrameDidCapture"), // The first frame of local video has been captured (only for video calls)
+    LocalFirstFrameDidPublish("localFirstFrameDidPublish"), // Local user successfully pushes the first frame (audio or video)
+    RemoteUserJoinChannel("remoteUserJoinChannel"), // Remote user joins the channel
+    RecvFirstFrame("recvFirstFrame")                // Received the first frame from the remote side
 }
 
 class CallConnectInfo {
-    // 开始获取视频流的时间
+    // Time to start retrieving the video stream
     var startRetrieveFirstFrame: Long? = null
         private set
 
-    // 是否获取到对端视频首帧
+    // Whether the first frame of the remote video has been retrieved
     var isRetrieveFirstFrame: Boolean = false
 
-    // 呼叫类型
+    // Call type
     var callType: CallType = CallType.Video
 
-    // 呼叫的session id
+    // Call session ID
     var callId: String = ""
 
-    // 呼叫中的频道名
+    // Channel name during the call
     var callingRoomId: String? = null
 
-    // 呼叫中的远端用户
+    // Remote user during the call
     var callingUserId: Int? = null
 
-    //通话开始的时间
+    // Call start time
     var callConnectedTs: Long = 0
 
-    /// 本地是否已经同意
+    // Whether the local user has accepted
     var isLocalAccepted: Boolean = false
 
-    // 呼叫开始的时间
+    // Call start time
     private var _callTs: Long? = null
     var callTs: Long?
         get() = _callTs
@@ -50,13 +50,13 @@ class CallConnectInfo {
 
     val callCostMap = mutableMapOf<String, Long>()
 
-    // 发起呼叫的定时器，用来处理超时
+    // Timer for initiating the call, used to handle timeout
     private val mHandler = Handler(Looper.getMainLooper())
     private var timerRunnable: Runnable? = null
         set(value) {
-            val oldVlaue = field
+            val oldValue = field
             field = value
-            oldVlaue?.let { mHandler.removeCallbacks(it) }
+            oldValue?.let { mHandler.removeCallbacks(it) }
         }
 
     fun scheduledTimer(runnable: Runnable?, time: Long = 0) {

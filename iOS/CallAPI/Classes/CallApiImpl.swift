@@ -142,7 +142,7 @@ public class CallApiImpl: NSObject {
     private var rtcConnection: AgoraRtcConnection?
     // Callback for completing RTC join
     private var joinRtcCompletion: ((NSError?) -> Void)?
-    // Callback for the first frame display/sound
+    // Callback for the first frame video/audio
     private var firstFrameCompletion: (() -> Void)?
     // Indicates whether currently preparing; currently a straightforward return of an error, to see if we need to store each closure for dispatch after completion
     private var isPreparing: Bool = false
@@ -338,7 +338,7 @@ extension CallApiImpl {
             _notifyCallConnected()
         } else if state == .prepared, oldState == .connected {
             switch stateReason {
-                // Normally only .remoteCancel, .remoteHangup will trigger, the rest are fallback
+            // Normally only .remoteCancelled, .remoteHangup will trigger, the rest are fallback
             case .remoteCancelled, .remoteHangup, .remoteRejected, .remoteCallBusy:
                 _notifyCallDisconnected(hangupUserId: connectInfo.callingUserId ?? 0)
             default:
@@ -986,9 +986,9 @@ extension CallApiImpl {
         // Must be in calling state and from the user who initiated the call
         guard state == .calling, _isCallingUser(message: message) else { return }
 //        let elapsed = _getTimeInMs() - (connectInfo.callTs ?? 0)
-// TODO: If already connected
-// and isLocalAccepted (initiated the call or has already accepted),
-// otherwise consider that local has not agreed
+        // TODO: If already connected
+        // and isLocalAccepted (initiated the call or has already accepted),
+        // otherwise consider that local has not agreed
         if connectInfo.isLocalAccepted {
             _updateAndNotifyState(state: .connecting, stateReason: .remoteAccepted, eventInfo: message)
         }

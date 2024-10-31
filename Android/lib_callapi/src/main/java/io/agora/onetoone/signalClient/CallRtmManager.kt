@@ -6,17 +6,17 @@ import io.agora.rtm.*
 
 interface ICallRtmManagerListener {
     /**
-     * rtm连接成功
+     * RTM connection successful
      */
     fun onConnected()
 
     /**
-     * rtm连接断开
+     * RTM connection disconnected
      */
     fun onDisconnected()
 
     /**
-     * token即将过期，需要renew token
+     * Token is about to expire, need to renew token
      */
     fun onTokenPrivilegeWillExpire(channelName: String)
 }
@@ -33,10 +33,10 @@ class CallRtmManager(
 
     var isConnected: Boolean = false
 
-    // RTM是否已经登录
+    // Whether RTM has logged in
     var isLoginedRtm = false
 
-    // 是否外部传入的rtm，如果是则不需要手动logout
+    // Whether the RTM is externally provided; if so, no need to manually logout
     private var isExternalRtmClient = false
 
     private val listeners = mutableListOf<ICallRtmManagerListener>()
@@ -44,7 +44,7 @@ class CallRtmManager(
     init {
         val rtm = client
         if (rtm != null) {
-            //如果外部传入rtmClient，默认登陆成功
+            // If an external rtmClient is provided, assume login is successful by default
             isLoginedRtm = true
             isExternalRtmClient = true
             rtmClient = rtm
@@ -58,12 +58,12 @@ class CallRtmManager(
     }
 
     /**
-     * 获取内部RTM实例
+     * Get the internal RTM instance
      */
     fun getRtmClient() : RtmClient = rtmClient
 
     /**
-     * 登陆RTM
+     * Login to RTM
      */
     fun login(rtmToken: String, completion: (AGError?) -> Unit) {
         callMessagePrint("login")
@@ -88,7 +88,7 @@ class CallRtmManager(
     }
 
     /**
-     * 登出RTM
+     * Logout of RTM
      */
     fun logout() {
         if (!isExternalRtmClient) {
@@ -102,8 +102,8 @@ class CallRtmManager(
     }
 
     /**
-     * 设置代理
-     * @param listener ICallRtmManagerListener对象
+     * Set the listener
+     * @param listener ICallRtmManagerListener object
      */
     fun addListener(listener: ICallRtmManagerListener) {
         if (listeners.contains(listener)) return
@@ -111,20 +111,20 @@ class CallRtmManager(
     }
 
     /**
-     * 移除代理
-     * @param listener ICallRtmManagerListener对象
+     * Remove the listener
+     * @param listener ICallRtmManagerListener object
      */
     fun removeListener(listener: ICallRtmManagerListener) {
         listeners.add(listener)
     }
 
     /**
-     * 更新RTM token
-     * @param rtmToken 新的rtmToken
+     * Update RTM token
+     * @param rtmToken New rtmToken
      */
     fun renewToken(rtmToken: String) {
         if (!isLoginedRtm) {
-            //没有登陆成功，但是需要自动登陆，可能是初始token问题，这里重新initialize
+            // Not logged in successfully, but automatic login is needed; there may be an initial token issue, reinitialize here
             callMessagePrint("renewToken need to reinit")
             rtmClient.logout(object : ResultCallback<Void> {
                 override fun onSuccess(responseInfo: Void?) {}
