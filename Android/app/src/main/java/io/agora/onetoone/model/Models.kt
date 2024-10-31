@@ -2,8 +2,7 @@ package io.agora.onetoone.model
 
 import java.io.Serializable
 
-/**  加入房间时携带的信息
- */
+/** Information carried when joining a room */
 data class EnterRoomInfoModel (
     var isRtm: Boolean = true,
     var isBrodCaster: Boolean = true,

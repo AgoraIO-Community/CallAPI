@@ -19,7 +19,7 @@ object HttpManager {
 
     fun sendPostRequest() {
 
-        // 创建一个 JSON 格式的请求体
+        // Create a JSON formatted request body
         val requestBody = RequestBody.create(MediaType.parse("application/json"), "{\"name\":\"John\", \"age\":30}")
 
         val request = Request.Builder()
@@ -39,16 +39,16 @@ object HttpManager {
         })
     }
 
-    // 1: RTC Token ; 2: RTM Token
+    // 1: RTC Token; 2: RTM Token
     fun token007(channelName: String, uid: String, onCompletion: ((String?) -> Unit)?) {
         val postBody = JSONObject()
-        val types = arrayOf(1,2)
+        val types = arrayOf(1, 2)
         val jsonArray = JSONArray(types)
         try {
             postBody.put("appId", BuildConfig.AG_APP_ID)
             postBody.put("appCertificate", BuildConfig.AG_APP_CERTIFICATE)
             postBody.put("channelName", channelName)
-            postBody.put("expire", 1500) // s
+            postBody.put("expire", 1500) // expire seconds
             postBody.put("src", "Android")
             postBody.put("ts", System.currentTimeMillis())
             postBody.put("types", jsonArray)
@@ -77,10 +77,10 @@ object HttpManager {
                         onCompletion?.invoke(null)
                     }
                 }
-                Log.d(TAG, "http response: $json")
+                Log.d(TAG, "HTTP response: $json")
             }
             override fun onFailure(call: Call, e: IOException) {
-                Log.d(TAG, "http error")
+                Log.d(TAG, "HTTP error")
                 runOnUiThread {
                     onCompletion?.invoke(null)
                 }

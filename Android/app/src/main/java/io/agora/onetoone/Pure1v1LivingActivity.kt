@@ -103,14 +103,14 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         setupView()
         updateCallState(CallStateType.Idle, null)
 
-        // 初始化 call api
+        // initialize
         initMessageManager { }
 
         PermissionHelp(this).checkCameraAndMicPerms(
             {
             },
             {
-                Toasty.normal(this@Pure1v1LivingActivity, "没给权限😯", Toast.LENGTH_SHORT).show()
+                Toasty.normal(this@Pure1v1LivingActivity, getString(R.string.app_no_permission), Toast.LENGTH_SHORT).show()
             },
             false
         )
@@ -118,34 +118,34 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
 
     private fun initMessageManager(completion: ((Boolean) -> Unit)) {
         if (enterModel.isRtm) {
-            // 使用RtmManager管理RTM
+            // Manage RTM using RtmManager
             rtmManager = createRtmManager(BuildConfig.AG_APP_ID, enterModel.currentUid.toInt())
             // rtm login
             rtmManager?.login(enterModel.rtmToken) {
                 if (it == null) {
-                    // login 成功后初始化 call api
+                    // Initialize call API after login success
                     initCallApi(completion)
                 } else {
                     completion.invoke(false)
                 }
             }
-            // 监听 rtm manager 事件
+            // Listen to RTM manager events
             rtmManager?.addListener(object : ICallRtmManagerListener {
                 override fun onConnected() {
                     mViewBinding.root.post {
-                        Toasty.normal(this@Pure1v1LivingActivity, "rtm已连接", Toast.LENGTH_SHORT).show()
+                        Toasty.normal(this@Pure1v1LivingActivity, getString(R.string.app_rtm_connected), Toast.LENGTH_SHORT).show()
                     }
                 }
 
                 override fun onDisconnected() {
                     mViewBinding.root.post {
-                        Toasty.normal(this@Pure1v1LivingActivity, "rtm已断开", Toast.LENGTH_SHORT)
+                        Toasty.normal(this@Pure1v1LivingActivity, getString(R.string.app_rtm_disconnected), Toast.LENGTH_SHORT)
                             .show()
                     }
                 }
 
                 override fun onTokenPrivilegeWillExpire(channelName: String) {
-                    // 重新获取token
+                    // Renew token
                     tokenPrivilegeWillExpire()
                 }
             })
@@ -153,7 +153,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
             emClient = createEasemobSignalClient(this, BuildConfig.IM_APP_KEY, enterModel.currentUid.toInt())
             emClient?.login {
                 if (it) {
-                    // login 成功后初始化 call api
+                    // Initialize call API after login success
                     initCallApi(completion)
                 } else {
                     completion.invoke(false)
@@ -218,19 +218,19 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         }
     }
 
-    // 检查信令通道链接状态
+    // Check the signaling channel connection status
     private fun checkConnectionAndNotify(): Boolean {
         if (enterModel.isRtm) {
             val manager = rtmManager ?: return false
             if (!manager.isConnected) {
-                Toasty.normal(this, "rtm未登录或连接异常", Toast.LENGTH_SHORT).show()
+                Toasty.normal(this, getString(R.string.app_rtm_connect_fail), Toast.LENGTH_SHORT).show()
                 return false
             }
             return true
         } else {
             val client = emClient ?: return false
             if (!client.isConnected) {
-                Toasty.normal(this, "环信未登录或连接异常", Toast.LENGTH_SHORT).show()
+                Toasty.normal(this, getString(R.string.app_easemob_connect_fail), Toast.LENGTH_SHORT).show()
             }
             return client.isConnected
         }
@@ -259,7 +259,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
     }
 
     private fun setupView() {
-        mViewBinding.tvCurrentId.text = "当前用户id：${enterModel.currentUid}"
+        mViewBinding.tvCurrentId.text = "${getString(R.string.app_input_title_local_uid)}：${enterModel.currentUid}"
         mViewBinding.etTargetUid.setText(SPUtil.getString(kTargetUserId, ""))
         mViewBinding.btnQuitChannel.setOnClickListener {
             closeAction()
@@ -324,35 +324,35 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
     }
 
     private fun callAction() {
-        // 检查信令通道链接状态
+        // Check the signaling channel connection status
         if (!checkConnectionAndNotify()) return
         if (this.mCallState == CallStateType.Prepared) else {
             initCallApi { success ->
             }
-            Toasty.normal(this, "CallAPi初始化中", Toast.LENGTH_SHORT).show()
+            Toasty.normal(this, getString(R.string.app_call_api_initializing), Toast.LENGTH_SHORT).show()
             return
         }
         val roomId = (mViewBinding.etTargetUid.text ?: "").toString()
         val targetUserId = roomId.toIntOrNull()
         if (roomId.isEmpty() || targetUserId == null) {
-            Toasty.normal(this, "无目标用户", Toast.LENGTH_SHORT).show()
+            Toasty.normal(this, getString(R.string.app_no_target_user), Toast.LENGTH_SHORT).show()
             return
         }
         SPUtil.putString(kTargetUserId, roomId)
 
         callTypeDialog = AlertDialog.Builder(this)
-            .setTitle("通话类型选择")
-            .setMessage("选择音频或视频通话")
-            .setPositiveButton("音频") { p0, p1 ->
+            .setTitle(getString(R.string.app_select_call_type))
+            .setMessage(getString(R.string.app_select_call_type_desc))
+            .setPositiveButton(getString(R.string.app_call_type_audio)) { p0, p1 ->
                 api.call(targetUserId, CallType.Audio, mapOf("key1" to "value1", "key2" to "value2")) { error ->
-                    // call 失败立刻挂断
+                    // Call failed, hang up immediately
                     if (error != null && mCallState == CallStateType.Calling) {
                         api.cancelCall {  }
                     }
                 }
-            }.setNegativeButton("视频") { p0, p1 ->
+            }.setNegativeButton(getString(R.string.app_call_type_video)) { p0, p1 ->
                 api.call(targetUserId) { error ->
-                    // call 失败立刻挂断
+                    // Call failed, hang up immediately
                     if (error != null && mCallState == CallStateType.Calling) {
                         api.cancelCall {  }
                     }
@@ -363,7 +363,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
     }
 
     private fun hangupAction() {
-        // 检查信令通道链接状态
+        // Check the signaling channel connection status
         if (!checkConnectionAndNotify()) return
         api.hangup(connectedUserId ?: 0, "hangup by user") {
         }
@@ -398,23 +398,23 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
                         }
                         return@runOnUiThread
                     }
-                    // 触发状态的用户是自己才处理
+                    // Only handle if the triggering user is oneself
                     if (enterModel.currentUid.toIntOrNull() == toUserId) {
                         connectedUserId = fromUserId
                         callDialog = AlertDialog.Builder(this)
-                            .setTitle("提示")
-                            .setMessage("用户 $fromUserId 邀请您1对1通话")
-                            .setPositiveButton("同意") { p0, p1 ->
-                                // 检查信令通道链接状态
+                            .setTitle(getString(R.string.app_call_dialog_prompt))
+                            .setMessage("${getString(R.string.app_user)} $fromUserId ${getString(R.string.app_invites_you_to_1v1_call)}")
+                            .setPositiveButton(getString(R.string.app_agree)) { p0, p1 ->
+                                // Check the signaling channel connection status
                                 if (!checkConnectionAndNotify()) return@setPositiveButton
                                 api.accept(fromUserId) { err ->
                                     if (err != null) {
-                                        //如果接受消息出错，则发起拒绝，回到初始状态
+                                        //  If there is an error receiving the message, initiate a rejection and return to the initial state
                                         api.reject(fromUserId, err.msg) {}
                                     }
                                 }
-                            }.setNegativeButton("拒绝") { p0, p1 ->
-                                // 检查信令通道链接状态
+                            }.setNegativeButton(getString(R.string.app_reject)) { p0, p1 ->
+                                // Check the signaling channel connection status
                                 if (!checkConnectionAndNotify()) return@setNegativeButton
                                 api.reject(fromUserId, "reject by user") { err ->
                                 }
@@ -424,10 +424,10 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
                     } else if (enterModel.currentUid.toIntOrNull() == fromUserId) {
                         connectedUserId = toUserId
                         callDialog = AlertDialog.Builder(this)
-                            .setTitle("提示")
-                            .setMessage("呼叫用户 $toUserId 中")
-                            .setNegativeButton("取消") { p0, p1 ->
-                                // 检查信令通道链接状态
+                            .setTitle(getString(R.string.app_call_dialog_prompt))
+                            .setMessage("${getString(R.string.app_calling_to_user)} $toUserId ")
+                            .setNegativeButton(getString(R.string.app_cancel)) { p0, p1 ->
+                                // Check the signaling channel connection status
                                 if (!checkConnectionAndNotify()) return@setNegativeButton
                                 api.cancelCall { err ->
                                 }
@@ -439,7 +439,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
                 CallStateType.Connected -> {
                     Toasty.normal(
                         this,
-                        "通话开始${eventInfo.getOrDefault(CallApiImpl.kCostTimeMap, "")}",
+                        "${getString(R.string.app_call_did_begin)}${eventInfo.getOrDefault(CallApiImpl.kCostTimeMap, "")}",
                         Toast.LENGTH_LONG
                     ).show()
                     callDialog?.dismiss()
@@ -457,18 +457,19 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
                 }
                 CallStateType.Prepared -> {
                     when (stateReason) {
-                        CallStateReason.LocalHangup, CallStateReason.RemoteHangup -> {
-                            Toasty.normal(this, "通话结束", Toast.LENGTH_SHORT).show()
+                        CallStateReason.LocalHangup,
+                        CallStateReason.RemoteHangup -> {
+                            Toasty.normal(this, getString(R.string.app_call_did_finish), Toast.LENGTH_SHORT).show()
                         }
                         CallStateReason.LocalRejected,
                         CallStateReason.RemoteRejected -> {
-                            Toasty.normal(this, "通话被拒绝", Toast.LENGTH_SHORT).show()
+                            Toasty.normal(this, getString(R.string.app_call_is_busy), Toast.LENGTH_SHORT).show()
                         }
                         CallStateReason.CallingTimeout -> {
-                            Toasty.normal(this, "无应答", Toast.LENGTH_SHORT).show()
+                            Toasty.normal(this, getString(R.string.app_call_timeout), Toast.LENGTH_SHORT).show()
                         }
                         CallStateReason.RemoteCallBusy -> {
-                            Toasty.normal(this, "用户正忙", Toast.LENGTH_SHORT).show()
+                            Toasty.normal(this, getString(R.string.app_call_timeout), Toast.LENGTH_SHORT).show()
                         }
                         else -> {}
                     }
@@ -492,7 +493,10 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         Log.d(TAG, "onCallEventChanged: $event, eventReason: $eventReason")
         when(event) {
             CallEvent.RemoteLeft -> {
-                //Demo通过监听远端用户离开进行结束异常通话，真实业务场景推荐使用服务端监听RTC用户离线来进行踢人，客户端通过监听踢人来结束异常通话
+                // The demo ends an abnormal call by listening for the remote user's departure.
+                // In real business scenarios, it is recommended to use the server.
+                // Listen for RTC user disconnections to kick users out.
+                // The client listens for kick events to end abnormal calls
                 hangupAction()
             }
             CallEvent.JoinRTCStart -> {
@@ -517,7 +521,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
                             Log.d(TAG, "onRemoteAudioStateChanged, uid:$uid, state:$state, reason:$reason")
                         }
                     },
-                    RtcConnection(enterModel.currentUid, enterModel.currentUid.toInt()) // demo 为了方便将本端uid的字符串作为了频道名
+                    RtcConnection(enterModel.currentUid, enterModel.currentUid.toInt()) // The demo uses the local UID string as the channel name for convenience
                 )
             }
             else -> {}
@@ -542,7 +546,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         super.onCallConnected(roomId, callUserId, currentUserId, timestamp)
         Log.d(TAG, "onCallConnected, roomId: $roomId, callUserId: $callUserId, currentUserId: $currentUserId, timestamp: $timestamp")
         runOnUiThread {
-            mViewBinding.tvText.text = "通话开始, \nRTC 频道号: $roomId, \n主叫用户id: $callUserId, \n当前用户id: $currentUserId, \n开始时间戳: $timestamp ms"
+            mViewBinding.tvText.text = "Call started, \nRTC channel id: $roomId, \nCaller user id: $callUserId, \nCurrent user id: $currentUserId, \nStart timestamp: $timestamp ms"
         }
     }
 
@@ -556,7 +560,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
         super.onCallDisconnected(roomId, hangupUserId, currentUserId, timestamp, duration)
         Log.d(TAG, "onCallDisconnected, roomId: $roomId, hangupUserId: $hangupUserId, currentUserId: $currentUserId, timestamp: $timestamp, duration:$duration")
         runOnUiThread {
-            mViewBinding.tvText.text = "通话结束, \nRTC 频道号: $roomId, \n挂断用户id: $hangupUserId, \n当前用户id: $currentUserId, \n结束时间戳: $timestamp ms， \n通话时长: $duration ms"
+            mViewBinding.tvText.text = "Call ended, \nRTC channel id: $roomId, \nHanging up user id: $hangupUserId, \nCurrent user id: $currentUserId, \nEnd timestamp: $timestamp ms, \nCall duration: $duration ms"
         }
     }
 
@@ -584,7 +588,7 @@ class Pure1v1LivingActivity : AppCompatActivity(),  ICallApiListener {
                 }
             }
         }
-        //观众更新主播频道token
+        // Audience updates the broadcaster's channel token
         if (!enterModel.isBrodCaster) {
             HttpManager.token007(enterModel.showRoomId, enterModel.currentUid) { rtcToken ->
                 runOnUiThread {

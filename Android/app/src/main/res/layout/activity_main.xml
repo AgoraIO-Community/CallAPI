@@ -23,28 +23,28 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:checked="true"
-            android:text="RTM秀转场1V1"
+            android:text="@string/app_rtm_show_to_1v1"
             android:textColor="@color/white" />
 
         <androidx.appcompat.widget.AppCompatRadioButton
             android:id="@+id/btnOneToOne"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="RTM纯1V1"
+            android:text="@string/app_rtm_1v1"
             android:textColor="@color/white" />
 
         <androidx.appcompat.widget.AppCompatRadioButton
             android:id="@+id/btnHyShow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="环信秀转场1V1"
-            android:textColor="@color/white"/>
+            android:text="@string/app_easemob_show_to_1v1"
+            android:textColor="@color/white" />
 
         <androidx.appcompat.widget.AppCompatRadioButton
             android:id="@+id/btnHyOneToOne"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="环信纯1V1"
+            android:text="@string/app_easemob_1v1"
             android:textColor="@color/white" />
     </RadioGroup>
 
@@ -106,7 +106,7 @@
         android:layout_width="100dp"
         android:layout_height="48dp"
         android:gravity="center_vertical"
-        android:text="主播id"
+        android:text="@string/app_role_broadcaster_uid"
         android:textColor="#CCFFFFFF"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="parent"
@@ -117,9 +117,9 @@
         android:layout_width="200dp"
         android:layout_height="48dp"
         android:layout_marginStart="16dp"
-        android:hint="输入主播id"
-        android:singleLine="true"
+        android:hint="@string/app_role_broadcaster_uid_placeholder"
         android:imeOptions="actionDone|flagNoExtractUi"
+        android:singleLine="true"
         android:textColor="@color/white"
         android:textColorHint="#99FFFFFF"
         android:textSize="14sp"
@@ -263,11 +263,10 @@
         android:id="@+id/firstFrameWaitting"
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:text="音视频首帧与接通相关"
         android:checked="true"
-        app:layout_constraintTop_toBottomOf="@+id/layoutFrameRate"
+        android:text="@string/app_first_frame_related_connected"
         app:layout_constraintStart_toStartOf="parent"
-        />
+        app:layout_constraintTop_toBottomOf="@+id/layoutFrameRate" />
 
 <!--    <com.google.android.material.checkbox.MaterialCheckBox-->
 <!--        android:id="@+id/cbJoinRTC"-->
@@ -282,15 +281,15 @@
         android:id="@+id/btnEnter"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="创建秀场转1v1"
+        android:layout_marginBottom="100dp"
+        android:paddingHorizontal="24dp"
+        android:text="@string/app_create_show_to_1v1"
         android:textAllCaps="false"
         android:textColor="@color/white"
         android:textSize="16sp"
         app:cornerRadius="4dp"
-        android:paddingHorizontal="24dp"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginBottom="100dp"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

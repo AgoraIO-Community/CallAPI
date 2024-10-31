@@ -35,9 +35,9 @@ class CallEasemobSignalClient(
     init {
         val options = EMOptions()
         options.appKey = appKey
-        // 其他 EMOptions 配置。
+        // Other EMOptions configuration.
         EMClient.getInstance().init(context, options)
-        // 注册消息监听
+        // Register message listener
         EMClient.getInstance().chatManager().addMessageListener(this)
         EMClient.getInstance().addConnectionListener(this)
     }
@@ -48,19 +48,19 @@ class CallEasemobSignalClient(
 
     fun login(completion: ((success: Boolean) -> Unit)?) {
         Thread {
-            // 注册
+            // Registration
             try {
-                // 同步方法，会阻塞当前线程。
+                // Synchronous method, will block the current thread.
                 EMClient.getInstance().createAccount(userId.toString(), userId.toString())
 
             } catch (e: HyphenateException) {
-                //失败
+                // Failure
                 Log.e(TAG, "createAccount failed: ${e.message}, code: ${e.errorCode}")
             }
 
-            // 登陆
+            // Login
             EMClient.getInstance().login(userId.toString(), userId.toString(), object : EMCallBack {
-                // 登录成功回调
+                // Login success callback
                 override fun onSuccess() {
                     Log.d(TAG, "login success")
                     isConnected = true
@@ -69,7 +69,7 @@ class CallEasemobSignalClient(
                     completion?.invoke(true)
                 }
 
-                // 登录失败回调，包含错误信息
+                // Login failure callback, includes error information
                 override fun onError(code: Int, error: String) {
                     Log.e(TAG, "login failed, code:$code, msg:$error")
                     completion?.invoke(false)
@@ -113,26 +113,26 @@ class CallEasemobSignalClient(
         options.setChannelType(RtmConstants.RtmChannelType.USER)
         val startTime = System.currentTimeMillis()
 
-        // `content` 为要发送的文本内容，`toChatUsername` 为对方的账号。
+        // `content` is the text content to be sent, `toChatUsername` is the recipient's account.
         val msg = EMMessage.createTextSendMessage(message, userId)
-        // 会话类型：单聊为 EMMessage.ChatType.Chat
+        // Conversation type: single chat is EMMessage.ChatType.Chat
         msg.chatType = EMMessage.ChatType.Chat
         msg.deliverOnlineOnly(true)
-        // 发送消息时可以设置 `EMCallBack` 的实例，获得消息发送的状态。可以在该回调中更新消息的显示状态。例如消息发送失败后的提示等等。
+        // When sending a message, you can set an instance of `EMCallBack` to obtain the message sending status. You can update the message display status in this callback, for example, prompts after message sending failures, etc.
         msg.setMessageStatusCallback(object : EMCallBack {
             override fun onSuccess() {
-                // 发送消息成功
+                // Message sent successfully
                 runOnUiThread { completion?.invoke(null) }
             }
 
             override fun onError(code: Int, error: String) {
-                // 发送消息失败
+                // Message sending failed
                 runOnUiThread { completion?.invoke(AGError(error, code)) }
             }
 
             override fun onProgress(progress: Int, status: String) {}
         })
-        // 发送消息
+        // Send message
         EMClient.getInstance().chatManager().sendMessage(msg)
     }
 
@@ -151,14 +151,14 @@ class CallEasemobSignalClient(
     // ---------------- EMConnectionListener ----------------
     override fun onConnected() {
         runOnUiThread {
-            Toasty.normal(context, "环信已连接", Toast.LENGTH_SHORT).show()
+            Toasty.normal(context, "Connected to Easemob", Toast.LENGTH_SHORT).show()
         }
         isConnected = true
     }
 
     override fun onDisconnected(errorCode: Int) {
         runOnUiThread {
-            Toasty.normal(context, "环信已断开", Toast.LENGTH_SHORT).show()
+            Toasty.normal(context, "Disconnected from Easemob", Toast.LENGTH_SHORT).show()
         }
         isConnected = false
     }

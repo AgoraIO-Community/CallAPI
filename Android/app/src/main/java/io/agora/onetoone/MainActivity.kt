@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         val isRtm = mViewBinding.btnShow.isChecked || mViewBinding.btnOneToOne.isChecked
 
         if (!isRtm && BuildConfig.IM_APP_KEY == "") {
-            Toasty.normal(this, "未配置IM_APP_KEY", Toast.LENGTH_LONG).show()
+            Toasty.normal(this, getString(R.string.app_im_app_key_not_configured), Toast.LENGTH_LONG).show()
         }
 
 
@@ -84,17 +84,17 @@ class MainActivity : AppCompatActivity() {
         val remoteUserId = mViewBinding.etOwnerUid.text.toString()
 
         if (currentUserId.isEmpty()) {
-            Toasty.normal(this, "用户id不能为空", Toast.LENGTH_LONG).show()
+            Toasty.normal(this, getString(R.string.app_user_id_cannot_be_empty), Toast.LENGTH_LONG).show()
             return
         }
         if (isBrodCaster) {
             if (currentUserId.toIntOrNull() == null) {
-                Toasty.normal(this, "本地用户的id需要是纯数字", Toast.LENGTH_LONG).show()
+                Toasty.normal(this, getString(R.string.app_local_user_id_must_be_numeric), Toast.LENGTH_LONG).show()
                 return
             }
         } else {
             if (currentUserId.toIntOrNull() == null || remoteUserId.toIntOrNull() == null) {
-                Toasty.normal(this, "本地和远端用户的id需要是纯数字", Toast.LENGTH_LONG).show()
+                Toasty.normal(this, getString(R.string.app_local_and_remote_user_id_must_be_numeric), Toast.LENGTH_LONG).show()
                 return
             }
         }
@@ -180,17 +180,17 @@ class MainActivity : AppCompatActivity() {
             if (roleChecked == R.id.btnBroadcaster) {
                 mViewBinding.tvOwnerUid.isVisible = false
                 mViewBinding.etOwnerUid.isVisible = false
-                mViewBinding.btnEnter.text = "创建秀场转1v1"
+                mViewBinding.btnEnter.text = getString(R.string.app_create_show_to_1v1)
             } else {
                 mViewBinding.tvOwnerUid.isVisible = true
                 mViewBinding.etOwnerUid.isVisible = true
-                mViewBinding.btnEnter.text = "加入秀场转1v1"
+                mViewBinding.btnEnter.text = getString(R.string.app_join_show_to_1v1)
             }
         } else {
             mViewBinding.rgRole.isVisible = false
             mViewBinding.tvOwnerUid.isVisible = false
             mViewBinding.etOwnerUid.isVisible = false
-            mViewBinding.btnEnter.text = "进入纯1v1"
+            mViewBinding.btnEnter.text = getString(R.string.app_enter_pure_1v1)
         }
     }
 

@@ -1,6 +1,5 @@
 package io.agora.onetoone.utils
 
-
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -61,11 +60,10 @@ class PermissionHelp constructor(val activity: ComponentActivity) {
             }
         }
 
-
     /**
-     * 检查摄像头和麦克风权限
+     * Check camera and microphone permissions
      *
-     * @param force 是：如果权限被禁用则会跳转到系统应用权限设置页面
+     * @param force If true, will redirect to the system app permission settings page if the permission is denied
      */
     fun checkCameraAndMicPerms(granted: () -> Unit, unGranted: () -> Unit, force: Boolean = false) {
         checkCameraPerm({
@@ -74,27 +72,27 @@ class PermissionHelp constructor(val activity: ComponentActivity) {
     }
 
     /**
-     * 检查麦克风权限
+     * Check microphone permission
      *
-     * @param force 是：如果权限被禁用则会跳转到系统应用权限设置页面
+     * @param force If true, will redirect to the system app permission settings page if the permission is denied
      */
     fun checkMicPerm(granted: () -> Unit, unGranted: () -> Unit, force: Boolean = false) {
         checkPermission(Manifest.permission.RECORD_AUDIO, granted, force, unGranted)
     }
 
     /**
-     * 检查摄像头权限
+     * Check camera permission
      *
-     * @param force 是：如果权限被禁用则会跳转到系统应用权限设置页面
+     * @param force If true, will redirect to the system app permission settings page if the permission is denied
      */
     fun checkCameraPerm(granted: () -> Unit, unGranted: () -> Unit, force: Boolean = false) {
         checkPermission(Manifest.permission.CAMERA, granted, force, unGranted)
     }
 
     /**
-     * 检查外置存储权限
+     * Check external storage permission
      *
-     * @param force 是：如果权限被禁用则会跳转到系统应用权限设置页面
+     * @param force If true, will redirect to the system app permission settings page if the permission is denied
      */
     fun checkStoragePerm(granted: () -> Unit, unGranted: () -> Unit, force: Boolean = false) {
         checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, {
