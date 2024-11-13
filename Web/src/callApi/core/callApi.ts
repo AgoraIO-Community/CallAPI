@@ -93,11 +93,11 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     this._listenRtcEvents()
     this._listenMessagerManagerEvents()
     // privacy protection （Do not print sensitive information）
-    logger.debug(`[${this._clientId}] init client success , `, {
+    logger.debug(`[${this._clientId}] init client success , ${JSON.stringify({
       userId: config.userId,
       logLevel: config.logLevel,
       version: this.version,
-    })
+    })}`)
   }
 
   // ------- public -------
