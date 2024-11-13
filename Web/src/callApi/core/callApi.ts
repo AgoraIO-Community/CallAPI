@@ -61,6 +61,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
 
   get callMessageManager() {
     if (!this.callConfig.callMessageManager) {
+      logger.error("callMessageManager is undefined")
       throw new Error("callMessageManager is undefined")
     }
     return this.callConfig.callMessageManager
@@ -119,6 +120,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
    * @param prepareConfig 准备呼叫配置
    */
   async prepareForCall(prepareConfig: Partial<IPrepareConfig>) {
+    logger.debug(`start set prepareConfig`,)
     if (this.isBusy) {
       this._callEventChange(CallEvent.stateMismatch)
       const message = "currently busy!"
@@ -148,6 +150,11 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
    * @param callType 呼叫类型
    */
   async call(remoteUserId: number, callType?: CallType) {
+    logger.debug(
+      `start call,remoteUserId:${remoteUserId},callType:${
+        callType ?? CallType.video
+      }`
+    )
     if (this.state !== CallStateType.prepared) {
       this._callEventChange(CallEvent.stateMismatch)
       const message = `call failed! current state:${this.state} is not prepared state ${CallStateType.prepared}`
@@ -189,6 +196,8 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
    * 取消呼叫 (主叫)
    */
   async cancelCall() {
+    logger.debug(`start cancelCall`)
+    try {
     await this.destroy()
     this._callStateChange(CallStateType.prepared, CallStateReason.localCancel)
     this._callEventChange(CallEvent.localCancelled)
@@ -206,6 +215,9 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       cancelCallByInternal: RejectByInternal.External,
     })
     logger.debug(`cancelCall success`)
+    } catch (error) {
+      logger.error(`cancelCall error ${JSON.stringify(error)}`)
+    }
   }
 
   /**
@@ -214,6 +226,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
    * @param reason 原因
    */
   async reject(remoteUserId: number, reason?: string) {
+    logger.debug(`start reject,remoteUserId:${remoteUserId},reason:${reason}`)
     await this.destroy()
     this._callStateChange(
       CallStateType.prepared,
@@ -242,6 +255,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
    * @param remoteUserId 远端用户Id
    */
   async accept(remoteUserId: number) {
+    logger.debug(`start accept,remoteUserId:${remoteUserId}`)
     if (this.state !== CallStateType.calling) {
       this._callEventChange(CallEvent.stateMismatch)
       const message = `accept fail! current state:${this.state} is not calling state ${CallStateType.calling}`
@@ -274,6 +288,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
    * @param remoteUserId 远端用户Id
    */
   async hangup(remoteUserId: number) {
+    logger.debug(`start hangup ,remoteUserId:${remoteUserId}`)
     await this.destroy()
     this._callStateChange(CallStateType.prepared, CallStateReason.localHangup)
     this._callEventChange(CallEvent.localHangup)
@@ -295,6 +310,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
    * 销毁
    */
   async destroy() {
+    logger.debug("start destroy ")
     try {
       // stop remote audio track
       this.remoteTracks.audioTrack?.stop()
@@ -336,9 +352,12 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
   // ------- private -------
   private _listenMessagerManagerEvents() {
     this.callMessageManager.on("messageReceive", async (message) => {
-      logger.debug("message receive success:", message)
       const data = decodeMessage(message)
       const { message_action } = data
+      logger.debug(
+        `message receive success action:${CallAction[message_action]},remoteUserId:${data.remoteUserId} `,
+        message
+      )
       switch (message_action) {
         // receive video call
         case CallAction.VideoCall:
@@ -547,6 +566,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
   }
 
   private _palyRemoteVideo() {
+    logger.debug("start play remote video")
     const videoTrack = this.remoteTracks.videoTrack
     if (!videoTrack) {
       const msg = "remote video track is undefined"
@@ -579,6 +599,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
   }
 
   private _playRemoteAudio() {
+    logger.debug("start play remote audio")
     const audioTrack = this.remoteTracks.audioTrack
     if (!audioTrack) {
       const msg = "remote audio track is undefined"
@@ -593,6 +614,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
 
   private _listenRtcEvents() {
     this.rtcClient.on("user-joined", (user) => {
+      logger.debug(`RTC EVENT: remote user joined ,uid:${user.uid}`)
       if (user.uid != this.remoteUserId) {
         return
       }
@@ -601,6 +623,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       this._callEventChange(CallEvent.remoteJoined)
     })
     this.rtcClient.on("user-left", async (user) => {
+      logger.debug(`RTC EVENT: remote user left ,uid:${user.uid}`)
       if (user.uid != this.remoteUserId) {
         return
       }
@@ -611,6 +634,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       if (user.uid != this.remoteUserId) {
         return
       }
+      logger.debug(`RTC EVENT: user-published,uid:${user.uid},mediaType:${mediaType}`)
       await this.rtcClient?.subscribe(user, mediaType)
       logger.debug(
         `subscribe user success,uid:${user.uid},mediaType:${mediaType}`,
@@ -634,6 +658,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       }
     })
     this.rtcClient.on("user-unpublished", async (user, mediaType) => {
+      logger.debug(`RTC EVENT: user-unpublished,uid:${user.uid},mediaType:${mediaType}`)
       if (user.uid != this.remoteUserId) {
         return
       }
@@ -668,6 +693,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     if (!this.remoteUserId) {
       return
     }
+    logger.warn(`timeout,start auto cancelCall`)
     const time = this.prepareConfig?.callTimeoutMillisecond
     if (time) {
       if (this._cancelCallTimer) {
@@ -711,11 +737,14 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     const { appId, userId } = this.callConfig
     const { rtcToken, roomId } = this.prepareConfig
     if (!roomId) {
+      logger.error("rtc has joined")
       throw new Error("roomId is undefined")
     }
     if (!rtcToken) {
+      logger.error("rtcToken is undefined")
       throw new Error("rtcToken is undefined")
     }
+    logger.debug(`start join rtc channel,roomId:${roomId},userId:${userId}`)
     this._callEventChange(CallEvent.joinRTCStart)
     await this.rtcClient.join(appId, roomId, rtcToken, userId)
     logger.debug(`rtc join success,roomId:${roomId},userId:${userId}`)
@@ -741,6 +770,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       return logger.warn("rtc not joined when publish")
     }
     if (this.localTracks.videoTrack && this.localTracks.audioTrack) {
+      logger.debug("start publish video and audio track")
       await this.rtcClient.publish([
         this.localTracks.videoTrack,
         this.localTracks.audioTrack,
@@ -760,8 +790,9 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
   ) {
     try {
       const finMessage = encodeMessage(message)
+      logger.debug(`start send message, remote uid:${uid} `, finMessage)
       await this.callMessageManager.sendMessage(uid.toString(), finMessage)
-      logger.debug(`message send success, uid:${uid} `, finMessage)
+      logger.debug(`message send success, remote uid:${uid} `, finMessage)
     } catch (e) {
       this._callError(
         CallErrorEvent.sendMessageFail,
@@ -778,7 +809,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     err: any, // Error
   ) {
     logger.error(
-      `onCallError! errorEvent:${errorEvent},errorType:${errorType},errorCode:${err.code},message:${err.message}`,
+      `onCallError! errorEvent:${errorEvent},errorType:${errorType},errorCode:${err.code},message:${err.message}`
     )
     this.emit("callError", errorEvent, errorType, err.code, err.message)
   }
@@ -795,16 +826,22 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     this.state = state
     logger.debug(
       "callStateChanged",
-      state,
-      stateReason,
-      eventReason,
-      JSON.stringify(eventInfo),
+      `current state number:[${this.state} status is :${
+        CallStateType[this.state]
+      }],target state:[${state} status is :${
+        CallStateType[state]
+      }]stateReason:${stateReason},eventReason:${eventReason},eventInfo:${JSON.stringify(
+        eventInfo
+      )}`
     )
     this.emit("callStateChanged", state, stateReason, eventReason, eventInfo)
   }
 
   private _callEventChange(event: CallEvent) {
-    logger.debug("callEventChanged", event)
+    logger.debug(
+      "callEventChanged",
+      `event code: [${event} status is :${CallEvent[event]}]`
+    )
     this.emit("callEventChanged", event)
   }
 
@@ -823,6 +860,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
   }
 
   private _handleRemoteFirstFrameDecoded() {
+    logger.debug("remote first frame decoded")
     this._callEventChange(CallEvent.recvRemoteFirstFrame)
     this._receiveRemoteFirstFrameDecoded = true
     this._callInfo.add("recvFirstFrame")
