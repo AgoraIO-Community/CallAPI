@@ -823,7 +823,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     if (this.state == state) {
       return
     }
-    this.state = state
     logger.debug(
       "callStateChanged",
       `current state number:[${this.state} status is :${
@@ -834,6 +833,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
         eventInfo
       )}`
     )
+    this.state = state
     this.emit("callStateChanged", state, stateReason, eventReason, eventInfo)
   }
 
