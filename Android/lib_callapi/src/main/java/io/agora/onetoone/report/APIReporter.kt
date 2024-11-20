@@ -7,14 +7,9 @@ import org.json.JSONObject
 import java.util.HashMap
 
 enum class APIType(val value: Int) {
-    KTV(1),             // Karaoke
-    CALL(2),            // Call connection
-    BEAUTY(3),          // Beauty filter
-    VIDEO_LOADER(4),    // Instant loading and switching
-    PK(5),              // Team battle
-    VIRTUAL_SPACE(6),   //
-    SCREEN_SPACE(7),    // Screen sharing
-    AUDIO_SCENARIO(8)   // Audio
+    // Call Connection
+    // 呼叫连麦
+    CALL(2),
 }
 
 enum class ApiEventType(val value: Int) {
@@ -32,9 +27,15 @@ object ApiEventKey {
 }
 
 object ApiCostEvent {
-    const val CHANNEL_USAGE = "channelUsage"                 // Channel usage duration
-    const val FIRST_FRAME_ACTUAL = "firstFrameActual"        // Actual duration of the first frame
-    const val FIRST_FRAME_PERCEIVED = "firstFramePerceived"  // Perceived duration of the first frame
+    // Channel Usage Time
+    // 频道使用耗时
+    const val CHANNEL_USAGE = "channelUsage"
+    // Actual First Frame Time
+    // 首帧实际耗时
+    const val FIRST_FRAME_ACTUAL = "firstFrameActual"
+    // Perceived First Frame Time
+    // 首帧感官耗时
+    const val FIRST_FRAME_PERCEIVED = "firstFramePerceived"
 }
 
 class APIReporter(
@@ -51,7 +52,8 @@ class APIReporter(
         configParameters()
     }
 
-    // Report normal scenario API
+    // Report regular scenario API
+    // 上报普通场景化API
     fun reportFuncEvent(name: String, value: Map<String, Any>, ext: Map<String, Any>) {
         Log.d(tag, "reportFuncEvent: $name value: $value ext: $ext")
         val eventMap = mapOf(ApiEventKey.TYPE to ApiEventType.API.value, ApiEventKey.DESC to name)
@@ -76,7 +78,8 @@ class APIReporter(
         innerReportCostEvent(ts, name, cost, ext)
     }
 
-    // Report duration timing information
+    // Report timing information
+    // 上报耗时打点信息
     fun reportCostEvent(name: String, cost: Int, ext: Map<String, Any>) {
         durationEventStartMap.remove(name)
         innerReportCostEvent(
@@ -88,6 +91,7 @@ class APIReporter(
     }
 
     // Report custom information
+    // 上报自定义信息
     fun reportCustomEvent(name: String, ext: Map<String, Any>) {
         Log.d(tag, "reportCustomEvent: $name ext: $ext")
         val eventMap = mapOf(ApiEventKey.TYPE to ApiEventType.CUSTOM.value, ApiEventKey.DESC to name)
@@ -108,10 +112,14 @@ class APIReporter(
     // ---------------------- private ----------------------
 
     private fun configParameters() {
-        //rtcEngine.setParameters("{\"rtc.qos_for_test_purpose\": true}") // For test environment
+        // For test environment
+        // 测试环境使用
+        //rtcEngine.setParameters("{\"rtc.qos_for_test_purpose\": true}") //测试环境使用
         // Data reporting
+        // 数据上报
         rtcEngine.setParameters("{\"rtc.direct_send_custom_event\": true}")
         // Log writing
+        // 日志写入
         rtcEngine.setParameters("{\"rtc.log_external_input\": true}")
     }
 
