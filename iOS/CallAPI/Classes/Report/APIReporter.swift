@@ -9,14 +9,7 @@ import AgoraRtcKit
 
 /// Scene type
 public enum APIType: Int {
-    case ktv = 1             // KTV (Karaoke)
     case call = 2            // Call
-    case beauty = 3          // Beauty filter
-    case videoLoader = 4     // Instant open/instant switch
-    case pk = 5              // Team battle
-    case vitualSpace = 6     // Virtual space
-    case screenSpace = 7     // Screen sharing
-    case audioScenario = 8   // Audio scenario
 }
 
 enum APIEventType: Int {

@@ -11,6 +11,7 @@ import AgoraRtcKit
 let kApiVersion = "2.1.2"
 
 let kMessageId: String = "messageId"     // ID of the sent message
+                                        // 发送消息的ID
 
 private let kCurrentMessageVersion = "1.0"
 private let kMessageAction = "message_action"
@@ -23,22 +24,28 @@ public let kRemoteUserId = "remoteUserId"
 public let kFromUserId = "fromUserId"
 public let kFromUserExtension = "fromUserExtension"
 public let kFromRoomId = "fromRoomId"
-public let kCalleeState = "state"      // Current call state
+let kCalleeState = "state"      // Current call state
+                               // 当前通话状态
 public let kPublisher = "publisher"    // UID of the user that triggered the state; can currently indicate the state of the current user and the caller. If there is no publisher, it defaults to the current user.
+                               // 触发状态的用户UID，目前可以表示当前用户和主叫方的状态,如果没有发布者默认为当前用户
 
 /// ⚠️ Do not modify the following two values; clients may use rejectReason/call busy for business logic (e.g., user is busy).
+/// ⚠️ 不要修改以下两个值,客户端可能会使用rejectReason/call busy用于业务逻辑(例如用户忙)
 public let kRejectReason = "rejectReason"
 public let kRejectReasonCallBusy = "The user is currently busy"
 
 public let kHangupReason = "hangupReason"
 
 // Indicates whether the rejection is internal; internal rejection is currently marked as the other party being call busy.
+// 表示是否为内部拒绝,内部拒绝目前标记为对方通话忙
 public let kRejectByInternal = "rejectByInternal"
 
 // Indicates whether the call was canceled internally; internal cancellation is currently marked as the other party remote calling timeout.
+// 表示是否为内部取消通话,内部取消目前标记为对方远程呼叫超时
 public let kCancelCallByInternal = "cancelCallByInternal"
 
 public let kCostTimeMap = "costTimeMap"    // Duration information during the call, which will be reported step-by-step when connected.
+                                          // 通话过程中的时长信息,连接后会逐步上报
 
 struct CallCustomEvent {
     static let stateChange = "stateChange"
@@ -55,12 +62,16 @@ enum CallAction: UInt {
 }
 
 // Default timing for joining RTC
+// 加入RTC的默认时机
 var defaultCalleeJoinRTCTiming: CalleeJoinRTCTiming = .calling
 
 /// Timing for joining RTC during an incoming call
+/// 来电时加入RTC的时机
 @objc public enum CalleeJoinRTCTiming: Int {
     case calling = 0    // Join the channel and start pushing video stream immediately upon receiving the call. This incurs higher costs but provides faster display.
+                       // 收到来电即加入频道并开始推流,成本高但显示快
     case accepted       // Join the channel and start pushing video stream only after actively accepting the call. This incurs lower costs but results in slower display.
+                       // 主动接听后才加入频道并开始推流,成本低但显示慢
 }
 
 public class CallApiImpl: NSObject {
@@ -74,9 +85,11 @@ public class CallApiImpl: NSObject {
     private var prepareConfig: PrepareConfig? = nil
 
     // Message ID
+    // 消息ID
     private var messageId: Int = 0
     
-    // Call information
+    // Call information 
+    // 通话信息
     private var connectInfo = CallConnectInfo()
     
     private var tempRemoteCanvasView: UIView = UIView()
@@ -84,6 +97,7 @@ public class CallApiImpl: NSObject {
     private var reporter: APIReporter?
     
     /// Current state
+    /// 当前状态
     private var state: CallStateType = .idle {
         didSet {
             let prevState = oldValue
@@ -92,6 +106,7 @@ public class CallApiImpl: NSObject {
             switch state {
             case .calling:
                 // Start a timer; if there is no response after the timeout, call no response
+                // 启动定时器,超时无响应则调用无响应
                 let timeoutSecond = prepareConfig?.callTimeoutMillisecond ?? 0
                 if timeoutSecond == 0 { return }
                 let timeoutInterval = Double(timeoutSecond) / 1000
@@ -139,12 +154,19 @@ public class CallApiImpl: NSObject {
     }
     
     /// Connection for joining the channel ex, used to leave the channel ex and check if already joined the ex channel
+    /// 用于加入频道ex的连接,用于离开频道ex和检查是否已加入ex频道
     private var rtcConnection: AgoraRtcConnection?
+
     // Callback for completing RTC join
+    // RTC加入完成的回调
     private var joinRtcCompletion: ((NSError?) -> Void)?
+
     // Callback for the first frame video/audio
+    // 第一帧视频/音频的回调
     private var firstFrameCompletion: (() -> Void)?
+
     // Indicates whether currently preparing; currently a straightforward return of an error, to see if we need to store each closure for dispatch after completion
+    // 表示是否正在准备中;目前是直接返回错误,看是否需要存储每个闭包等完成后再派发
     private var isPreparing: Bool = false
     
     deinit {
@@ -157,6 +179,7 @@ public class CallApiImpl: NSObject {
     }
     
     // Get NTP time
+    // 获取NTP时间
     private func _getTimeInMs() -> Int {
         return Date().millisecondsSince1970()
     }
@@ -247,6 +270,7 @@ extension CallApiImpl {
         }
         
         // If no protocol is implemented, use the default value
+        // 如果没有实现协议,使用默认值
         if emptyCount == delegates.allObjects.count {
             callPrint("join rtc strategy callback not found, use default")
             return true
@@ -303,6 +327,12 @@ extension CallApiImpl {
          Therefore:
          Changing to connecting: need to check if it has changed to "remote accepted" + "local accepted (or called)".
          Changing to connected: need to check if it is in "connecting state" + "received first frame".
+         
+         1. 由于被叫提前加入频道并订阅流和推流,双端可能会在被叫点击接听(变为connecting)之前就收到第一帧视频
+         2. 由于1v1匹配时双端都会收到onCall,如果A发起accept,B收到onAccept + A的第一帧,会导致B在没有accept的情况下进入connected状态
+         因此:
+         变为connecting:需要检查是否变为"远端已接受" + "本地已接受(或已呼叫)"
+         变为connected:需要检查是否处于"connecting状态" + "收到第一帧"
          */
         _changeToConnectedState(reason: reason)
     }
@@ -326,6 +356,7 @@ extension CallApiImpl {
     }
     
     // External state notification
+    // 外部状态通知
     private func _updateAndNotifyState(state: CallStateType,
                                        stateReason: CallStateReason = .none,
                                        eventReason: String = "",
@@ -334,15 +365,18 @@ extension CallApiImpl {
         callPrint("call change[\(connectInfo.callId)] state: \(state.rawValue), stateReason: \(stateReason.rawValue), eventReason: '\(eventReason)'")
         let oldState = self.state
         // Check connected/disconnected
+        // 检查连接/断开连接
         if state == .connected, oldState == .connecting {
             _notifyCallConnected()
         } else if state == .prepared, oldState == .connected {
             switch stateReason {
             // Normally only .remoteCancelled, .remoteHangup will trigger, the rest are fallback
+            // 正常情况下只会触发.remoteCancelled, .remoteHangup,其余为兜底
             case .remoteCancelled, .remoteHangup, .remoteRejected, .remoteCallBusy:
                 _notifyCallDisconnected(hangupUserId: connectInfo.callingUserId ?? 0)
             default:
                 //.localHangup or bad case
+                //.localHangup或异常情况
                 _notifyCallDisconnected(hangupUserId: config?.userId ?? 0)
                 break
             }
@@ -499,6 +533,7 @@ extension CallApiImpl {
     }
     
     // Set remote video view
+    // 设置远端视频视图
     private func _setupRemoteVideo(uid: UInt) {
         if connectInfo.callType == .audio { return }
         
@@ -531,6 +566,7 @@ extension CallApiImpl {
     }
     
     // Set local video view
+    // 设置本地视频视图
     private func _setupLocalVideo() {
         if connectInfo.callType == .audio { return }
         
@@ -570,20 +606,23 @@ extension CallApiImpl {
     }
     
     /// Check if the current RTC channel matches the provided room ID
-    /// - Parameter roomId: <#roomId description#>
-    /// - Returns: <#description#>
+    /// 检查当前RTC频道是否与提供的房间ID匹配
+    /// - Parameter roomId: Room ID to check
+    /// - Returns: Whether they match
     private func _isCurrentRTCChannel(roomId: String) -> Bool {
         return rtcConnection?.channelId == roomId ? true : false
     }
     
     /// Check if the current RTC channel has successfully joined or is in the process of joining
-    /// - Returns: <#description#>
+    /// 检查当前RTC频道是否已成功加入或正在加入中
+    /// - Returns: Whether joined or joining
     private func _isChannelJoinedOrJoining() -> Bool {
         return rtcConnection == nil ? false : true
     }
     
     /// Check if initialization is complete
-    /// - Returns: <#description#>
+    /// 检查是否已完成初始化
+    /// - Returns: Whether initialized
     private func _isInitialized() -> Bool {
         switch state {
         case .idle, .failed:
@@ -619,6 +658,7 @@ extension CallApiImpl {
         _updateSubscribeStatus(audioStatus: true, videoStatus: subscribeVideo)
         
         // Mute after joining the channel, unmute only after connecting
+        // 加入频道后静音,只有连接后才取消静音
         _muteRemoteAudio(true)
     }
     
@@ -635,9 +675,10 @@ extension CallApiImpl {
     }
     
     /// Join RTC as a viewer
+    /// 以观众身份加入RTC
     /// - Parameters:
-    ///   - roomId: <#roomId description#>
-    ///   - completion: <#completion description#>
+    ///   - roomId: Room ID to join
+    ///   - completion: Completion callback
     private func _joinRTC(roomId: String, completion:@escaping ((NSError?) -> ())) {
         guard let config = self.config, let rtcToken = prepareConfig?.rtcToken else {
             completion(NSError(domain: "config is empty", code: -1))
@@ -675,6 +716,7 @@ extension CallApiImpl {
     }
     
     /// Update the status of pushing audio and video streams
+    /// 更新推音频和视频流的状
     /// - Parameters:
     ///   - audioStatus: Whether to push audio stream
     ///   - videoStatus: Whether to push video stream
@@ -692,6 +734,7 @@ extension CallApiImpl {
     }
     
     /// Update the subscription status of audio and video streams
+    /// 更新音频和视频流的订阅状态
     /// - Parameters:
     ///   - audioStatus: <#audioStatus description#>
     ///   - videoStatus: <#videoStatus description#>
@@ -943,20 +986,25 @@ extension CallApiImpl {
             // because in scenarios like switching to a 1v1 show,
             // it is necessary to notify the external system to close external capture first;
             // otherwise, internal streaming will fail, causing the other party to see no video.
+            // 加入操作需要在calling事件抛出后执行,
+            // 因为在切换到1v1直播等场景下,
+            // 需要先通知外部系统关闭外部采集,
+            // 否则内部推流会失败导致对方看不到画面
             _joinRTCAsBroadcaster(roomId: fromRoomId)
         }
         
         if connectInfo.isLocalAccepted, prepareConfig?.firstFrameWaittingDisabled == true {
-            // If the first frame is not associated, in the scenario of switching to a 1v1 show,
-            // it might automatically accept, leading to a state of connected before joining the channel,
-            // making unmuting ineffective.
+            // If first frame is not associated, in show-to-1v1 scenario, auto-accept may occur, causing connected state before joining channel and unmute audio becomes invalid
+            // 如果首帧不关联，在秀场转1v1场景下，可能会自动接受，会导致么有加频道前变成connected，unmute声音无效
             checkConnectedSuccess(reason: .localAccepted)
         }
     }
 
     // Received cancel call message
+    // 收到取消通话消息
     fileprivate func _onCancel(message: [String: Any]) {
         // Do not process if the operation is not from the user who is currently calling
+        // 如果操作不是来自当前正在通话的用户则不处理
         guard _isCallingUser(message: message) else { return }
         var stateReason: CallStateReason = .remoteCancelled
         var callEvent: CallEvent = .remoteCancelled
@@ -969,6 +1017,7 @@ extension CallApiImpl {
     }
 
     // Received reject message
+    // 收到拒绝消息
     fileprivate func _onReject(message: [String: Any]) {
         guard _isCallingUser(message: message) else { return }
         var stateReason: CallStateReason = .remoteRejected
@@ -982,13 +1031,13 @@ extension CallApiImpl {
     }
 
     // Received accept message
+    // 收到接听消息
     fileprivate func _onAccept(message: [String: Any]) {
         // Must be in calling state and from the user who initiated the call
+        // 必须处于calling状态且来自发起通话的用户
         guard state == .calling, _isCallingUser(message: message) else { return }
 //        let elapsed = _getTimeInMs() - (connectInfo.callTs ?? 0)
-        // TODO: If already connected
-        // and isLocalAccepted (initiated the call or has already accepted),
-        // otherwise consider that local has not agreed
+        // TODO: 如果已经连接且isLocalAccepted(发起通话或已接受),否则认为本地未同意
         if connectInfo.isLocalAccepted {
             _updateAndNotifyState(state: .connecting, stateReason: .remoteAccepted, eventInfo: message)
         }
@@ -996,6 +1045,7 @@ extension CallApiImpl {
     }
 
     // Received hangup message
+    // 收到挂断消息
     fileprivate func _onHangup(message: [String: Any]) {
         guard _isCallingUser(message: message) else { return }
 
@@ -1023,6 +1073,7 @@ extension CallApiImpl: CallApiProtocol {
         self.config = config.cloneConfig()
         
         // API enables accelerated rendering of the first frame of audio and video
+        // API启用音视频首帧加速渲染
         if let rtcEngine = config.rtcEngine {
             reporter = APIReporter(type: .call, version: kApiVersion, engine: rtcEngine)
             optimize1v1Video(engine: rtcEngine)
@@ -1130,6 +1181,7 @@ extension CallApiImpl: CallApiProtocol {
             return
         }
         // Check if in calling state; if in prepared, it indicates the caller may have canceled
+        // 检查是否处于calling状态;如果处于prepared状态,表示主叫可能已经取消
         guard state == .calling else {
             let errReason = "accept fail! current state[\(state.rawValue)] is not calling"
             completion?(NSError(domain: errReason, code: -1))
@@ -1149,9 +1201,8 @@ extension CallApiImpl: CallApiProtocol {
         callPrint("[accepted]defaultCalleeJoinRTCTiming: \(defaultCalleeJoinRTCTiming.rawValue)")
         if defaultCalleeJoinRTCTiming == .accepted {
             /*
-             Because connecting will set autosubscribeAudio=true,
-             here join will be set to false,
-             thus if this method needs to be called, it must be called before the state machine changes to connecting.
+             Because connecting will set autosubscribeAudio=true, here join will be set to false, thus if this method needs to be called, it must be called before the state machine changes to connecting.
+             因为连接时会设置 autosubscribeAudio=true，这里加入时会设置为 false，所以如果需要调用此方法，必须在状态机变为 connecting 之前调用。
              */
             _joinRTCAsBroadcaster(roomId: roomId)
         }
@@ -1239,6 +1290,10 @@ extension CallApiImpl: AgoraRtcEngineDelegate {
          Since the transition from leave rtc to didLeaveChannelWith is asynchronous,
          setting rtcConnection = nil here will cause an immediate join after leave,
          which will incorrectly nullify the rtc connection after joining in didLeaveChannelWith.
+         
+         由于从leave rtc到didLeaveChannelWith的转换是异步的，
+         在此处设置rtcConnection = nil会导致离开后立即加入，
+         这将在didLeaveChannelWith中加入后错误地将rtc连接置为空。
          */
 //        rtcConnection = nil
         _notifyEvent(event: .localLeft)
