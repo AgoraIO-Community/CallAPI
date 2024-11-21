@@ -46,6 +46,10 @@
 
 "video"="视频";
 "audio"="音频";
+"call_audio_on"="开启音频";
+"call_audio_off"="关闭音频";
+"call_video_on"="开启视频";
+"call_video_off"="关闭视频";
 
 "video_call"="视频呼叫";
 "audio_call"="音频呼叫";

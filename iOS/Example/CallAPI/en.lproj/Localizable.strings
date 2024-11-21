@@ -45,6 +45,10 @@
 
 "video"="Video";
 "audio"="Audio";
+"call_audio_on"="Audio On";
+"call_audio_off"="Audio Off";
+"call_video_on"="Video On";
+"call_video_off"="Video Off";
 
 "video_call"="Video Call";
 "audio_call"="Audio Call";

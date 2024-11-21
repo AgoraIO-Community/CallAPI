@@ -172,7 +172,6 @@ class CallApiImpl constructor(
                     connectInfo.clean()
                     isPreparing = false
                 }
-                else -> {}
             }
         }
     /// RTC connection for join channel ex, used for leaving channel ex and checking if already joined ex channel
@@ -431,7 +430,7 @@ class CallApiImpl constructor(
     }
 
     private fun notifyEvent(event: CallEvent, reasonCode: String? = null, reasonString: String? = null) {
-        callPrint("call change[${connectInfo.callId}] event: ${event.value} reason: '$reasonCode' reasonString: '$reasonString'")
+        callPrint("call change[${connectInfo.callId}] event: ${event.value} reasonCode: '$reasonCode' reasonString: '$reasonString'")
         config?.let { config ->
             val ext = mutableMapOf(
                 "event" to event.value,
@@ -532,7 +531,7 @@ class CallApiImpl constructor(
                     )
                     remoteView.addView(tempRemoteCanvasView)
                 } else {
-                    callWarningPrint("remote view not found in connected state!")
+                    callPrint("remote canvas already added")
                 }
             }
             // Add local rendering view
@@ -550,7 +549,7 @@ class CallApiImpl constructor(
                     )
                     localView.addView(tempLocalCanvasView)
                 } else {
-                    callWarningPrint("remote view not found in connected state!")
+                    callPrint("local canvas already added")
                 }
             }
         }
@@ -878,7 +877,6 @@ class CallApiImpl constructor(
             CallAction.Reject ->        onReject(message)
             CallAction.Accept ->        onAccept(message)
             CallAction.Hangup ->        onHangup(message)
-            else -> {}
         }
     }
 
@@ -1266,7 +1264,7 @@ class CallApiImpl constructor(
             }
         }
 
-        callPrint("[calling]defaultCalleeJoinRTCTiming: ${defaultCalleeJoinRTCTiming.value}")
+        callPrint("[accepted]defaultCalleeJoinRTCTiming: ${defaultCalleeJoinRTCTiming.value}")
         if (defaultCalleeJoinRTCTiming == CalleeJoinRTCTiming.Accepted) {
             joinRTCAsBroadcaster(roomId)
         }
@@ -1314,6 +1312,7 @@ class CallApiImpl constructor(
 //    }
 
     override fun onMessageReceive(message: String) {
+        callPrint("on event message: $message")
         val messageDic = jsonStringToMap(message)
         val messageAction = messageDic[kMessageAction] as? Int ?: 0
         val msgTs = messageDic[kMessageTs] as? Long
@@ -1325,7 +1324,6 @@ class CallApiImpl constructor(
         }
         //TODO: compatible other message version
         if (kCurrentMessageVersion != messageVersion)  { return }
-        callPrint("on event message: $message")
         CallAction.fromValue(messageAction)?.let {
             processRespEvent(it, messageDic)
         }

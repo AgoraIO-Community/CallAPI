@@ -1056,7 +1056,7 @@ extension CallApiImpl: CallApiProtocol {
             return
         }
         self.prepareConfig?.rtcToken = rtcToken
-//        callPrint("renewToken with roomId[\(roomId)]")
+        callPrint("renewToken with roomId[\(roomId)]")
         guard let connection = rtcConnection else {
             return
         }
@@ -1201,7 +1201,7 @@ extension CallApiImpl: ISignalClientListener {
         }
         guard let messageAction = CallAction(rawValue: msg[kMessageAction] as? UInt ?? 0),
               let messageVersion = msg[kMessageVersion] as? String else {
-            callWarningPrint("fail to parse message")
+            callWarningPrint("fail to parse message: \(message)")
             return
         }
         

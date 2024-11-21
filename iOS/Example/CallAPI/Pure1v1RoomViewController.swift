@@ -47,10 +47,13 @@ class Pure1v1RoomViewController: UIViewController {
             case .connected:
                 muteAudioButton.isSelected = false
                 muteAudioButton.isHidden = false
+                muteVideoButton.isSelected = false
+                muteVideoButton.isHidden = false
                 self.leftView.isHidden = false
                 hangupButton.isHidden = false
             case .prepared, .idle, .failed:
                 muteAudioButton.isHidden = true
+                muteVideoButton.isHidden = true
                 self.leftView.isHidden = true
                 self.rightView.isHidden = true
                 self.callButton.isHidden = false
@@ -135,10 +138,18 @@ class Pure1v1RoomViewController: UIViewController {
     }()
     
     private lazy var muteAudioButton: UIButton = {
-        let btn = UIButton()
+        let btn = UIButton(type: .system)
         btn.addTarget(self, action: #selector(muteAudioAction), for: .touchUpInside)
-        btn.setImage(UIImage(named: "mic_unmute"), for: .normal)
-        btn.setImage(UIImage(named: "mic_mute"), for: .selected)
+        btn.setTitle(NSLocalizedString("call_audio_off", comment: ""), for: .normal)
+        btn.setTitle(NSLocalizedString("call_audio_on", comment: ""), for: .selected)
+        return btn
+    }()
+    
+    private lazy var muteVideoButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.addTarget(self, action: #selector(muteVideoAction), for: .touchUpInside)
+        btn.setTitle(NSLocalizedString("call_video_off", comment: ""), for: .normal)
+        btn.setTitle(NSLocalizedString("call_video_on", comment: ""), for: .selected)
         return btn
     }()
     
@@ -186,6 +197,7 @@ class Pure1v1RoomViewController: UIViewController {
         view.addSubview(callButton)
         view.addSubview(hangupButton)
         view.addSubview(muteAudioButton)
+        view.addSubview(muteVideoButton)
         
         view.addSubview(connectStatusLabel)
         
@@ -199,10 +211,14 @@ class Pure1v1RoomViewController: UIViewController {
         callButton.frame = CGRect(x: view.frame.width - 50, y: top, width: 40, height: 40)
         hangupButton.frame = callButton.frame
         
-        muteAudioButton.frame = CGRect(x: callButton.frame.origin.x - callButton.frame.size.width - 10,
-                                       y: top,
-                                       width: callButton.frame.width,
-                                       height: callButton.frame.height)
+        muteAudioButton.frame = CGRect(x: view.frame.width - 96,
+                                       y: callButton.frame.minY - 54,
+                                       width: 80,
+                                       height: 44)
+        muteVideoButton.frame = CGRect(x: view.frame.width - 96,
+                                       y: muteAudioButton.frame.minY - 54,
+                                       width: 80,
+                                       height: 44)
         
         leftView.frame = CGRect(x: 0, y: 50, width: view.frame.width / 2, height: view.frame.height / 2)
         rightView.frame = CGRect(x: view.frame.width / 2, y: 50, width: view.frame.width / 2, height: view.frame.height / 2)
@@ -353,14 +369,32 @@ extension Pure1v1RoomViewController {
         }
     }
     
+    @objc func muteVideoAction() {
+        guard let roomId = connectedRoomId else { return }
+        muteVideoButton.isSelected = !muteVideoButton.isSelected
+        let connection = AgoraRtcConnection(channelId: roomId, localUid: Int(currentUid))
+        var ret: Int32 = 0
+        if (muteVideoButton.isSelected) {
+            rtcEngine.stopPreview()
+            ret = rtcEngine.muteLocalVideoStreamEx(true, connection: connection)
+        } else {
+            rtcEngine.startPreview()
+            ret = rtcEngine.muteLocalVideoStreamEx(false, connection: connection)
+        }
+        print("muteVideoAction ret: \(ret)")
+    }
+    
     @objc func muteAudioAction() {
         guard let roomId = connectedRoomId else { return }
         muteAudioButton.isSelected = !muteAudioButton.isSelected
-        
         let connection = AgoraRtcConnection(channelId: roomId, localUid: Int(currentUid))
-        let mediaOptions = AgoraRtcChannelMediaOptions()
-        mediaOptions.publishMicrophoneTrack = muteAudioButton.isSelected == false ? true : false
-        rtcEngine.updateChannelEx(with: mediaOptions, connection: connection)
+        var ret: Int32 = 0
+        if (muteAudioButton.isSelected) {
+            ret = rtcEngine.muteLocalAudioStreamEx(true, connection: connection)
+        } else {
+            ret = rtcEngine.muteLocalAudioStreamEx(false, connection: connection)
+        }
+        print("muteAudioAction ret: \(ret)")
     }
     
     // Create RTM
