@@ -12,7 +12,9 @@ import CallAPI
 import AgoraRtcKit
 
 class EMPure1v1RoomViewController: UIViewController {
-    private var currentUid: UInt             //Current user UID
+    // Current user UID
+    // 当前用户UID
+    private var currentUid: UInt
     private var prepareConfig: PrepareConfig
     var videoEncoderConfig: AgoraVideoEncoderConfiguration?
     
@@ -222,6 +224,7 @@ class EMPure1v1RoomViewController: UIViewController {
     
     private func initCallApi(completion: @escaping ((Bool)->())) {
         // External creation requires managing login by oneself
+        // 外部创建需要自己管理登录
         self.signalClient.login() {[weak self] err in
             guard let self = self else {return}
             if let err = err {
@@ -259,6 +262,7 @@ extension EMPure1v1RoomViewController {
     
     private func _checkConnectionAndNotify() -> Bool{
         // If the signaling state is abnormal, callapi operations are not allowed
+        // 如果信令状态异常，不允许进行callapi操作
         guard signalClient.isConnected == true else {
             AUIToast.show(text: NSLocalizedString("easemob_connect_fail", comment: ""))
             return false
@@ -423,6 +427,7 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
             }
             connectedRoomId = fromRoomId
             // Only handle if the user triggering the state is oneself
+            // 仅处理触发状态的用户是自己的情况
             if currentUid == toUserId {
                 connectedUserId = fromUserId
                 let title = String(format: NSLocalizedString("calling_format", comment: ""),
@@ -446,6 +451,7 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
                             self.api.accept(remoteUserId: fromUserId) {[weak self] err in
                                 guard let err = err else { return }
                                 // If there is an error accepting the message, initiate a rejection and return to the initial state
+                                // 如果接受消息出错，发起拒绝并返回初始状态
                                 self?.api.reject(remoteUserId: fromUserId, reason: err.localizedDescription, completion: { err in
                                 })
                                 
@@ -477,6 +483,7 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
             AUIAlertManager.hiddenView()
             
             //setup configuration after join channel ex
+            // 加入频道后设置配置
             if let videoEncoderConfig = videoEncoderConfig {
                 rtcEngine.setVideoEncoderConfiguration(videoEncoderConfig)
                 let cameraConfig = AgoraCameraCapturerConfiguration()
@@ -519,6 +526,7 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
         switch event {
         case .remoteLeft:
             // The demo ends abnormal calls by listening for remote user departures. In real business scenarios, it is recommended to use the server to monitor RTC user disconnections for kicking users, while the client listens for kicks to end abnormal calls.
+            // 演示通过监听远端用户离开来结束异常通话。在实际业务场景中，建议使用服务器监控RTC用户断开连接来踢用户，同时客户端监听踢人结束异常通话。            
             hangupAction()
         default:
             break
@@ -532,6 +540,7 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
         NSLog("onCallErrorOccur errorEvent:\(errorEvent.rawValue), errorType: \(errorType.rawValue), errorCode: \(errorCode), message: \(message ?? "")")
         if errorEvent == .rtcOccurError, errorType == .rtc, errorCode == AgoraErrorCode.tokenExpired.rawValue {
             // Failed to join RTC channel, need to cancel the call and re-obtain the token
+            // 加入RTC频道失败，需要取消通话并重新获取token
             self.api.cancelCall { err in
             }
         }

@@ -10,8 +10,9 @@ import AgoraRtcKit
 
 let kApiVersion = "2.1.2"
 
-let kMessageId: String = "messageId"     // ID of the sent message
-                                        // 发送消息的ID
+// ID of the sent message
+// 发送消息的ID
+let kMessageId: String = "messageId"
 
 private let kCurrentMessageVersion = "1.0"
 private let kMessageAction = "message_action"
@@ -24,10 +25,14 @@ public let kRemoteUserId = "remoteUserId"
 public let kFromUserId = "fromUserId"
 public let kFromUserExtension = "fromUserExtension"
 public let kFromRoomId = "fromRoomId"
-let kCalleeState = "state"      // Current call state
-                               // 当前通话状态
-public let kPublisher = "publisher"    // UID of the user that triggered the state; can currently indicate the state of the current user and the caller. If there is no publisher, it defaults to the current user.
-                               // 触发状态的用户UID，目前可以表示当前用户和主叫方的状态,如果没有发布者默认为当前用户
+
+// Current call state
+// 当前通话状态
+let kCalleeState = "state"
+
+// UID of the user that triggered the state; can currently indicate the state of the current user and the caller. If there is no publisher, it defaults to the current user.
+// 触发状态的用户UID，目前可以表示当前用户和主叫方的状态,如果没有发布者默认为当前用户
+public let kPublisher = "publisher"
 
 /// ⚠️ Do not modify the following two values; clients may use rejectReason/call busy for business logic (e.g., user is busy).
 /// ⚠️ 不要修改以下两个值,客户端可能会使用rejectReason/call busy用于业务逻辑(例如用户忙)
@@ -44,8 +49,9 @@ public let kRejectByInternal = "rejectByInternal"
 // 表示是否为内部取消通话,内部取消目前标记为对方远程呼叫超时
 public let kCancelCallByInternal = "cancelCallByInternal"
 
-public let kCostTimeMap = "costTimeMap"    // Duration information during the call, which will be reported step-by-step when connected.
-                                          // 通话过程中的时长信息,连接后会逐步上报
+// Duration information during the call, which will be reported step-by-step when connected.
+// 通话过程中的时长信息,连接后会逐步上报
+public let kCostTimeMap = "costTimeMap"
 
 struct CallCustomEvent {
     static let stateChange = "stateChange"
@@ -68,10 +74,13 @@ var defaultCalleeJoinRTCTiming: CalleeJoinRTCTiming = .calling
 /// Timing for joining RTC during an incoming call
 /// 来电时加入RTC的时机
 @objc public enum CalleeJoinRTCTiming: Int {
-    case calling = 0    // Join the channel and start pushing video stream immediately upon receiving the call. This incurs higher costs but provides faster display.
-                       // 收到来电即加入频道并开始推流,成本高但显示快
-    case accepted       // Join the channel and start pushing video stream only after actively accepting the call. This incurs lower costs but results in slower display.
-                       // 主动接听后才加入频道并开始推流,成本低但显示慢
+    // Join the channel and start pushing video stream immediately upon receiving the call. This incurs higher costs but provides faster display.
+    // 收到来电即加入频道并开始推流,成本高但显示快
+    case calling = 0
+    
+    // Join the channel and start pushing video stream only after actively accepting the call. This incurs lower costs but results in slower display.
+    // 主动接听后才加入频道并开始推流,成本低但显示慢
+    case accepted
 }
 
 public class CallApiImpl: NSObject {
