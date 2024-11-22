@@ -103,247 +103,238 @@ This document mainly describes how to quickly run the CallAPI sample project.
 ### Implement a 1v1 call
 #### Initialize CallRtmManager
   ```kotlin
-  val rtmManager = CallRtmManager(appId = <#AppId#>,
-                              userId = <#UserId#>,
+  val rtmManager = CallRtmManager(appId = "Your AppId",
+                              userId = "Local user UserId",
                               client = null)  
   ```
 #### Add and listen for CallRtmManager state callbacks.
-  ```swift
-  rtmManager.delegate = self
-
-  extension ViewController: ICallRtmManagerListener {
-      func onConnected() {
+  ```kotlin
+rtmManager?.addListener(object : ICallRtmManagerListener {
+    override fun onConnected() {
         // Network connected, signaling can be sent and received normally.
-      }
+    }
 
-      func onDisconnected() {
+    override fun onDisconnected() {
         // Network not connected, signaling cannot be sent or received at this time; the business layer can handle exceptions based on the current status.
-      }
+    }
 
-      func onTokenPrivilegeWillExpire(channelName: String) {
+    override fun onTokenPrivilegeWillExpire(channelName: String) {
         // Token expired, need to refresh the RTM Token.
-      }
-  }
+    }
+})
   ```
 
 #### Initialize CallRtmSignalClient
-  ```swift
-  let signalClient = CallRtmSignalClient(rtmClient: rtmManager.getRtmClient())
+  ```kotlin
+  val signalClient = createRtmSignalClient(rtmManager.getRtmClient())
   ```
 
 #### Initialize CallAPI
-  ```swift
-  let config = CallConfig()
-  config.appId = <#AppId#>
-  config.userId = <#UserId#>
-  config.rtcEngine = rtcEngine
-  config.signalClient = signalClient
-
-  callApi.initialize(config: config)
+  ```kotlin
+val config = CallConfig(
+    appId = "Your AppId",
+    userId = "Local user UserId",
+    rtcEngine = rtcEngine,
+    signalClient = signalClient
+)
+api.initialize(config)
   ```
 
 #### Add and listen for CallAPI callbacks.
-  ```swift
-  callApi.addListener(listener: self)
 
-  extension ViewController: CallApiListenerProtocol {
-      func onCallStateChanged(with state: CallStateType,
-                              stateReason: CallStateReason,
-                              eventReason: String,
-                              eventInfo: [String : Any]) {
-          // ...
-      }
-  }
+  ```kotlin
+api.addListener(this)
+
+override fun onCallStateChanged(
+    state: CallStateType,
+    stateReason: CallStateReason,
+    eventReason: String,
+    eventInfo: Map<String, Any>
+) {
+}
   ```
 
 #### Handle CallRtmManager login
-  ```swift
-  rtmManager?.login(rtmToken: rtmToken, completion: { err in
-      if let _ = err { return }
-      // Login successful, you can start preparing the call environment.
-  })
+  ```kotlin
+rtmManager?.login(enterModel.rtmToken) {
+    if (it == null) {
+        // Initialize call api after successful login
+    }
+}
   ```
 
 #### prepare call environment
-  ```swift
-  // Prepare the call environment
-  let prepareConfig = PrepareConfig()
-  prepareConfig.rtcToken = <#Universal RTC Token#>
-  prepareConfig.roomId = <#Channel ID to call#>
-  prepareConfig.localView = callVC.localCanvasView.canvasView
-  prepareConfig.remoteView = callVC.remoteCanvasView.canvasView
-  // If you want to send extension information to the other party, you can achieve this through this parameter
-  prepareConfig.userExtension = nil
 
-  callApi.prepareForCall(prepareConfig: prepareConfig) { err in
-      // Success means you can start making the call
-  }
+  ```kotlin
+// Prepare the call environment
+var prepareConfig = PrepareConfig()
+prepareConfig.rtcToken = "${Universal RTC Token}"
+prepareConfig.roomId = "${Channel ID to call}"
+prepareConfig.localView = callVC.localCanvasView.canvasView
+prepareConfig.remoteView = callVC.remoteCanvasView.canvasView
+prepareConfig.userExtension = null
+
+api.prepareForCall(prepareConfig) { error ->
+    completion.invoke(error == null)
+}
   ```
     
-  #### Caller makes a call
+#### Caller makes a call
   - Video call
-    ```swift
-    private func _call(remoteUserId: UInt) {
-        // Check if the call can be made; the CallAPI state should be "prepared"
-        if callState == .idle || callState == .failed {
-            // The call environment is not prepared or has encountered an error; need to reprepare the call environment
-
-            // Error message
-
-            return
-        }
-        
-        callApi.call(remoteUserId: remoteUserId) { [weak self] err in
-            guard let err = err, self?.callState == .calling else { return }
-            // Call failed, cancel the call and return to idle state
-            self?.callApi.cancelCall(completion: { err in
-            })
+    ```kotlin
+    api.call(targetUserId) { error ->
+        // Call fails, hang up immediately
+        if (error != null && mCallState == CallStateType.Calling) {
+            api.cancelCall {  }
         }
     }
       ```
   - Audio call
-    ```swift
-    private func _call(remoteUserId: UInt) {
-        // Need to check if the call can be made; if the CallAPI is complete, the state will be "prepared"
-        if callState == .idle || callState == .failed {
-            // The call environment is not prepared or has encountered an error; need to reprepare the call environment
-
-            // Error message
-
-            return
-        }
-        
-        callApi.call(remoteUserId: remoteUserId, callType: .audio, callExtension: [:]) { [weak self] err in
-            guard let err = err, self?.callState == .calling else { return }
-            // Call failed, cancel the call and return to idle state
-            self?.callApi.cancelCall(completion: { err in
-            })
+    ```kotlin
+    api.call(targetUserId, CallType.Audio) { error ->
+        // Call fails, hang up immediately
+        if (error != null && mCallState == CallStateType.Calling) {
+            api.cancelCall {  }
         }
     }
     ```
 #### listens for call events and processes
-  ```swift
-  func onCallStateChanged(with state: CallStateType,
-                        stateReason: CallStateReason,
-                        eventReason: String,
-                        eventInfo: [String: Any]) {
-      switch state {
-      case .calling:
-          let fromUserId = eventInfo[kFromUserId] as? UInt ?? 0
-          let fromRoomId = eventInfo[kFromRoomId] as? String ?? ""
-          let toUserId = eventInfo[kRemoteUserId] as? UInt ?? 0
+  ```kotlin
+override fun onCallStateChanged(
+    state: CallStateType,
+    stateReason: CallStateReason,
+    eventReason: String,
+    eventInfo: Map<String, Any>
+) {
+    runOnUiThread {
+        val publisher = eventInfo.getOrDefault(CallApiImpl.kPublisher, enterModel.currentUid)
+        if (publisher != enterModel.currentUid) {
+            return@runOnUiThread
+        }
+        updateCallState(state, stateReason)
 
-          if currentUid == "\(toUserId)" {
-              // The current user is the callee
-
-              // Get user information for displaying in the popup
-              let user = userList.first { \$0.userId == "\(fromUserId)" }
-              let dialog = CalleeDialog.show(user: user)
-              // Accept the call
-              dialog?.acceptClosure = { [weak self] in
-                  guard let self = self else { return }
-                  self.callApi.accept(remoteUserId: fromUserId) { [weak self] err in
-                      guard let err = err else { return }
-                      // If there is an error accepting the call, reject it and return to the initial state
-                      self?.api.reject(remoteUserId: fromUserId, reason: err.localizedDescription, completion: { err in
-                      })
-                  }
-              }
-              // Reject the call
-              dialog?.rejectClosure = { [weak self] in
-                  self?.callApi.reject(remoteUserId: fromUserId, reason: "reject by user") { err in
-                  }
-              }
-          } else if currentUid == "\(fromUserId)" {
-              // The current user is the caller
-
-              // Get user information for displaying in the popup
-              let user = userList.first { \$0.userId == "\(toUserId)" }
-              let dialog = CallerDialog.show(user: user)
-              // Cancel the call
-              dialog?.cancelClosure = { [weak self] in
-                  self?.callApi.cancelCall(completion: { err in
-                  })
-              }
-          }
-      default:
-          break
-      }
+        when (state) {
+            CallStateType.Calling -> {
+                val fromUserId = eventInfo[CallApiImpl.kFromUserId] as? Int ?: 0
+                val fromRoomId = eventInfo[CallApiImpl.kFromRoomId] as? String ?: ""
+                val toUserId = eventInfo[CallApiImpl.kRemoteUserId] as? Int ?: 0
+                if (connectedUserId != null && connectedUserId != fromUserId) {
+                    api.reject(fromUserId, "already calling") {
+                    }
+                    return@runOnUiThread
+                }
+                // Only handle if target user is self
+                if (enterModel.currentUid.toIntOrNull() == toUserId) {
+                    connectedUserId = fromUserId
+                    connectedChannel = fromRoomId
+                    callDialog = AlertDialog.Builder(this)
+                        .setTitle(getString(R.string.alert_title))
+                        .setMessage(getString(R.string.alert_incoming_call, fromUserId))
+                        .setPositiveButton(getString(R.string.alert_accept)) { p0, p1 ->
+                            // Check signal channel connection status
+                            if (!checkConnectionAndNotify()) return@setPositiveButton
+                            api.accept(fromUserId) { err ->
+                                if (err != null) {
+                                    // If accept message fails, reject and return to initial state
+                                    api.reject(fromUserId, err.msg) {}
+                                }
+                            }
+                        }.setNegativeButton(getString(R.string.alert_reject)) { p0, p1 ->
+                            // Check signal channel connection status
+                            if (!checkConnectionAndNotify()) return@setNegativeButton
+                            api.reject(fromUserId, "reject by user") { err ->
+                            }
+                        }.create()
+                    callDialog?.setCancelable(false)
+                    callDialog?.show()
+                } else if (enterModel.currentUid.toIntOrNull() == fromUserId) {
+                    connectedUserId = toUserId
+                    connectedChannel = fromRoomId
+                    callDialog = AlertDialog.Builder(this)
+                        .setTitle(getString(R.string.alert_title))
+                        .setMessage(getString(R.string.alert_calling_user, toUserId))
+                        .setNegativeButton(getString(R.string.alert_cancel)) { p0, p1 ->
+                            // Check signal channel connection status
+                            if (!checkConnectionAndNotify()) return@setNegativeButton
+                            api.cancelCall { err ->
+                            }
+                        }.create()
+                    callDialog?.setCancelable(false)
+                    callDialog?.show()
+                }
+            }
+            else -> {}
+        }
+    }
   }
   ```
 #### Receives call success
-  ```swift
-  func onCallStateChanged(with state: CallStateType,
-                        stateReason: CallStateReason,
-                        eventReason: String,
-                        eventInfo: [String : Any]) {
-      switch state {
-      case .connected:
-
-          // Display the call page.
-          present(callVC, animated: false)
-          break
-      default:
-          break
-      }
+  ```kotlin
+override fun onCallStateChanged(
+    state: CallStateType,
+    stateReason: CallStateReason,
+    eventReason: String,
+    eventInfo: Map<String, Any>
+) {
+    when (state) {
+        CallStateType.Connected -> {
+            // Display the call page.
+        } else -> {}
+    }
   }
   ```
 #### Ends call
-  ```swift
-  func _hangupAction() {
-      callApi?.hangup(remoteUserId: UInt(targetUser?.userId ?? "") ?? 0, reason: nil, completion: { err in
-      })
-  ...
+
+  ```kotlin
+private fun hangupAction() { 
+    // Check signal channel connection status
+    api.hangup(connectedUserId ?: 0, "hangup by user") {
+    }
+}
   ```
 
 #### Receives hang-up message
-  ```swift
-  func onCallStateChanged(with state: CallStateType,
-                        stateReason: CallStateReason,
-                        eventReason: String,
-                        eventInfo: [String: Any]) {
-      let currentUid = userInfo?.userId ?? ""
-
-      switch state {
-      case .prepared:
-          switch stateReason {
-          case .localHangup, .remoteHangup:
-              // Remove the call page
-              callVC.dismiss(animated: false)
-              // Display rejection information
-
-          default:
-              break
-          }
-      default:
-          break
-      }
+  ```kotlin
+  override fun onCallStateChanged(
+    state: CallStateType,
+    stateReason: CallStateReason,
+    eventReason: String,
+    eventInfo: Map<String, Any>
+) {
+    when (state) {
+        CallStateType.Prepared -> {
+            when (stateReason) {
+                CallStateReason.LocalHangup, CallStateReason.RemoteHangup -> {
+                    // Remove the call page
+                    // Display rejection information
+                }
+                else -> {}
+            }
+        } else -> {}
+    }
   }
   ```
 
 #### Updates channel id
-  ```swift
+  ```kotlin
   // Prepare the call environment
-  let prepareConfig = PrepareConfig()
+  val prepareConfig = PrepareConfig()
   // Set the new channel ID
-  prepareConfig.roomId = <#Channel ID to call#>
+  prepareConfig.roomId = "${Channel ID to call}"
   // Other property settings are omitted here. Please ensure to synchronize the settings for other properties.
-
-  callApi.prepareForCall(prepareConfig: prepareConfig) { err in
+  callApi.prepareForCall(prepareConfig) { err ->
       // Success means you can start making the call
   }
   ```
 
 #### Leaves and releases resources
-  ```swift
+  ```kotlin
   // Clear CallAPI cache
   callApi.deinitialize {
       // Destroy RTC instance
-      AgoraRtcEngineKit.destroy()
-
+      RtcEngine.destroy()
       // Logout from RTM service
-      self.rtmManager.logout()
-
+      rtmManager?.logout()
       // Other business logic
   }
   ```
@@ -372,7 +363,7 @@ rtmClient.login(token, object : ResultCallback<Void?> {
     override fun onFailure(p0: ErrorInfo?) {
         // Login failed
     }
-}
+})
 ```
 
 ### 5.2 Switching the Timing of Publishing and Subscribing for the Callee to Save Costs
