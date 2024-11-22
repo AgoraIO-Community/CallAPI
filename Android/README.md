@@ -103,9 +103,10 @@ This document mainly describes how to quickly run the CallAPI sample project.
 ### Implement a 1v1 call
 #### Initialize CallRtmManager
   ```kotlin
-  val rtmManager = CallRtmManager(appId = "Your AppId",
-                              userId = "Local user UserId",
-                              client = null)  
+  val rtmManager = CallRtmManager(
+    appId = "${Your AppId}", 
+    userId = "${Local user UserId}", 
+    client = null)  
   ```
 #### Add and listen for CallRtmManager state callbacks.
   ```kotlin
@@ -132,8 +133,8 @@ rtmManager?.addListener(object : ICallRtmManagerListener {
 #### Initialize CallAPI
   ```kotlin
 val config = CallConfig(
-    appId = "Your AppId",
-    userId = "Local user UserId",
+    appId = "${Your AppId}",
+    userId = "${Local user UserId}",
     rtcEngine = rtcEngine,
     signalClient = signalClient
 )
