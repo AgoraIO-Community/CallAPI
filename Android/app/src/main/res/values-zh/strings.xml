@@ -79,6 +79,8 @@
     <string name="toast_no_target_user">无目标用户</string>
     <string name="toast_rtm_connected">rtm已连接</string>
     <string name="toast_rtm_disconnected">rtm已断开</string>
+    <string name="toast_easemob_connected">环信已连接</string>
+    <string name="toast_easemob_disconnected">环信已断开</string>
     <string name="toast_rtm_not_logged_in">rtm未登录或连接异常</string>
     <string name="toast_easemob_not_logged_in">环信未登录或连接异常</string>
     <string name="toast_call_started">通话开始%s</string>

@@ -15,6 +15,7 @@ import com.hyphenate.chat.EMTextMessageBody
 import com.hyphenate.exceptions.HyphenateException
 import es.dmoral.toasty.Toasty
 import io.agora.onetoone.AGError
+import io.agora.onetoone.R
 import io.agora.rtm.PublishOptions
 import io.agora.rtm.RtmConstants
 import java.util.concurrent.Executors
@@ -167,14 +168,14 @@ class CallEasemobSignalClient(
     // ---------------- EMConnectionListener ----------------
     override fun onConnected() {
         runOnUiThread {
-            Toasty.normal(context, "环信已连接", Toast.LENGTH_SHORT).show()
+            Toasty.normal(context, context.getString(R.string.toast_easemob_connected), Toast.LENGTH_SHORT).show()
         }
         isConnected = true
     }
 
     override fun onDisconnected(errorCode: Int) {
         runOnUiThread {
-            Toasty.normal(context, "环信已断开", Toast.LENGTH_SHORT).show()
+            Toasty.normal(context, context.getString(R.string.toast_easemob_disconnected), Toast.LENGTH_SHORT).show()
         }
         isConnected = false
     }

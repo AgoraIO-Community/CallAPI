@@ -79,6 +79,8 @@
     <string name="toast_no_target_user">No Target User</string>
     <string name="toast_rtm_connected">RTM connected</string>
     <string name="toast_rtm_disconnected">RTM disconnected</string>
+    <string name="toast_easemob_connected">Easemob Client Connected</string>
+    <string name="toast_easemob_disconnected">Easemob Client Disconnected</string>
     <string name="toast_rtm_not_logged_in">RTM not logged in or connection abnormal</string>
     <string name="toast_easemob_not_logged_in">Easemob not logged in or connection abnormal</string>
     <string name="toast_call_started">Call started %s</string>
