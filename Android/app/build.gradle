@@ -64,6 +64,10 @@ android {
     buildFeatures {
         viewBinding true
     }
+
+    packagingOptions {
+        pickFirst 'lib/*/libaosl.so'
+    }
 }
 
 dependencies {
