@@ -2,6 +2,12 @@
 
 *[English](CHANGELOG.md) | 中文*
 
+## [2.1.3](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.1.3)
+
+- 升级 RTC SDK 到 4.5.0 版本。
+- 国际化。
+- Android、iOS demo 增加麦克风和摄像头的开关。
+
 ## [2.1.2](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.1.2)
 
 - 呼叫接通支持与音视频首帧接收状态无关。
