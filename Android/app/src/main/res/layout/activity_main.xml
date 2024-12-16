@@ -23,28 +23,28 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:checked="true"
-            android:text="@string/app_rtm_show_to_1v1"
+            android:text="@string/radio_rtm_show_1v1"
             android:textColor="@color/white" />
 
         <androidx.appcompat.widget.AppCompatRadioButton
             android:id="@+id/btnOneToOne"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/app_rtm_1v1"
+            android:text="@string/radio_rtm_pure_1v1"
             android:textColor="@color/white" />
 
         <androidx.appcompat.widget.AppCompatRadioButton
             android:id="@+id/btnHyShow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/app_easemob_show_to_1v1"
-            android:textColor="@color/white" />
+            android:text="@string/radio_easemob_show_1v1"
+            android:textColor="@color/white"/>
 
         <androidx.appcompat.widget.AppCompatRadioButton
             android:id="@+id/btnHyOneToOne"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/app_easemob_1v1"
+            android:text="@string/radio_easemob_pure_1v1"
             android:textColor="@color/white" />
     </RadioGroup>
 
@@ -76,7 +76,7 @@
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/tvLocalUid"
-        android:layout_width="100dp"
+        android:layout_width="120dp"
         android:layout_height="48dp"
         android:layout_marginTop="10dp"
         android:text="@string/app_input_title_local_uid"
@@ -103,10 +103,10 @@
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/tvOwnerUid"
-        android:layout_width="100dp"
+        android:layout_width="120dp"
         android:layout_height="48dp"
         android:gravity="center_vertical"
-        android:text="@string/app_role_broadcaster_uid"
+        android:text="@string/input_broadcaster_id"
         android:textColor="#CCFFFFFF"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="parent"
@@ -117,9 +117,9 @@
         android:layout_width="200dp"
         android:layout_height="48dp"
         android:layout_marginStart="16dp"
-        android:hint="@string/app_role_broadcaster_uid_placeholder"
-        android:imeOptions="actionDone|flagNoExtractUi"
+        android:hint="@string/input_broadcaster_id_hint"
         android:singleLine="true"
+        android:imeOptions="actionDone|flagNoExtractUi"
         android:textColor="@color/white"
         android:textColorHint="#99FFFFFF"
         android:textSize="14sp"
@@ -252,7 +252,7 @@
         android:id="@+id/cbAutoAccept"
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:text="收到呼叫自动接受"
+        android:text="@string/checkbox_auto_accept"
         android:checked="true"
         android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@+id/layoutFrameRate"
@@ -263,33 +263,34 @@
         android:id="@+id/firstFrameWaitting"
         android:layout_width="match_parent"
         android:layout_height="50dp"
+        android:text="@string/checkbox_first_frame"
         android:checked="true"
-        android:text="@string/app_first_frame_related_connected"
+        app:layout_constraintTop_toBottomOf="@+id/layoutFrameRate"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/layoutFrameRate" />
+        />
 
-<!--    <com.google.android.material.checkbox.MaterialCheckBox-->
-<!--        android:id="@+id/cbJoinRTC"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="50dp"-->
-<!--        android:text="提前加入RTC频道"-->
-<!--        app:layout_constraintTop_toBottomOf="@+id/cbAutoAccept"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        />-->
+    <!--    <com.google.android.material.checkbox.MaterialCheckBox-->
+    <!--        android:id="@+id/cbJoinRTC"-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="50dp"-->
+    <!--        android:text="@string/checkbox_join_rtc"-->
+    <!--        app:layout_constraintTop_toBottomOf="@+id/cbAutoAccept"-->
+    <!--        app:layout_constraintStart_toStartOf="parent"-->
+    <!--        />-->
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnEnter"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="100dp"
-        android:paddingHorizontal="24dp"
-        android:text="@string/app_create_show_to_1v1"
+        android:text="@string/btn_create_show_to_1v1"
         android:textAllCaps="false"
         android:textColor="@color/white"
         android:textSize="16sp"
         app:cornerRadius="4dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:paddingHorizontal="24dp"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        android:layout_marginBottom="100dp"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

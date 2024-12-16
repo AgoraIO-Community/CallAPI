@@ -24,7 +24,7 @@ func callMessagePrint(_ message: String) {
 }
 
 /// CallRtmManager callback protocol
-public protocol ICallRtmManagerListener: NSObjectProtocol {
+@objc public protocol ICallRtmManagerListener: NSObjectProtocol {
     
     /// RTM connection succeeded
     func onConnected()
@@ -39,7 +39,7 @@ public protocol ICallRtmManagerListener: NSObjectProtocol {
 
 @objcMembers public class CallRtmManager: NSObject {
     public var isConnected: Bool = false
-    public weak var delegate: ICallRtmManagerListener?
+    @objc public weak var delegate: ICallRtmManagerListener?
     
     private var rtmClient: AgoraRtmClientKit
 

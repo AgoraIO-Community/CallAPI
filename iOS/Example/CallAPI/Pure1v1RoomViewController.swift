@@ -47,10 +47,13 @@ class Pure1v1RoomViewController: UIViewController {
             case .connected:
                 muteAudioButton.isSelected = false
                 muteAudioButton.isHidden = false
+                muteVideoButton.isSelected = false
+                muteVideoButton.isHidden = false
                 self.leftView.isHidden = false
                 hangupButton.isHidden = false
             case .prepared, .idle, .failed:
                 muteAudioButton.isHidden = true
+                muteVideoButton.isHidden = true
                 self.leftView.isHidden = true
                 self.rightView.isHidden = true
                 self.callButton.isHidden = false
@@ -135,10 +138,18 @@ class Pure1v1RoomViewController: UIViewController {
     }()
     
     private lazy var muteAudioButton: UIButton = {
-        let btn = UIButton()
+        let btn = UIButton(type: .system)
         btn.addTarget(self, action: #selector(muteAudioAction), for: .touchUpInside)
-        btn.setImage(UIImage(named: "mic_unmute"), for: .normal)
-        btn.setImage(UIImage(named: "mic_mute"), for: .selected)
+        btn.setTitle(NSLocalizedString("call_audio_off", comment: ""), for: .normal)
+        btn.setTitle(NSLocalizedString("call_audio_on", comment: ""), for: .selected)
+        return btn
+    }()
+    
+    private lazy var muteVideoButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.addTarget(self, action: #selector(muteVideoAction), for: .touchUpInside)
+        btn.setTitle(NSLocalizedString("call_video_off", comment: ""), for: .normal)
+        btn.setTitle(NSLocalizedString("call_video_on", comment: ""), for: .selected)
         return btn
     }()
     
@@ -186,6 +197,7 @@ class Pure1v1RoomViewController: UIViewController {
         view.addSubview(callButton)
         view.addSubview(hangupButton)
         view.addSubview(muteAudioButton)
+        view.addSubview(muteVideoButton)
         
         view.addSubview(connectStatusLabel)
         
@@ -199,16 +211,21 @@ class Pure1v1RoomViewController: UIViewController {
         callButton.frame = CGRect(x: view.frame.width - 50, y: top, width: 40, height: 40)
         hangupButton.frame = callButton.frame
         
-        muteAudioButton.frame = CGRect(x: callButton.frame.origin.x - callButton.frame.size.width - 10,
-                                       y: top,
-                                       width: callButton.frame.width,
-                                       height: callButton.frame.height)
+        muteAudioButton.frame = CGRect(x: view.frame.width - 96,
+                                       y: callButton.frame.minY - 54,
+                                       width: 80,
+                                       height: 44)
+        muteVideoButton.frame = CGRect(x: view.frame.width - 96,
+                                       y: muteAudioButton.frame.minY - 54,
+                                       width: 80,
+                                       height: 44)
         
         leftView.frame = CGRect(x: 0, y: 50, width: view.frame.width / 2, height: view.frame.height / 2)
         rightView.frame = CGRect(x: view.frame.width / 2, y: 50, width: view.frame.width / 2, height: view.frame.height / 2)
         
         self.callState = .idle
         // External creation of rtmClient
+        // 外部创建rtmClient
         rtmClient = _createRtmClient()
         initCallApi { success in
         }
@@ -216,6 +233,7 @@ class Pure1v1RoomViewController: UIViewController {
     
     private func initCallApi(completion: @escaping ((Bool)->())) {
         // External creation requires managing login by oneself
+        // 外部创建需要自己管理登录
         NSLog("login")
         rtmClient?.login(rtmToken) {[weak self] resp, err in
             guard let self = self else {return}
@@ -239,6 +257,7 @@ class Pure1v1RoomViewController: UIViewController {
 extension Pure1v1RoomViewController {
     private func _checkConnectionAndNotify() -> Bool{
         // If the signaling state is abnormal, callapi operations are not allowed
+        // 如果信令状态异常，不允许进行callapi操作
         guard rtmManager?.isConnected == true else {
             AUIToast.show(text: NSLocalizedString("rtm_connect_fail", comment: ""))
             return false
@@ -248,17 +267,20 @@ extension Pure1v1RoomViewController {
     }
     
     private func _initialize(rtmClient: AgoraRtmClientKit?, completion: @escaping ((Bool)->())) {
-        // create rtm manager
+        // Create rtm manager
+        // 创建RTM管理器
         let rtmManager = CallRtmManager(appId: KeyCenter.AppId,
                                         userId: "\(currentUid)",
                                         rtmClient: rtmClient)
         rtmManager.delegate = self
         self.rtmManager = rtmManager
         
-        // create signal client
+        // Create signal client
+        // 创建信令客户端
         let client = CallRtmSignalClient(rtmClient: rtmManager.getRtmClient())
         
-        // callapi initialize
+        // CallAPI initialize
+        // CallAPI初始化
         let config = CallConfig()
         config.appId = KeyCenter.AppId
         config.userId = currentUid
@@ -272,7 +294,8 @@ extension Pure1v1RoomViewController {
         
         api.addListener(listener: self)
         
-        // callapi prepareForCall
+        // CallAPI prepareForCall
+        // CallAPI准备通话
         prepareConfig.roomId = "\(currentUid)"
         prepareConfig.localView = rightView
         prepareConfig.remoteView = leftView
@@ -353,14 +376,32 @@ extension Pure1v1RoomViewController {
         }
     }
     
+    @objc func muteVideoAction() {
+        guard let roomId = connectedRoomId else { return }
+        muteVideoButton.isSelected = !muteVideoButton.isSelected
+        let connection = AgoraRtcConnection(channelId: roomId, localUid: Int(currentUid))
+        var ret: Int32 = 0
+        if (muteVideoButton.isSelected) {
+            rtcEngine.stopPreview()
+            ret = rtcEngine.muteLocalVideoStreamEx(true, connection: connection)
+        } else {
+            rtcEngine.startPreview()
+            ret = rtcEngine.muteLocalVideoStreamEx(false, connection: connection)
+        }
+        print("muteVideoAction ret: \(ret)")
+    }
+    
     @objc func muteAudioAction() {
         guard let roomId = connectedRoomId else { return }
         muteAudioButton.isSelected = !muteAudioButton.isSelected
-        
         let connection = AgoraRtcConnection(channelId: roomId, localUid: Int(currentUid))
-        let mediaOptions = AgoraRtcChannelMediaOptions()
-        mediaOptions.publishMicrophoneTrack = muteAudioButton.isSelected == false ? true : false
-        rtcEngine.updateChannelEx(with: mediaOptions, connection: connection)
+        var ret: Int32 = 0
+        if (muteAudioButton.isSelected) {
+            ret = rtcEngine.muteLocalAudioStreamEx(true, connection: connection)
+        } else {
+            ret = rtcEngine.muteLocalAudioStreamEx(false, connection: connection)
+        }
+        print("muteAudioAction ret: \(ret)")
     }
     
     // Create RTM
@@ -405,6 +446,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
     
     func tokenPrivilegeWillExpire() {
         // Update token; both RTC and RTM are updated together here
+        // 更新令牌; 这里同时更新RTC和RTM的令牌
         NetworkManager.shared.generateToken(channelName: "",
                                             uid: "\(currentUid)",
                                             types: [.rtc, .rtm]) {[weak self] token in
@@ -455,6 +497,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
             }
             connectedRoomId = fromRoomId
             // Only handle if the user triggering the state is oneself
+            // 仅处理触发状态的用户是自己的情况
             if currentUid == toUserId {
                 connectedUserId = fromUserId
                 let title = String(format: NSLocalizedString("calling_format", comment: ""),
@@ -477,6 +520,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
                         self.api.accept(remoteUserId: fromUserId) {[weak self] err in
                             guard let err = err else { return }
                             // If there is an error accepting the message, initiate a rejection and return to the initial state
+                            // 如果接受消息出错，发起拒绝并返回初始状态
                             self?.api.reject(remoteUserId: fromUserId, reason: err.localizedDescription, completion: { err in
                             })
                             AUIToast.show(text: "\(NSLocalizedString("accept_fail", comment: "")): \(err.localizedDescription)")
@@ -504,6 +548,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
             AUIAlertManager.hiddenView()
             
             //setup configuration after join channel ex
+            // 加入频道后设置配置
             if let videoEncoderConfig = videoEncoderConfig {
                 rtcEngine.setVideoEncoderConfiguration(videoEncoderConfig)
             }
@@ -541,6 +586,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
         switch event {
         case .remoteLeft:
             // The demo ends abnormal calls by listening for remote user departures. In real business scenarios, it is recommended to use the server to monitor RTC user disconnections for kicking users, while the client listens for kicks to end abnormal calls.
+            // 演示通过监听远端用户离开来结束异常通话。在实际业务场景中，建议使用服务器监控RTC用户断开连接来踢用户，同时客户端监听踢人结束异常通话。
             hangupAction()
         default:
             break
@@ -554,6 +600,7 @@ extension Pure1v1RoomViewController:CallApiListenerProtocol {
         NSLog("onCallErrorOccur errorEvent:\(errorEvent.rawValue), errorType: \(errorType.rawValue), errorCode: \(errorCode), message: \(message ?? "")")
         if errorEvent == .rtcOccurError, errorType == .rtc, errorCode == AgoraErrorCode.tokenExpired.rawValue {
             // Failed to join RTC channel, need to cancel the call and re-obtain the token
+            // 加入RTC频道失败，需要取消通话并重新获取token
             self.api.cancelCall { err in
             }
         }
@@ -606,16 +653,19 @@ extension Pure1v1RoomViewController: ICallRtmManagerListener {
         NSLog("onConnected")
         AUIToast.show(text: NSLocalizedString("rtm_did_connected", comment: ""))
         // Indicates that the connection is successful, and callapi can be used to initiate a call
+        // 表示连接成功，可以使用callapi发起呼叫
     }
     
     func onDisconnected() {
         NSLog("onDisconnected")
         AUIToast.show(text: NSLocalizedString("rtm_not_connected", comment: ""))
         // Indicates that the connection was not successful, and calling callapi will fail
+        // 表示连接未成功，调用callapi会失败
     }
     
     func onTokenPrivilegeWillExpire(channelName: String) {
         // Token has expired, needs to be renewed
+        // Token已过期，需要续期
         tokenPrivilegeWillExpire()
     }
 }

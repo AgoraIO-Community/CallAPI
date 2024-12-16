@@ -19,7 +19,6 @@ object HttpManager {
 
     fun sendPostRequest() {
 
-        // Create a JSON formatted request body
         val requestBody = RequestBody.create(MediaType.parse("application/json"), "{\"name\":\"John\", \"age\":30}")
 
         val request = Request.Builder()
@@ -39,10 +38,10 @@ object HttpManager {
         })
     }
 
-    // 1: RTC Token; 2: RTM Token
+    // 1: RTC Token ; 2: RTM Token
     fun token007(channelName: String, uid: String, onCompletion: ((String?) -> Unit)?) {
         val postBody = JSONObject()
-        val types = arrayOf(1, 2)
+        val types = arrayOf(1,2)
         val jsonArray = JSONArray(types)
         try {
             postBody.put("appId", BuildConfig.AG_APP_ID)

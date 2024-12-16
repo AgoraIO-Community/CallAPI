@@ -2,9 +2,9 @@
     <string name="app_name">OneToOne</string>
     <string name="app_channel_name">Channel Number</string>
     <string name="app_role">Role</string>
-    <string name="app_input_channel">Enter live channel name</string>
-    <string name="app_input_title_local_uid">Current user ID</string>
-    <string name="app_input_local_uid">Enter current user UID</string>
+    <string name="app_input_channel">Enter Live Channel Name</string>
+    <string name="app_input_title_local_uid">Current User ID</string>
+    <string name="app_input_local_uid">Enter Current User UID</string>
     <string name="app_role_broadcaster">Broadcaster</string>
     <string name="app_role_audience">Audience</string>
     <string name="app_join_channel">Join Channel</string>
@@ -18,59 +18,89 @@
     <string name="app_debug_bitrate">kbps</string>
     <string name="app_confirm">Confirm</string>
     <string name="app_pk_channel">Peer Channel</string>
-    <string name="app_pk_channel1">Channel One</string>
-    <string name="app_pk_channel2">Channel Two</string>
-    <string name="app_pk_channel3">Channel Three</string>
-    <string name="app_pk_channel4">Channel Four</string>
-    <string name="app_pk_channel5">Channel Five</string>
     <string name="app_update_pk_channel">Update Peer Channel Number</string>
-    <string name="app_quit_channel">Quit</string>
+    <string name="app_quit_channel">Exit</string>
     <string name="app_statistic">Real-time Data</string>
     <string name="app_statistic_dimensions">Encoding Resolution: %s</string>
     <string name="app_statistic_frame_rate">Encoding Frame Rate: %s fps</string>
     <string name="app_statistic_bitrate">Encoding Bitrate: %s Kbps</string>
-    <string name="app_pk_channels">Peer Channels: %s</string>
+    <string name="app_pk_channels">Peer Channel: %s</string>
     <string name="app_local_uid">UID: %s</string>
-    <string name="app_current_channel">Current Channel ID: %s</string>
     <string name="app_main_channel_empty">Joined channel cannot be empty</string>
-    <string name="app_user">User</string>
-    <string name="app_invites_you_to_1v1_call">Invites you to a 1v1 call</string>
-    <string name="app_im_app_key_not_configured">IM_APP_KEY not configured</string>
-    <string name="app_user_id_cannot_be_empty">User ID cannot be empty</string>
-    <string name="app_local_user_id_must_be_numeric">Local user ID must be numeric</string>
-    <string name="app_local_and_remote_user_id_must_be_numeric">Local and remote user IDs must be numeric</string>
-    <string name="app_create_show_to_1v1">Create a show for 1v1</string>
-    <string name="app_join_show_to_1v1">Join a show for 1v1</string>
-    <string name="app_enter_pure_1v1">Enter pure 1v1</string>
-    <string name="app_no_permission">No permission 😯</string>
-    <string name="app_rtm_connected">RTM connected</string>
-    <string name="app_rtm_disconnected">RTM disconnected</string>
-    <string name="app_rtm_connect_fail">RTM not logged in or connection error</string>
-    <string name="app_easemob_connect_fail">Easemob not logged in or connection error</string>
-    <string name="app_select_call_type">Select call type</string>
-    <string name="app_select_call_type_desc">Choose audio or video call</string>
-    <string name="app_call_type_video">Video</string>
-    <string name="app_call_type_audio">Audio</string>
-    <string name="app_call_dialog_prompt">Prompt</string>
-    <string name="app_call_api_initializing">Call API initializing</string>
-    <string name="app_no_target_user">No target user</string>
-    <string name="app_invite">Invite to 1v1</string>
-    <string name="app_agree">Agree</string>
-    <string name="app_reject">Reject</string>
-    <string name="app_cancel">Cancel</string>
-    <string name="app_calling_to_user">Calling user</string>
-    <string name="app_call_did_begin">Call started</string>
-    <string name="app_call_did_finish">Call ended</string>
-    <string name="app_call_did_reject">Call was rejected</string>
-    <string name="app_call_timeout">No response</string>
-    <string name="app_call_is_busy">User is busy</string>
-    <string name="app_call_is_cancel">Call was canceled</string>
-    <string name="app_rtm_show_to_1v1">RTM Show to 1v1</string>
-    <string name="app_rtm_1v1">RTM Pure 1v1</string>
-    <string name="app_easemob_show_to_1v1">Easemob Show to 1v1</string>
-    <string name="app_easemob_1v1">Easemob Pure 1v1</string>
-    <string name="app_role_broadcaster_uid">Broadcaster ID</string>
-    <string name="app_role_broadcaster_uid_placeholder">Enter Broadcaster ID</string>
-    <string name="app_first_frame_related_connected">First frame related to connection</string>
-    <string name="app_target_user_id">Target User UID</string>
+
+    <!-- Radio Buttons -->
+    <string name="radio_rtm_show_1v1">RTM Show to 1v1</string>
+    <string name="radio_rtm_pure_1v1">RTM Pure 1v1</string>
+    <string name="radio_easemob_show_1v1">Easemob Show to 1v1</string>
+    <string name="radio_easemob_pure_1v1">Easemob Pure 1v1</string>
+
+    <!-- Input Fields -->
+    <string name="input_broadcaster_id">Broadcaster ID</string>
+    <string name="input_broadcaster_id_hint">Enter broadcaster ID</string>
+
+    <!-- Checkboxes -->
+    <string name="checkbox_auto_accept">Auto accept incoming calls</string>
+    <string name="checkbox_first_frame">First frame related to connection</string>
+    <string name="checkbox_join_rtc">Join RTC channel in advance</string>
+
+    <!-- Toast Messages -->
+    <string name="toast_no_im_app_key">IM_APP_KEY not configured</string>
+    <string name="toast_user_id_empty">User ID cannot be empty</string>
+    <string name="toast_local_user_id_number">Local user ID must be numeric</string>
+    <string name="toast_both_user_id_number">Both local and remote user IDs must be numeric</string>
+    <string name="toast_get_token_failed">Get token failed</string>
+
+    <!-- Button Text -->
+    <string name="btn_create_show_to_1v1">Create Show to 1v1</string>
+    <string name="btn_join_show_to_1v1">Join Show to 1v1</string>
+    <string name="btn_enter_pure_1v1">Enter Pure 1v1</string>
+
+    <!-- Channel -->
+    <string name="app_current_channel">Current Channel: %s</string>
+    <string name="label_current_user_id">Current User ID: %1$s</string>
+
+    <!-- Call Type Dialog -->
+    <string name="call_type_dialog_title">Call Type Selection</string>
+    <string name="call_type_dialog_message">Select audio or video call</string>
+    <string name="call_type_audio">Audio</string>
+    <string name="call_type_video">Video</string>
+
+    <!-- Alert Dialog -->
+    <string name="alert_title">Notice</string>
+    <string name="alert_calling_user">Calling user %d</string>
+    <string name="alert_cancel">Cancel</string>
+    <string name="alert_incoming_call">User %1$d invites you to 1-on-1 call</string>
+    <string name="alert_accept">Accept</string>
+    <string name="alert_reject">Reject</string>
+
+    <!-- Toast Messages -->
+    <string name="toast_no_permission">No permission granted 😯</string>
+    <string name="toast_call_api_initializing">CallAPI Initializing</string>
+    <string name="toast_no_target_user">No Target User</string>
+    <string name="toast_rtm_connected">RTM connected</string>
+    <string name="toast_rtm_disconnected">RTM disconnected</string>
+    <string name="toast_easemob_connected">Easemob Client Connected</string>
+    <string name="toast_easemob_disconnected">Easemob Client Disconnected</string>
+    <string name="toast_rtm_not_logged_in">RTM not logged in or connection abnormal</string>
+    <string name="toast_easemob_not_logged_in">Easemob not logged in or connection abnormal</string>
+    <string name="toast_call_started">Call started %s</string>
+    <string name="toast_call_ended">Call ended</string>
+    <string name="toast_call_rejected">Call rejected</string>
+    <string name="toast_no_answer">No answer</string>
+    <string name="toast_user_busy">User is busy</string>
+
+    <!-- Call Status -->
+    <string name="call_status_start">Call started,\nRTC Channel: %1$s,\nCaller ID: %2$d,\nCurrent User ID: %3$d,\nStart Timestamp: %4$d ms</string>
+    <string name="call_status_end">Call ended,\nRTC Channel: %1$s,\nHangup User ID: %2$d,\nCurrent User ID: %3$d,\nEnd Timestamp: %4$d ms,\nDuration: %5$d ms</string>
+
+    <!-- Pure 1v1 Activity -->
+    <string name="pure_1v1_target_uid">Target User ID</string>
+    <string name="pure_1v1_target_uid_hint">Enter target user ID</string>
+    <string name="pure_1v1_current_uid">Current User ID</string>
+    <string name="pure_1v1_invite">Invite 1v1</string>
+    <string name="pure_1v1_hangup">Hangup 1v1</string>
+    <string name="pure_1v1_video_on">Video On</string>
+    <string name="pure_1v1_video_off">Video Off</string>
+    <string name="pure_1v1_audio_on">Audio On</string>
+    <string name="pure_1v1_audio_off">Audio Off</string>
 </resources>
