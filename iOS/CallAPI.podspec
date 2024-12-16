@@ -40,8 +40,7 @@ TODO: Add long description of the pod here.
   
   s.subspec 'All' do |ss|
     ss.source_files = 'CallAPI/Classes/**/*'
-    
-    ss.dependency 'AgoraRtm', '2.2.0'
+    ss.dependency 'AgoraRtm/RtmKit', '2.2.2'
   end
   
   s.subspec 'WithoutRTM' do |ss|
@@ -55,5 +54,5 @@ TODO: Add long description of the pod here.
     ]
   end
   
-  s.dependency 'AgoraRtcEngine_Special_iOS', '4.1.1.26'
+  s.dependency 'AgoraRtcEngine_iOS', '4.5.0'
 end

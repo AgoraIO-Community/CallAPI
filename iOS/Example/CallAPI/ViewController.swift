@@ -31,17 +31,22 @@ class ViewController: UIViewController {
     private let videoEncoderConfig = AgoraVideoEncoderConfiguration()
     
     private lazy var modeControl: UISegmentedControl = {
-        let items = ["RTM秀场1v1", "RTM纯1v1", "环信秀场1v1", "环信纯1v1"]
+        let items = [
+            NSLocalizedString("show_to_1v1_rtm", comment: ""),
+            NSLocalizedString("1v1_rtm", comment: ""),
+            NSLocalizedString("show_to_1v1_easemob", comment: ""),
+            NSLocalizedString("1v1_easemob", comment: "")
+        ]
         let control = UISegmentedControl(items: items)
-        control.setTitleTextAttributes([.foregroundColor: UIColor.black], for: .normal)
-        control.setTitleTextAttributes([.foregroundColor: UIColor.blue], for: .selected)
+        control.setTitleTextAttributes([.foregroundColor: UIColor.black, .font: UIFont.systemFont(ofSize: 12)], for: .normal)
+        control.setTitleTextAttributes([.foregroundColor: UIColor.blue, .font: UIFont.systemFont(ofSize: 12)], for: .selected)
         control.selectedSegmentIndex = 0
         control.addTarget(self, action: #selector(modeChanged), for: .valueChanged)
         return control
     }()
     
     private lazy var roleControl: UISegmentedControl = {
-        let items = ["主播", "观众"]
+        let items = [NSLocalizedString("broadcaster", comment: ""), NSLocalizedString("audience", comment: "")]
         let control = UISegmentedControl(items: items)
         control.setTitleTextAttributes([.foregroundColor: UIColor.black], for: .normal)
         control.setTitleTextAttributes([.foregroundColor: UIColor.blue], for: .selected)
@@ -53,8 +58,8 @@ class ViewController: UIViewController {
     private lazy var enterButton1: UIButton = {
         let button = UIButton()
         button.tag = 1
-        button.setTitle("创建秀场转1v1", for: .normal)
-        button.setTitle("加入秀场转1v1", for: .selected)
+        button.setTitle(NSLocalizedString("create_show_to_1v1", comment: ""), for: .normal)
+        button.setTitle(NSLocalizedString("join_show_to_1v1", comment: ""), for: .selected)
         button.backgroundColor = .blue
         button.addTarget(self, action: #selector(enterShowTo1v1(_ :)), for: .touchUpInside)
         return button
@@ -62,7 +67,7 @@ class ViewController: UIViewController {
     
     private lazy var enterButton2: UIButton = {
         let button = UIButton()
-        button.setTitle("进入纯1v1", for: .normal)
+        button.setTitle(NSLocalizedString("enter_1v1", comment: ""), for: .normal)
         button.backgroundColor = .blue
         button.addTarget(self, action: #selector(enterPure1v1(_ :)), for: .touchUpInside)
         return button
@@ -71,9 +76,9 @@ class ViewController: UIViewController {
     private var role: CallRole = .callee {
         didSet {
             if role == .callee {
-                enterButton1.setTitle("创建秀场转1v1", for: .normal)
+                enterButton1.setTitle(NSLocalizedString("create_show_to_1v1", comment: ""), for: .normal)
             } else {
-                enterButton1.setTitle("加入秀场转1v1", for: .normal)
+                enterButton1.setTitle(NSLocalizedString("join_show_to_1v1", comment: ""), for: .normal)
             }
             
             updateUI()
@@ -194,7 +199,7 @@ class ViewController: UIViewController {
     
     private lazy var userLabel: UILabel = {
         let label = UILabel()
-        label.text = "当前的用户id"
+        label.text = NSLocalizedString("current_user_id", comment: "")
         label.textColor = .black
         return label
     }()
@@ -203,7 +208,7 @@ class ViewController: UIViewController {
         let tf = UITextField()
         tf.backgroundColor = .white
         tf.borderStyle = .roundedRect
-        tf.placeholder = "当前的用户id"
+        tf.placeholder = NSLocalizedString("current_user_id", comment: "")
         tf.textColor = .black
         tf.keyboardType = .numberPad
         tf.addTarget(self, action: #selector(currentUserChanged), for: .editingChanged)
@@ -212,7 +217,7 @@ class ViewController: UIViewController {
     
     private lazy var callUserLabel: UILabel = {
         let label = UILabel()
-        label.text = "主播id"
+        label.text = NSLocalizedString("broadcaster_id", comment: "")
         label.textColor = .black
         return label
     }()
@@ -221,7 +226,7 @@ class ViewController: UIViewController {
         let tf = UITextField()
         tf.backgroundColor = .white
         tf.borderStyle = .roundedRect
-        tf.placeholder = "主播id"
+        tf.placeholder = NSLocalizedString("broadcaster_id", comment: "")
         tf.textColor = .black
         tf.keyboardType = .numberPad
         tf.addTarget(self, action: #selector(callUserTfChanged), for: .editingChanged)
@@ -242,9 +247,10 @@ class ViewController: UIViewController {
     private lazy var firstFrameDisableButton: UIButton = {
         let button = UIButton()
         button.backgroundColor = .blue
-        button.setTitle("音视频首帧与接通相关", for: .normal)
+        button.titleLabel?.adjustsFontSizeToFitWidth = true
+        button.setTitle(NSLocalizedString("first_frame_related_connected", comment: ""), for: .normal)
         button.setTitleColor(.white, for: .normal)
-        button.setTitle("音视频首帧与接通不相关", for: .selected)
+        button.setTitle(NSLocalizedString("first_frame_not_related_connected", comment: ""), for: .selected)
         button.setTitleColor(.white, for: .selected)
         button.titleLabel?.textAlignment = .left
         button.layer.cornerRadius = 5
@@ -254,7 +260,7 @@ class ViewController: UIViewController {
     
     private lazy var dimensionsLabel: UILabel = {
         let label = UILabel()
-        label.text = "分辨率"
+        label.text = NSLocalizedString("select_resolution", comment: "")
         label.textColor = .black
         return label
     }()
@@ -263,7 +269,7 @@ class ViewController: UIViewController {
         let tf = UITextField()
         tf.backgroundColor = .white
         tf.borderStyle = .roundedRect
-        tf.placeholder = "宽"
+        tf.placeholder = NSLocalizedString("select_width", comment: "")
         tf.textColor = .black
         tf.keyboardType = .numberPad
         tf.addTarget(self, action: #selector(dimensionsWTfChanged), for: .editingChanged)
@@ -274,7 +280,7 @@ class ViewController: UIViewController {
         let tf = UITextField()
         tf.backgroundColor = .white
         tf.borderStyle = .roundedRect
-        tf.placeholder = "高"
+        tf.placeholder = NSLocalizedString("select_height", comment: "")
         tf.textColor = .black
         tf.keyboardType = .numberPad
         tf.addTarget(self, action: #selector(dimensionsHTfChanged), for: .editingChanged)
@@ -371,7 +377,7 @@ class ViewController: UIViewController {
     }
     
     @objc func fpsChanged() {
-        let vc = UIAlertController(title: "选择fps", message: nil, preferredStyle: .alert)
+        let vc = UIAlertController(title: NSLocalizedString("select_fps", comment: ""), message: nil, preferredStyle: .alert)
         for (idx, item) in fpsItems.enumerated() {
             let action = UIAlertAction(title: "\(item.rawValue)", style: .default) {[weak self] action in
                 self?.fpsIndex = idx
@@ -403,7 +409,7 @@ class ViewController: UIViewController {
     
     @objc func enterShowTo1v1(_ button: UIButton) {
         if role == .caller, currentUserId == callUserId {
-            AUIToast.show(text: "直播频道名和1v1频道名不能相同")
+            AUIToast.show(text: "The live stream channel name and the 1v1 channel name cannot be the same.")
             return
         }
         
@@ -440,7 +446,7 @@ class ViewController: UIViewController {
                 vc.videoEncoderConfig = videoEncoderConfig
                 showVc = vc
             #else
-                AUIToast.show(text: "CallAPI未包含RTM，请检查集成方式")
+                AUIToast.show(text: NSLocalizedString("rtm_not_found", comment: ""))
             #endif
             } else {
                 let vc = EMShowTo1v1RoomViewController(showRoomId: "\(targetUserId)_live",
@@ -486,7 +492,7 @@ class ViewController: UIViewController {
                 vc.videoEncoderConfig = videoEncoderConfig
                 showVc = vc
             #else
-                AUIToast.show(text: "CallAPI未包含RTM，请检查集成方式")
+                AUIToast.show(text: NSLocalizedString("rtm_not_found", comment: ""))
             #endif
             } else {
                 let vc = EMPure1v1RoomViewController(currentUid: currentUserId,

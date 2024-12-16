@@ -7,23 +7,15 @@
 
 import AgoraRtcKit
 
-
-/// 场景化类型
+/// Scene type
 public enum APIType: Int {
-    case ktv = 1             //K歌
-    case call = 2            //呼叫
-    case beauty = 3          //美颜
-    case videoLoader = 4     //秒开/秒切
-    case pk = 5              //团战
-    case vitualSpace = 6     //
-    case screenSpace = 7     //屏幕共享
-    case audioScenario = 8   //音频scenario
+    case call = 2            // Call
 }
 
 enum APIEventType: Int {
-    case api = 0       //api事件
-    case cost          //耗时事件
-    case custom        //自定义事件
+    case api = 0       // API event
+    case cost          // Duration event
+    case custom        // Custom event
 }
 
 struct ApiEventKey {
@@ -35,9 +27,9 @@ struct ApiEventKey {
 }
 
 struct APICostEvent {
-    static let channelUsage = "channelUsage"                  //频道使用耗时
-    static let firstFrameActual = "firstFrameActual"          //首帧实际耗时
-    static let firstFramePerceived = "firstFramePerceived"    //首帧感官耗时
+    static let channelUsage = "channelUsage"                  // Channel usage duration
+    static let firstFrameActual = "firstFrameActual"          // Actual duration of the first frame
+    static let firstFramePerceived = "firstFramePerceived"    // Perceived duration of the first frame
 }
 
 let formatter = DateFormatter()

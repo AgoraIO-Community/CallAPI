@@ -16,14 +16,14 @@ public class SPUtil {
     }
 
     /**
-     * 获取SharedPreferences实例对象
+     * Get the SharedPreferences instance object
      */
     private static SharedPreferences getSharedPreference() {
         return MInstanceHolder.mInstance;
     }
 
     /**
-     * 保存一个Boolean类型的值！
+     * Save a Boolean value!
      */
     public static boolean putBoolean(String key, Boolean value) {
         SharedPreferences sharedPreference = getSharedPreference();
@@ -33,7 +33,7 @@ public class SPUtil {
     }
 
     /**
-     * 保存一个int类型的值！
+     * Save an int value!
      */
     public static boolean putInt(String key, int value) {
         SharedPreferences sharedPreference = getSharedPreference();
@@ -43,7 +43,7 @@ public class SPUtil {
     }
 
     /**
-     * 保存一个float类型的值！
+     * Save a float value!
      */
     public static boolean putFloat(String key, float value) {
         SharedPreferences sharedPreference = getSharedPreference();
@@ -53,7 +53,7 @@ public class SPUtil {
     }
 
     /**
-     * 保存一个long类型的值！
+     * Save a long value!
      */
     public static boolean putLong(String key, long value) {
         SharedPreferences sharedPreference = getSharedPreference();
@@ -63,7 +63,7 @@ public class SPUtil {
     }
 
     /**
-     * 保存一个String类型的值！
+     * Save a String value!
      */
     public static boolean putString(String key, String value) {
         SharedPreferences sharedPreference = getSharedPreference();
@@ -73,7 +73,7 @@ public class SPUtil {
     }
 
     /**
-     * 获取String的value
+     * Get the String value
      */
     public static String getString(String key, String defValue) {
         SharedPreferences sharedPreference = getSharedPreference();
@@ -81,7 +81,7 @@ public class SPUtil {
     }
 
     /**
-     * 获取int的value
+     * Get the int value
      */
     public static int getInt(String key, int defValue) {
         SharedPreferences sharedPreference = getSharedPreference();
@@ -89,7 +89,7 @@ public class SPUtil {
     }
 
     /**
-     * 获取float的value
+     * Get the float value
      */
     public static float getFloat(String key, Float defValue) {
         SharedPreferences sharedPreference = getSharedPreference();
@@ -97,7 +97,7 @@ public class SPUtil {
     }
 
     /**
-     * 获取boolean的value
+     * Get the boolean value
      */
     public static boolean getBoolean(String key, Boolean defValue) {
         SharedPreferences sharedPreference = getSharedPreference();
@@ -105,7 +105,7 @@ public class SPUtil {
     }
 
     /**
-     * 获取long的value
+     * Get the long value
      */
     public static long getLong(String key, long defValue) {
         SharedPreferences sharedPreference = getSharedPreference();

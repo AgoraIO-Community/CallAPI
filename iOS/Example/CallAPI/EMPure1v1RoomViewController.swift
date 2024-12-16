@@ -12,7 +12,9 @@ import CallAPI
 import AgoraRtcKit
 
 class EMPure1v1RoomViewController: UIViewController {
-    private var currentUid: UInt             //当前用户UID
+    // Current user UID
+    // 当前用户UID
+    private var currentUid: UInt
     private var prepareConfig: PrepareConfig
     var videoEncoderConfig: AgoraVideoEncoderConfiguration?
     
@@ -44,10 +46,13 @@ class EMPure1v1RoomViewController: UIViewController {
             case .connected:
                 muteAudioButton.isSelected = false
                 muteAudioButton.isHidden = false
+                muteVideoButton.isSelected = false
+                muteVideoButton.isHidden = false
                 self.leftView.isHidden = false
                 hangupButton.isHidden = false
             case .prepared, .idle, .failed:
                 muteAudioButton.isHidden = true
+                muteVideoButton.isHidden = true
                 self.leftView.isHidden = true
                 self.rightView.isHidden = true
                 self.callButton.isHidden = false
@@ -94,14 +99,14 @@ class EMPure1v1RoomViewController: UIViewController {
     private lazy var currentUserLabel: UILabel = {
         let label = UILabel()
         label.textColor = .white
-        label.text = "当前用户id: \(currentUid)"
+        label.text = "\(NSLocalizedString("current_user_id", comment: "")): \(currentUid)"
         return label
     }()
     
     private lazy var targetUserLabel: UILabel = {
         let label = UILabel()
         label.textColor = .white
-        label.text = "目标用户id"
+        label.text = NSLocalizedString("target_user_id", comment: "")
         return label
     }()
     
@@ -109,7 +114,7 @@ class EMPure1v1RoomViewController: UIViewController {
         let tf = UITextField()
         tf.backgroundColor = .white
         tf.borderStyle = .roundedRect
-        tf.placeholder = "需要呼叫的用户id"
+        tf.placeholder = NSLocalizedString("call_user_id", comment: "")
         tf.textColor = .black
         tf.keyboardType = .numberPad
         tf.addTarget(self, action: #selector(targetUserChanged), for: .editingChanged)
@@ -138,10 +143,18 @@ class EMPure1v1RoomViewController: UIViewController {
     }()
     
     private lazy var muteAudioButton: UIButton = {
-        let btn = UIButton()
+        let btn = UIButton(type: .system)
         btn.addTarget(self, action: #selector(muteAudioAction), for: .touchUpInside)
-        btn.setImage(UIImage(named: "mic_unmute"), for: .normal)
-        btn.setImage(UIImage(named: "mic_mute"), for: .selected)
+        btn.setTitle(NSLocalizedString("call_audio_off", comment: ""), for: .normal)
+        btn.setTitle(NSLocalizedString("call_audio_on", comment: ""), for: .selected)
+        return btn
+    }()
+    
+    private lazy var muteVideoButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.addTarget(self, action: #selector(muteVideoAction), for: .touchUpInside)
+        btn.setTitle(NSLocalizedString("call_video_off", comment: ""), for: .normal)
+        btn.setTitle(NSLocalizedString("call_video_on", comment: ""), for: .selected)
         return btn
     }()
     
@@ -180,6 +193,7 @@ class EMPure1v1RoomViewController: UIViewController {
         view.addSubview(callButton)
         view.addSubview(hangupButton)
         view.addSubview(muteAudioButton)
+        view.addSubview(muteVideoButton)
         
         currentUserLabel.frame = CGRect(x: 10, y: 80, width: 200, height: 40)
         targetUserLabel.sizeToFit()
@@ -191,10 +205,14 @@ class EMPure1v1RoomViewController: UIViewController {
         callButton.frame = CGRect(x: view.frame.width - 50, y: top, width: 40, height: 40)
         hangupButton.frame = callButton.frame
         
-        muteAudioButton.frame = CGRect(x: callButton.frame.origin.x - callButton.frame.size.width - 10,
-                                       y: top,
-                                       width: callButton.frame.width,
-                                       height: callButton.frame.height)
+        muteAudioButton.frame = CGRect(x: view.frame.width - 96,
+                                       y: callButton.frame.minY - 54,
+                                       width: 80,
+                                       height: 44)
+        muteVideoButton.frame = CGRect(x: view.frame.width - 96,
+                                       y: muteAudioButton.frame.minY - 54,
+                                       width: 80,
+                                       height: 44)
         
         leftView.frame = CGRect(x: 0, y: 50, width: view.frame.width / 2, height: view.frame.height / 2)
         rightView.frame = CGRect(x: view.frame.width / 2, y: 50, width: view.frame.width / 2, height: view.frame.height / 2)
@@ -205,7 +223,8 @@ class EMPure1v1RoomViewController: UIViewController {
     }
     
     private func initCallApi(completion: @escaping ((Bool)->())) {
-        //外部创建需要自行管理login
+        // External creation requires managing login by oneself
+        // 外部创建需要自己管理登录
         self.signalClient.login() {[weak self] err in
             guard let self = self else {return}
             if let err = err {
@@ -242,9 +261,10 @@ extension EMPure1v1RoomViewController {
     }
     
     private func _checkConnectionAndNotify() -> Bool{
-        //如果信令状态异常，不允许执行callapi操作
+        // If the signaling state is abnormal, callapi operations are not allowed
+        // 如果信令状态异常，不允许进行callapi操作
         guard signalClient.isConnected == true else {
-            AUIToast.show(text: "环信未登录或连接异常")
+            AUIToast.show(text: NSLocalizedString("easemob_connect_fail", comment: ""))
             return false
         }
         
@@ -270,34 +290,41 @@ extension EMPure1v1RoomViewController {
         guard self.callState == .prepared else {
             initCallApi { err in
             }
-            AUIToast.show(text: "CallAPi初始化中")
+            AUIToast.show(text: NSLocalizedString("callapi_initialize", comment: ""))
             return
         }
         
         let remoteUserId = targetUserId
         
-        let alertController = UIAlertController(title: "呼叫", message: "请选择呼叫类型", preferredStyle: .actionSheet)
-        // 添加操作按钮
-        let action1 = UIAlertAction(title: "视频呼叫", style: .default) {[weak self] _ in
+        let alertController = UIAlertController(title: NSLocalizedString("call", comment: ""),
+                                                message: NSLocalizedString("select_call_type", comment: ""),
+                                                preferredStyle: .actionSheet)
+        // Add video call button
+        let action1 = UIAlertAction(title: NSLocalizedString("video_call", comment: ""), style: .default) {[weak self] _ in
             self?.api.call(remoteUserId: remoteUserId) { error in
-                guard let _ = error, self?.callState == .calling else {return}
+                guard let error = error, self?.callState == .calling else {return}
                 self?.api.cancelCall { err in }
+                
+                AUIToast.show(text: "\(NSLocalizedString("call_fail", comment: "")): \(error.localizedDescription)")
             }
         }
         alertController.addAction(action1)
 
-        let action2 = UIAlertAction(title: "音频呼叫", style: .default) {[weak self] _ in
+        // Add audio call button
+        let action2 = UIAlertAction(title: NSLocalizedString("audio_call", comment: ""), style: .default) {[weak self] _ in
             self?.api.call(remoteUserId: remoteUserId,
                            callType: .audio,
                            callExtension: ["test_call": 111]) { error in
-                guard let _ = error, self?.callState == .calling else {return}
+                guard let error = error, self?.callState == .calling else {return}
                 self?.api.cancelCall { err in }
+                
+                AUIToast.show(text: "\(NSLocalizedString("call_fail", comment: "")): \(error.localizedDescription)")
             }
         }
         alertController.addAction(action2)
 
-        // 添加取消按钮
-        let cancelAction = UIAlertAction(title: "取消", style: .cancel, handler: nil)
+        // Add cancel action
+        let cancelAction = UIAlertAction(title: NSLocalizedString("cancel", comment: ""), style: .cancel, handler: nil)
         alertController.addAction(cancelAction)
         present(alertController, animated: true)
     }
@@ -309,14 +336,32 @@ extension EMPure1v1RoomViewController {
         }
     }
     
+    @objc func muteVideoAction() {
+        guard let roomId = connectedRoomId else { return }
+        muteVideoButton.isSelected = !muteVideoButton.isSelected
+        let connection = AgoraRtcConnection(channelId: roomId, localUid: Int(currentUid))
+        var ret: Int32 = 0
+        if (muteVideoButton.isSelected) {
+            rtcEngine.stopPreview()
+            ret = rtcEngine.muteLocalVideoStreamEx(true, connection: connection)
+        } else {
+            rtcEngine.startPreview()
+            ret = rtcEngine.muteLocalVideoStreamEx(false, connection: connection)
+        }
+        print("muteVideoAction ret: \(ret)")
+    }
+    
     @objc func muteAudioAction() {
         guard let roomId = connectedRoomId else { return }
         muteAudioButton.isSelected = !muteAudioButton.isSelected
-        
         let connection = AgoraRtcConnection(channelId: roomId, localUid: Int(currentUid))
-        let mediaOptions = AgoraRtcChannelMediaOptions()
-        mediaOptions.publishMicrophoneTrack = muteAudioButton.isSelected == false ? true : false
-        rtcEngine.updateChannelEx(with: mediaOptions, connection: connection)
+        var ret: Int32 = 0
+        if (muteAudioButton.isSelected) {
+            ret = rtcEngine.muteLocalAudioStreamEx(true, connection: connection)
+        } else {
+            ret = rtcEngine.muteLocalAudioStreamEx(false, connection: connection)
+        }
+        print("muteAudioAction ret: \(ret)")
     }
 }
 
@@ -338,7 +383,7 @@ extension EMPure1v1RoomViewController: AgoraRtcEngineDelegate {
 
 extension EMPure1v1RoomViewController:CallApiListenerProtocol {
     func tokenPrivilegeWillExpire() {
-        //更新token
+        // Update token; 
         NetworkManager.shared.generateToken(channelName: "",
                                             uid: "\(currentUid)",
                                             types: [.rtc]) {[weak self] token in
@@ -381,15 +426,19 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
                 return
             }
             connectedRoomId = fromRoomId
-            // 触发状态的用户是自己才处理
+            // Only handle if the user triggering the state is oneself
+            // 仅处理触发状态的用户是自己的情况
             if currentUid == toUserId {
                 connectedUserId = fromUserId
+                let title = String(format: NSLocalizedString("calling_format", comment: ""),
+                                   fromUserId,
+                                   NSLocalizedString(stateReason == .remoteAudioCall ? "audio": "video", comment: ""))
 //                if prepareConfig.autoAccept == false {
                     AUIAlertView()
                         .isShowCloseButton(isShow: true)
-                        .title(title: "用户 \(fromUserId) 邀请您1对1\(stateReason == .remoteAudioCall ? "语音": "视频")通话")
-                        .rightButton(title: "同意")
-                        .leftButton(title: "拒绝")
+                        .title(title: title)
+                        .rightButton(title: NSLocalizedString("accept", comment: ""))
+                        .leftButton(title: NSLocalizedString("reject", comment: ""))
                         .leftButtonTapClosure {[weak self] in
                             guard let self = self else { return }
                             guard self._checkConnectionAndNotify() else { return }
@@ -399,7 +448,14 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
                         .rightButtonTapClosure(onTap: {[weak self] text in
                             guard let self = self else { return }
                             guard self._checkConnectionAndNotify() else { return }
-                            self.api.accept(remoteUserId: fromUserId) { err in
+                            self.api.accept(remoteUserId: fromUserId) {[weak self] err in
+                                guard let err = err else { return }
+                                // If there is an error accepting the message, initiate a rejection and return to the initial state
+                                // 如果接受消息出错，发起拒绝并返回初始状态
+                                self?.api.reject(remoteUserId: fromUserId, reason: err.localizedDescription, completion: { err in
+                                })
+                                
+                                AUIToast.show(text: "\(NSLocalizedString("accept_fail", comment: "")): \(err.localizedDescription)")
                             }
                         })
                         .show()
@@ -409,8 +465,8 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
 //                if prepareConfig.autoAccept == false {
                     AUIAlertView()
                         .isShowCloseButton(isShow: true)
-                        .title(title: "呼叫用户 \(toUserId) 中")
-                        .rightButton(title: "取消")
+                        .title(title: "\(NSLocalizedString("calling_to_user", comment: "")): \(toUserId)")
+                        .rightButton(title: NSLocalizedString("cancel", comment: ""))
                         .rightButtonTapClosure(onTap: {[weak self] text in
                             guard let self = self else { return }
                             guard self._checkConnectionAndNotify() else { return }
@@ -427,6 +483,7 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
             AUIAlertManager.hiddenView()
             
             //setup configuration after join channel ex
+            // 加入频道后设置配置
             if let videoEncoderConfig = videoEncoderConfig {
                 rtcEngine.setVideoEncoderConfiguration(videoEncoderConfig)
                 let cameraConfig = AgoraCameraCapturerConfiguration()
@@ -438,15 +495,15 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
         case .prepared:
             switch stateReason {
             case .localHangup, .remoteHangup:
-                AUIToast.show(text: "通话结束", postion: .bottom)
+                AUIToast.show(text: NSLocalizedString("call_did_finish", comment: ""), postion: .bottom)
             case .localRejected, .remoteRejected:
-                AUIToast.show(text: "通话被拒绝")
+                AUIToast.show(text: NSLocalizedString("call_did_reject", comment: ""))
             case .callingTimeout:
-                AUIToast.show(text: "无应答")
+                AUIToast.show(text: NSLocalizedString("call_timeout", comment: ""))
             case .localCancelled, .remoteCancelled:
-                AUIToast.show(text: "通话被取消")
+                AUIToast.show(text: NSLocalizedString("call_is_cancel", comment: ""))
             case .remoteCallBusy:
-                AUIToast.show(text: "用户正忙")
+                AUIToast.show(text: NSLocalizedString("call_is_busy", comment: ""))
             default:
                 break
             }
@@ -468,7 +525,8 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
         NSLog("onCallEventChanged: \(event.rawValue), eventReason: \(eventReason ?? "")")
         switch event {
         case .remoteLeft:
-            //Demo通过监听远端用户离开进行结束异常通话，真实业务场景推荐使用服务端监听RTC用户离线来进行踢人，客户端通过监听踢人来结束异常通话
+            // The demo ends abnormal calls by listening for remote user departures. In real business scenarios, it is recommended to use the server to monitor RTC user disconnections for kicking users, while the client listens for kicks to end abnormal calls.
+            // 演示通过监听远端用户离开来结束异常通话。在实际业务场景中，建议使用服务器监控RTC用户断开连接来踢用户，同时客户端监听踢人结束异常通话。            
             hangupAction()
         default:
             break
@@ -480,6 +538,12 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
                            errorCode: Int,
                            message: String?) {
         NSLog("onCallErrorOccur errorEvent:\(errorEvent.rawValue), errorType: \(errorType.rawValue), errorCode: \(errorCode), message: \(message ?? "")")
+        if errorEvent == .rtcOccurError, errorType == .rtc, errorCode == AgoraErrorCode.tokenExpired.rawValue {
+            // Failed to join RTC channel, need to cancel the call and re-obtain the token
+            // 加入RTC频道失败，需要取消通话并重新获取token
+            self.api.cancelCall { err in
+            }
+        }
     }
     
     @objc func callDebugInfo(message: String, logLevel: CallLogLevel) {
@@ -497,11 +561,11 @@ extension EMPure1v1RoomViewController:CallApiListenerProtocol {
 extension EMPure1v1RoomViewController: ICallEasemobSignalClientListener {
     func onConnected() {
         NSLog("onConnected")
-        AUIToast.show(text: "环信已连接")
+        AUIToast.show(text: NSLocalizedString("easemob_did_connected", comment: ""))
     }
     
     func onDisconnected() {
         NSLog("onDisconnected")
-        AUIToast.show(text: "环信未连接")
+        AUIToast.show(text: NSLocalizedString("easemob_not_connected", comment: ""))
     }
 }

@@ -1,130 +1,572 @@
 
 # CallAPI Example
 
-本文档主要介绍如何快速跑通 CallAPI示例工程
+*English | [中文](README.zh.md)* 
+
+This document mainly describes how to quickly run the CallAPI sample project.
 
 - [CallAPI Example](#callapi-example)
-  - [1. 开通服务](#1-开通服务)
-  - [2. 运行示例](#2-运行示例)
-  - [3. 项目介绍](#3-项目介绍)
-  - [4. 快速集成](#4-快速集成)
-  - [5. 进阶集成](#5-进阶集成)
-  - [6. API说明](#6-api说明)
-  - [7. 实现原理](#7-实现原理)
-    - [7.1 优化呼叫性能和可靠性](#71-优化呼叫性能和可靠性)
-      - [7.1.1 加快出图速度](#711-加快出图速度)
-      - [7.1.2 提升消息送达率](#712-提升消息送达率)
-    - [6.2 影响通话速度的指标](#62-影响通话速度的指标)
+  - [1. Enable Service](#1-enable-service)
+  - [2. Run the Example](#2-run-the-example)
+  - [3. Project Introduction](#3-project-introduction)
+    - [3.1 Overview](#31-overview)
+    - [3.2 Role Introduction](#32-role-introduction)
+    - [3.3 Core Capabilities](#33-core-capabilities)
+    - [3.4 Gameplay Introduction](#34-gameplay-introduction)
+  - [4. Quick Integration](#4-quick-integration)
+    - [Add dependencies](#add-dependencies)
+    - [Implement a 1v1 call](#implement-a-1v1-call)
+      - [Initialize CallRtmManager](#initialize-callrtmmanager)
+      - [Add and listen for CallRtmManager state callbacks.](#add-and-listen-for-callrtmmanager-state-callbacks)
+      - [Initialize CallRtmSignalClient](#initialize-callrtmsignalclient)
+      - [Initialize CallAPI](#initialize-callapi)
+      - [Add and listen for CallAPI callbacks.](#add-and-listen-for-callapi-callbacks)
+      - [Handle CallRtmManager login](#handle-callrtmmanager-login)
+      - [prepare call environment](#prepare-call-environment)
+      - [Caller makes a call](#caller-makes-a-call)
+      - [listens for call events and processes](#listens-for-call-events-and-processes)
+      - [Receives call success](#receives-call-success)
+      - [Ends call](#ends-call)
+      - [Receives hang-up message](#receives-hang-up-message)
+      - [Updates channel id](#updates-channel-id)
+      - [Leaves and releases resources](#leaves-and-releases-resources)
+    - [Sequence diagram for calling CallAPI scenarios:](#sequence-diagram-for-calling-callapi-scenarios)
+  - [5. Advanced Integration](#5-advanced-integration)
+    - [5.1 Using an Initialized rtmClient](#51-using-an-initialized-rtmclient)
+    - [5.2 Switching the Timing of Publishing and Subscribing for the Callee to Save Costs](#52-switching-the-timing-of-publishing-and-subscribing-for-the-callee-to-save-costs)
+    - [5.3 Manually Enable and Disable Audio and Video Stream Publishing](#53-manually-enable-and-disable-audio-and-video-stream-publishing)
+    - [5.4 Carry Custom Data Structure in the Message](#54-carry-custom-data-structure-in-the-message)
+    - [5.5 Call Exception Diagnosis](#55-call-exception-diagnosis)
+    - [5.6 Listen to RTC Call Channel Callbacks](#56-listen-to-rtc-call-channel-callbacks)
+    - [5.6 Updating Expired Tokens](#56-updating-expired-tokens)
+  - [6. API Reference](#6-api-reference)
+  - [7. Implementation Principles](#7-implementation-principles)
+    - [7.1 Optimizing Call Performance and Reliability](#71-optimizing-call-performance-and-reliability)
+      - [7.1.1 Accelerating Rendering Speed](#711-accelerating-rendering-speed)
+      - [7.1.2 Improve Message Delivery Rate](#712-improve-message-delivery-rate)
+    - [7.2 Metrics Affecting Call Speed](#72-metrics-affecting-call-speed)
 
-## 1. 开通服务
-请参考官网文档 [开通服务](https://doc.shengwang.cn/doc/one-to-one-live/ios/get-started/enable-service)
+## 1. Enable Service
+- Follow [the Account Document](https://docs.agora.io/en/video-calling/reference/manage-agora-account) to Access the **App ID** and **App Certificate**.
+- Follow Signaling(Agora Rtm) Beginner's guide to enable signaling in Agora Console. 
+- [Options]Enable and Configure [Agora Chat](https://docs.agora.io/en/agora-chat/get-started/enable?platform=ios) to Access Your **AppKey**.
 
-## 2. 运行示例
 
-- 克隆或者直接下载项目源码
-- 申请账号和权限
-  > **注意，由于Demo里包含了基于 `Rtm` 和 `环信` 的两种1v1信令呼叫场景，如果您只需要体验其中的一种呼叫场景，可以跳过另一种的申请流程**
-  - 进入声网控制台获取 APP ID 和 APP 证书 [控制台入口](https://console.shengwang.cn/overview)
+## 2. Run the Example
 
-  - 点击创建项目
+- Environment Preparation
+  - Xcode version 14.0 or above
+  - Minimum supported system: iOS 13.0
+  - Please ensure that your project is set up with a valid developer signature.
+- Clone or directly download the project source code.
 
-    ![图片](https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/ent-full/sdhy_1.jpg)
-
-  - 选择项目基础配置, 鉴权机制需要选择**安全模式**
-
-    ![图片](https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/ent-full/sdhy_2.jpg)
-
-  - 在项目的功能配置中启用"实时消息 RTM"功能
-     ```json
-     注: 如果没有启动"实时消息 RTM"功能, 将无法体验项目完整功能
-     ```
-
-    ![图片](https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/ent-full/sdhy_7.jpg)
-
-  - 拿到项目 APP ID 与 APP 证书
-
-    ![图片](https://accktvpic.oss-cn-beijing.aliyuncs.com/pic/github_readme/ent-full/sdhy_3.jpg)
-  - [注册环信获取AppKey](https://doc.easemob.com/product/enable_and_configure_IM.html#%E5%88%9B%E5%BB%BA%E5%BA%94%E7%94%A8)
-    - 环信相关功能为Demo层的扩展功能，仅提供简单的实现消息收发，一些边缘case异常、版本升级等需要自行维护。
-    - CallApi Demo里的自定义环信信令管理使用的是 username + password 方式，如果需要使用更安全的token方式鉴权，需要自行实现
-
-- <a id="custom-report">开通声网自定义数据上报和分析服务</a>
-  > 该服务当前处于免费内测期，如需试用该服务，请联系 sales@agora.io
-
-- 在项目的[KeyCenter.swift](Example/CallAPI/KeyCenter.swift) 中填写声网 APP ID 和 APP 证书 以及环信 App Key (如果不需要体验环信自定义信令流程，IMAppKey可以设置为`""`)
+- Fill in the Agora APP ID, APP certificate, and AgoraChat App Key in the project's [KeyCenter.swift](Example/CallAPI/KeyCenter.swift) (if you do not need to experience the AgoraChat custom signaling process, you can set IMAppKey to `""`)
   ```swift
   static var AppId: String = <#Your AppId#>
   static var Certificate: String = <#Your Certificate#>
-  static var IMAppKey: String = <#Your EaseMob AppKey#>
+  static var IMAppKey: String = <#Your Agora Chat AppKey#>
   ```
 
+- Open the terminal, navigate to the [Podfile](Example/Podfile) directory, and execute the `pod install` command.
 
-- 打开终端，进入到[Podfile](Example/Podfile)目录下，执行`pod install`命令
+- Finally, open [CallAPI.xcworkspace](Example/CallAPI.xcworkspace) and run it to start your experience.
 
-- 最后打开[CallAPI.xcworkspace](Example/CallAPI.xcworkspace)，运行即可开始您的体验
+## 3. Project Introduction
+### 3.1 Overview
+1v1 Private Room is Agora's 1v1 video social scenario solution. It integrates Agora's RTC and RTM SDK products and capabilities to ensure optimal performance, such as smoothness, high definition, and instant connection for 1v1 interactions. This integration significantly lowers the development threshold and supports rapid deployment.
+>  CallApi is an open-source call invitation module that focuses purely on business logic, allowing you to customize and modify it freely without restricting your business processes.
+>  
+>  CallApi does not involve any UI, enabling you to flexibly customize the UI according to your needs.
+>
 
+### 3.2 Role Introduction
+- Caller: The party that initiates the call and invites the other party to join the conversation. The caller actively sends a call request to establish a video call connection and sends an invitation to the callee.
+- Callee: The party that receives the call request and is invited to join the conversation. Upon receiving the caller's invitation, the callee can either accept or decline the call. If the call is accepted, a video call connection is established with the caller.
 
-## 3. 项目介绍
-请参考官网文档 [项目介绍](https://doc.shengwang.cn/doc/one-to-one-live/ios/overview/product-overview)
+### 3.3 Core Capabilities
+- **Call**: The caller initiates a call.
+- **Cancel Call**: The caller can cancel the call to interrupt the current call before it is successfully connected.
+- **Accept Call**: The callee can accept the call after receiving the caller's request.
+- **Reject Call**: The callee can decline the call after receiving the caller's request.
+- **Hang Up**: Either the caller or callee can initiate a hang-up request to end the current call during the conversation.
 
->  **CallApi是一套开源的纯业务逻辑的呼叫邀请模块，您可以自由定制和修改，而不会限制您的业务流程。**
-> 
-> **CallApi不涉及任何UI，您可以根据自己的需求灵活地自定义UI。**
+### 3.4 Gameplay Introduction
+- 1v1 Scenario: Typically in stranger social scenarios, users can filter potential matches based on photos and personal profiles, or randomly match with other users through location and tags, allowing two users to engage in a private 1v1 video call. During the call, both users are defaulted to have their cameras and microphones on, sending and receiving audio and video streams bidirectionally.
+- Showroom to 1v1 Scenario: During a live broadcast, users can pay to initiate a 1v1 video call with the host. Once the call is connected, the host's original live stream does not close but stops broadcasting, allowing the host to transition to the 1v1 video call with the paying user. After the 1v1 video call ends, the host transitions back to the original live stream to continue broadcasting.
   
-## 4. 快速集成
-请参考官网文档 [集成 CallAPI](https://doc.shengwang.cn/doc/one-to-one-live/ios/basic-features/integrate-callapi)
+## 4. Quick Integration
+### Add dependencies
+  - Copy the example code from the [iOS](/iOS/) directory to your own project, for example, at the same level as the Podfile.
+  - Add the following line to your Podfile:
+    ```
+    pod 'CallAPI', :path => './iOS'
+    ```
+  - If your project already uses Agora's RTC or RTM SDK:
+  - Please ensure that the SDK versions are not lower than the following:
+    - AgoraRtm: 2.2.0
+    - AgoraRtcEngine_Special_iOS: 4.1.1.26
+  - If the versions of the external dependencies differ from the above, please modify the corresponding SDK versions in the [CallAPI.podspec](/iOS/CallAPI.podspec) file:
+    ```
+    s.dependency 'AgoraRtcEngine_Special_iOS', '4.1.1.26'
+    s.dependency 'AgoraRtm_iOS', '2.2.0'
+    ```
+  - Open the terminal and execute the `pod install` command to integrate the CallAPI code into your project.
 
+### Implement a 1v1 call
+#### Initialize CallRtmManager
+  ```swift
+  let rtmManager = CallRtmManager(appId: <#AppId#>,
+                                  userId: <#UserId#>,
+                                  rtmClient: nil)
+  ```
+#### Add and listen for CallRtmManager state callbacks.
+  ```swift
+  rtmManager.delegate = self
 
-## 5. 进阶集成
-请参考官网文档 [进阶集成指引](https://doc.shengwang.cn/doc/one-to-one-live/ios/advanced-features/integration-guideline)
+  extension ViewController: ICallRtmManagerListener {
+      func onConnected() {
+        // Network connected, signaling can be sent and received normally.
+      }
 
-## 6. API说明
+      func onDisconnected() {
+        // Network not connected, signaling cannot be sent or received at this time; the business layer can handle exceptions based on the current status.
+      }
+
+      func onTokenPrivilegeWillExpire(channelName: String) {
+        // Token expired, need to refresh the RTM Token.
+      }
+  }
+  ```
+
+#### Initialize CallRtmSignalClient
+  ```swift
+  let signalClient = CallRtmSignalClient(rtmClient: rtmManager.getRtmClient())
+  ```
+
+#### Initialize CallAPI
+  ```swift
+  let config = CallConfig()
+  config.appId = <#AppId#>
+  config.userId = <#UserId#>
+  config.rtcEngine = rtcEngine
+  config.signalClient = signalClient
+
+  callApi.initialize(config: config)
+  ```
+
+#### Add and listen for CallAPI callbacks.
+  ```swift
+  callApi.addListener(listener: self)
+
+  extension ViewController: CallApiListenerProtocol {
+      func onCallStateChanged(with state: CallStateType,
+                              stateReason: CallStateReason,
+                              eventReason: String,
+                              eventInfo: [String : Any]) {
+          // ...
+      }
+  }
+  ```
+
+#### Handle CallRtmManager login
+  ```swift
+  rtmManager?.login(rtmToken: rtmToken, completion: { err in
+      if let _ = err { return }
+      // Login successful, you can start preparing the call environment.
+  })
+  ```
+
+#### prepare call environment
+  ```swift
+  // Prepare the call environment
+  let prepareConfig = PrepareConfig()
+  prepareConfig.rtcToken = <#Universal RTC Token#>
+  prepareConfig.roomId = <#Channel ID to call#>
+  prepareConfig.localView = callVC.localCanvasView.canvasView
+  prepareConfig.remoteView = callVC.remoteCanvasView.canvasView
+  // If you want to send extension information to the other party, you can achieve this through this parameter
+  prepareConfig.userExtension = nil
+
+  callApi.prepareForCall(prepareConfig: prepareConfig) { err in
+      // Success means you can start making the call
+  }
+  ```
+    
+  #### Caller makes a call
+  - Video call
+    ```swift
+    private func _call(remoteUserId: UInt) {
+        // Check if the call can be made; the CallAPI state should be "prepared"
+        if callState == .idle || callState == .failed {
+            // The call environment is not prepared or has encountered an error; need to reprepare the call environment
+
+            // Error message
+
+            return
+        }
+        
+        callApi.call(remoteUserId: remoteUserId) { [weak self] err in
+            guard let err = err, self?.callState == .calling else { return }
+            // Call failed, cancel the call and return to idle state
+            self?.callApi.cancelCall(completion: { err in
+            })
+        }
+    }
+      ```
+  - Audio call
+    ```swift
+    private func _call(remoteUserId: UInt) {
+        // Need to check if the call can be made; if the CallAPI is complete, the state will be "prepared"
+        if callState == .idle || callState == .failed {
+            // The call environment is not prepared or has encountered an error; need to reprepare the call environment
+
+            // Error message
+
+            return
+        }
+        
+        callApi.call(remoteUserId: remoteUserId, callType: .audio, callExtension: [:]) { [weak self] err in
+            guard let err = err, self?.callState == .calling else { return }
+            // Call failed, cancel the call and return to idle state
+            self?.callApi.cancelCall(completion: { err in
+            })
+        }
+    }
+    ```
+#### listens for call events and processes
+  ```swift
+  func onCallStateChanged(with state: CallStateType,
+                        stateReason: CallStateReason,
+                        eventReason: String,
+                        eventInfo: [String: Any]) {
+      switch state {
+      case .calling:
+          let fromUserId = eventInfo[kFromUserId] as? UInt ?? 0
+          let fromRoomId = eventInfo[kFromRoomId] as? String ?? ""
+          let toUserId = eventInfo[kRemoteUserId] as? UInt ?? 0
+
+          if currentUid == "\(toUserId)" {
+              // The current user is the callee
+
+              // Get user information for displaying in the popup
+              let user = userList.first { \$0.userId == "\(fromUserId)" }
+              let dialog = CalleeDialog.show(user: user)
+              // Accept the call
+              dialog?.acceptClosure = { [weak self] in
+                  guard let self = self else { return }
+                  self.callApi.accept(remoteUserId: fromUserId) { [weak self] err in
+                      guard let err = err else { return }
+                      // If there is an error accepting the call, reject it and return to the initial state
+                      self?.api.reject(remoteUserId: fromUserId, reason: err.localizedDescription, completion: { err in
+                      })
+                  }
+              }
+              // Reject the call
+              dialog?.rejectClosure = { [weak self] in
+                  self?.callApi.reject(remoteUserId: fromUserId, reason: "reject by user") { err in
+                  }
+              }
+          } else if currentUid == "\(fromUserId)" {
+              // The current user is the caller
+
+              // Get user information for displaying in the popup
+              let user = userList.first { \$0.userId == "\(toUserId)" }
+              let dialog = CallerDialog.show(user: user)
+              // Cancel the call
+              dialog?.cancelClosure = { [weak self] in
+                  self?.callApi.cancelCall(completion: { err in
+                  })
+              }
+          }
+      default:
+          break
+      }
+  }
+  ```
+#### Receives call success
+  ```swift
+  func onCallStateChanged(with state: CallStateType,
+                        stateReason: CallStateReason,
+                        eventReason: String,
+                        eventInfo: [String : Any]) {
+      switch state {
+      case .connected:
+
+          // Display the call page.
+          present(callVC, animated: false)
+          break
+      default:
+          break
+      }
+  }
+  ```
+#### Ends call
+  ```swift
+  func _hangupAction() {
+      callApi?.hangup(remoteUserId: UInt(targetUser?.userId ?? "") ?? 0, reason: nil, completion: { err in
+      })
+  ...
+  ```
+
+#### Receives hang-up message
+  ```swift
+  func onCallStateChanged(with state: CallStateType,
+                        stateReason: CallStateReason,
+                        eventReason: String,
+                        eventInfo: [String: Any]) {
+      let currentUid = userInfo?.userId ?? ""
+
+      switch state {
+      case .prepared:
+          switch stateReason {
+          case .localHangup, .remoteHangup:
+              // Remove the call page
+              callVC.dismiss(animated: false)
+              // Display rejection information
+
+          default:
+              break
+          }
+      default:
+          break
+      }
+  }
+  ```
+
+#### Updates channel id
+  ```swift
+  // Prepare the call environment
+  let prepareConfig = PrepareConfig()
+  // Set the new channel ID
+  prepareConfig.roomId = <#Channel ID to call#>
+  // Other property settings are omitted here. Please ensure to synchronize the settings for other properties.
+
+  callApi.prepareForCall(prepareConfig: prepareConfig) { err in
+      // Success means you can start making the call
+  }
+  ```
+
+#### Leaves and releases resources
+  ```swift
+  // Clear CallAPI cache
+  callApi.deinitialize {
+      // Destroy RTC instance
+      AgoraRtcEngineKit.destroy()
+
+      // Logout from RTM service
+      self.rtmManager.logout()
+
+      // Other business logic
+  }
+  ```
+
+### Sequence diagram for calling CallAPI scenarios:
+  - 1v1 scenario
+   <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_pure1v1.en.png" width="500px"><br><br>
+  - Show to 1v1
+    <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/100/sequence_showto1v1.en.png" width="500px"><br><br>
+
+## 5. Advanced Integration
+### 5.1 Using an Initialized rtmClient
+Agora's CallAPI for 1v1 private rooms has already implemented the necessary encapsulation for RTM services. If your project already has an RTM instance (rtmClient) before integrating the 1v1 private room, you can directly use the initialized RTM instance and then call the relevant functionalities.
+
+> If you use your own created `rtmClient` instance, you can manage the RTM login state yourself; you can also manage login and logout using the `login` and `logout` methods provided in our `CallRtmManager`.
+
+```swift
+let rtmClient: AgoraRtmClientKit? = _createRtmClient()
+rtmClient?.login(token) {[weak self] resp, error in
+    if let error = error {return}
   
-请参考官网文档 [场景化 API](https://doc.shengwang.cn/api-ref/one-to-one-live/ios/call-api)
+  // Once logged in, you can initialize CallRtmManager, CallRtmSignalClient, and CallApi
+}
+```
 
-## 7. 实现原理
-### 7.1 优化呼叫性能和可靠性
-#### 7.1.1 加快出图速度
-  - 1.使用[万能Token](https://doc.shengwang.cn/doc/rtc/ios/best-practice/wildcard-token)
-    - 为了提高通话质量和稳定性，我们采用万能 Token，可以节省因加入不同频道获取 Token 的时间，这意味着，在使用我们的服务时，您无需频繁获取 Token，而只需使用一个固定的 Token 即可。这样不仅可以提高您的使用效率，还可以让您更加专注于通话内容本身。
-    - > 注意：为了保障通话的私密性和安全性，推荐每次呼叫都采用**不同的RTC频道号**。
-  - 2.加快主叫出图速度
-    - 2.1 **`[可选]`** 初始化时，可以提前加入自己的 RTC 频道。**`请注意，这种行为可能会导致额外的费用。如果对费用比较在意，您可以选择忽略此步骤`**。
-    - 2.2 在向被叫发起呼叫时
-      - 2.2.1 加入自己的 RTC 频道。
-      - 2.2.2 往自己的RTC频道发送音视频流。
-      - 2.2.3 订阅远端的视频流，不订阅音频流。
-      - 2.2.4 同时，为了避免错过首个 I 帧解码导致可能的首帧渲染慢，您需要创建一个临时的画布，并使用 `setupRemoteVideoEx` 方法将被叫用户的视频流渲染到该画布中。
-    - 2.3 当收到收到被叫的接受消息后，开始订阅远端音频流。
-    - 2.4 当收到被叫方的首帧并且已经接收到被叫方的同意后，即可认为连接成功。此时，您可以将之前创建的临时画布添加到视图中，完成视频的渲染。
-  - 3.加快被叫出图速度
-    - 3.1 **`[可选][推荐]`** 当收到主叫呼叫后
-      - 3.1.1 立即加入主叫的RTC频道。
-      - 3.1.2 往主叫RTC频道推送音视频流。
-      - 3.1.3 然后订阅远端的视频流，不订阅音频流。
-      - 3.1.4 同时，为了避免错过首个 I 帧解码导致可能的首帧渲染慢，您需要创建一个临时的画布，并使用 `setupRemoteVideoEx` 方法将主叫用户的视频流渲染到该画布中。
-    **`请注意，[步骤3.1]会导致额外费用。如果对费用比较敏感，您可以选择忽略此步骤`**。
-    - 3.2 当点击接受后
-      - 3.2.1 如果收到呼叫时没有执行 **`[步骤3.1]`** ，那么需要在此处执行 **`[步骤3.1]`** 。
-      - 3.2.2 开始订阅远端音频流。
-    - 3.3 当收到主叫方的首帧后，即可确认连接成功。此时，您可以将之前创建的临时画布添加到可视化视图中，从而完成视频渲染的过程。
-  - 4.时序图
-      <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/200/sequence_solution_1v1.zh.png" width="500px"><br><br>
+### 5.2 Switching the Timing of Publishing and Subscribing for the Callee to Save Costs
+- There are two timing options for the callee's publishing and subscribing after receiving a call:
+  - Automatically publish audio and video streams and subscribe to the video stream upon receiving the call, which is the default behavior.
+  - Publish audio and video streams and subscribe to the video stream only after the callee accepts the call.
+- You can set the timing for publishing and subscribing through the optional callback canJoinRtcOnCalling in the CallApiListenerProtocol:
+  - If it returns true or the callback method is not implemented, the default streaming strategy will be used, meaning audio and video streams will be published and subscribed to upon receiving the call.
+  - If it returns false, the strategy will be to publish audio and video streams and subscribe to the video stream only after accepting the call.
   
-#### 7.1.2 提升消息送达率
-  - 增加消息回执(如果信令通道有则忽略)
-  - 增加超时重试(如果信令通道有则忽略)
-  - 选择送达率高的信令通道，例如声网RTM
+```swift
+/// Determine whether to join RTC when receiving a call
+/// @param eventInfo: Extended information received when the call is received
+/// @return
+/// - true: Can join
+/// - false: Cannot join
+@objc optional func canJoinRtcOnCalling(eventInfo: [String: Any]) -> Bool
+```
+### 5.3 Manually Enable and Disable Audio and Video Stream Publishing
+Since the `CallAPI` internally starts audio and video capture during a call and stops it when the call ends, if external manual activation of audio and video capture is needed after ending the call (for example, when `onCallStateChanged` returns `(state: prepared))`, you can enable the capture.
 
-### 6.2 影响通话速度的指标
-  - 主叫
-    - 呼叫-被叫收到呼叫的耗时
-    - 呼叫-收到被叫接受呼叫的耗时
-    - 呼叫-被叫加入频道的耗时
-    - 呼叫-主叫自己加入频道的耗时
-    - 呼叫-收到被叫首帧的耗时
-  - 被叫
-    - 收到呼叫-接受呼叫的耗时
-    - 收到呼叫-被叫自己加入频道的耗时
-    - 收到呼叫-主叫加入频道的耗时
-    - 收到呼叫-收到主叫首帧的耗时
+```swift
+rtcEngine.enableLocalAudio(true)
+rtcEngine.enableLocalVideo(true)
+```
+
+### 5.4 Carry Custom Data Structure in the Message
+By setting parameters in the `userExtension` attribute of the `PrepareConfig`, you can attach additional user extension information when sending messages to the other party (such as for call, cancel call, agree, reject, etc.). The other party can receive this `userExtension` through callback messages to obtain relevant additional information when processing the message.
+
+```swift
+public func onCallStateChanged(with state: CallStateType,
+                               stateReason: CallStateReason,
+                               eventReason: String,
+                               eventInfo: [String : Any]) {
+    let userExtension = eventInfo[kFromUserExtension] as? [String: Any]
+    ...          
+}
+```
+
+### 5.5 Call Exception Diagnosis
+During the connection process on both ends (when the state is calling/connecting/connected), you can obtain the call ID for the current call on both ends using the getCallId method.
+
+You can also query the duration of various nodes for the current call through the internal log reporting of the CallAPI in the Agora backend. If you need to use this, you can contact sales@agora.io to apply for the Agora custom data reporting and analysis service.
+
+### 5.6 Listen to RTC Call Channel Callbacks
+To better understand the current state and events of the call channel, you can also listen to the RTC channel callbacks. Since the `joinChannelEx` method is used to join the RTC channel in the `CallAPI`, you cannot use the `rtcEngine.addDelegate` method. Instead, you need to use `rtcEngine.addDelegateEx` and specify the corresponding channel to add the `delegate`:
+
+```swift
+// You can save the call's channel ID when receiving the call state
+func onCallStateChanged(with state: CallStateType,
+                        stateReason: CallStateReason,
+                        eventReason: String,
+                        eventInfo: [String : Any]) {
+    switch state {
+    case .calling:
+        roomId = eventInfo[kFromRoomId] as? String ?? ""
+    default:
+        break
+    }
+}
+
+// Set up the listener using the channel ID after receiving the joinRTCStart event
+@objc func onCallEventChanged(with event: CallEvent, eventReason: String?) {
+    switch event {
+    case .joinRTCStart:
+        /// @param roomId Current RTC call channel ID
+        /// @param currentUid Current user ID
+        let connection = AgoraRtcConnection(channelId: roomId, localUid: Int(currentUid))
+        rtcEngine.addDelegateEx(self, connection: connection)
+    default:
+        break
+    }
+}
+
+```
+The ID of the current RTC call channel (the `roomId` parameter) can be parsed from `eventInfo` when the state is `calling` in the `onCallStateChanged` method.
+> **Note:** 
+> You need to ensure that the joinRTCStart event has been triggered before joining; calling rtcEngine.addDelegateEx before this event will be ineffective.
+
+
+### 5.6 Updating Expired Tokens
+You can update the expired tokens for signaling and RTC in the following way.
+
+**Signaling Token**
+1. Monitor whether the RTM token has expired. You can do this by [adding and listening to the CallRtmManager state callback](#add-and-listen-for-callrtmmanager-state-callbacks)
+, specifically the `onTokenPrivilegeWillExpire` method of ICallRtmManagerListener``.
+   ```swift
+   extension Pure1v1RoomViewController: ICallRtmManagerListener {
+      func onTokenPrivilegeWillExpire(channelName: String) {
+          // The token is about to expire; a new token needs to be obtained.
+      }
+   }
+   ```
+2. Update Token。
+   ```swift
+   // Update RTC Token
+   self.api.renewToken(with: rtcToken)
+
+   // Update RTM Token
+   self.rtmManager?.renewToken(rtmToken: rtmToken)
+
+   // To ensure that both RTM and RTC Tokens are valid simultaneously, it is recommended to update both tokens at the same time.
+   ```
+
+**RTC Token**
+1. Monitor whether the RTC Token has expired.
+   - Listen for expired tokens during a call.
+   ```swift
+   extension Pure1v1RoomViewController: CallApiListenerProtocol {
+       func tokenPrivilegeWillExpire() {
+       // The token is about to expire; need to retrieve the token again
+       }
+   }
+   ```
+   - Monitor for expired tokens before starting a call.
+   ```swift
+   extension Pure1v1RoomViewController: CallApiListenerProtocol {
+       @objc func onCallError(with errorEvent: CallErrorEvent,
+                               errorType: CallErrorCodeType,
+                               errorCode: Int,
+                               message: String?) {
+           if errorEvent == .rtcOccurError, errorType == .rtc, errorCode == AgoraErrorCode.tokenExpired.rawValue {
+               // Failed to join the RTC channel; need to cancel the call and retrieve the Token again
+               self.api.cancelCall { err in
+               }
+           }
+       }
+   }
+   ```
+
+2. Update Token.
+   ```swift
+   // Update RTC Token
+   self.api.renewToken(with: rtcToken)
+
+   // Update RTM Token
+   self.rtmManager?.renewToken(rtmToken: rtmToken)
+
+   // To ensure that both RTM and RTC Tokens are valid simultaneously, it is recommended to update both tokens at the same time.
+   ```
+## 6. API Reference
+- Refer to the [link](./CallAPI/Classes/CallApiProtocol.swift) to review the API for CallAPI.
+- Refer to the [link](./CallAPI/Classes/SignalClient/ISignalClient.swift) to review the API for SignalClient.
+
+
+## 7. Implementation Principles
+### 7.1 Optimizing Call Performance and Reliability
+#### 7.1.1 Accelerating Rendering Speed
+  - 1. Use [Wildcard Token](https://doc.shengwang.cn/doc/rtc/ios/best-practice/wildcard-token)
+    - To improve call quality and stability, we use a wildcard token, which saves time spent obtaining tokens for joining different channels. This means that when using our service, you do not need to frequently obtain tokens; you only need to use a fixed token. This not only improves your efficiency but also allows you to focus more on the content of the call itself.
+    - > Note: To ensure the privacy and security of calls, it is recommended to use **different RTC channel numbers** for each call.
+  - 2. Accelerate the caller's rendering speed
+    - 2.1 **`[Optional]`** During initialization, you can join your RTC channel in advance. **`Please note that this behavior may incur additional costs. If you are concerned about costs, you may choose to skip this step.`**
+    - 2.2 When initiating a call to the callee
+      - 2.2.1 Join your RTC channel.
+      - 2.2.2 Send audio and video streams to your RTC channel.
+      - 2.2.3 Subscribe to the remote video stream, and do not subscribe to the audio stream.
+      - 2.2.4 At the same time, to avoid missing the first I-frame decoding, which may cause slow rendering of the first frame, you need to create a temporary canvas and use the `setupRemoteVideoEx` method to render the callee's video stream on that canvas.
+    - 2.3 After receiving the callee's acceptance message, start subscribing to the remote audio stream.
+    - 2.4 When the first frame from the callee is received and the callee's agreement is confirmed, the connection can be considered successful. At this point, you can add the previously created temporary canvas to the view to complete the video rendering.
+  - 3. Accelerate the callee's rendering speed
+    - 3.1 **`[Optional][Recommended]`** After receiving the caller's call
+      - 3.1.1 Immediately join the caller's RTC channel.
+      - 3.1.2 Push audio and video streams to the caller's RTC channel.
+      - 3.1.3 Then subscribe to the remote video stream, and do not subscribe to the audio stream.
+      - 3.1.4 At the same time, to avoid missing the first I-frame decoding, which may cause slow rendering of the first frame, you need to create a temporary canvas and use the `setupRemoteVideoEx` method to render the caller's video stream on that canvas.
+    **`Please note that [Step 3.1] may incur additional costs. If you are sensitive to costs, you may choose to skip this step.`**
+    - 3.2 After clicking accept
+      - 3.2.1 If [Step 3.1] was not executed when receiving the call, then you need to execute [Step 3.1] here.
+      - 3.2.2 Start subscribing to the remote audio stream.
+    - 3.3 After receiving the first frame from the caller, the connection can be confirmed as successful. At this point, you can add the previously created temporary canvas to the visual view, thus completing the video rendering process.
+  - 4. Sequence Diagram
+      <br><br><img src="https://fullapp.oss-cn-beijing.aliyuncs.com/scenario_api/callapi/diagram/200/sequence_solution_1v1.en.png" width="500px"><br><br>
+  
+#### 7.1.2 Improve Message Delivery Rate
+  - Add message acknowledgment (ignore if signaling channel is available)
+  - Add timeout retries (ignore if signaling channel is available)
+  - Select signaling channels with higher delivery rates, such as Agora RTM
+
+### 7.2 Metrics Affecting Call Speed
+  - Caller
+    - Time taken from call initiation to the callee receiving the call
+    - Time taken from call initiation to receiving the callee's acceptance
+    - Time taken from call initiation to the callee joining the channel
+    - Time taken from call initiation to the caller joining the channel
+    - Time taken from call initiation to receiving the first frame from the callee
+  - Callee
+    - Time taken from receiving the call to accepting the call
+    - Time taken from receiving the call to the callee joining the channel
+    - Time taken from receiving the call to the caller joining the channel
+    - Time taken from receiving the call to receiving the first frame from the caller

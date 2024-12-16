@@ -19,7 +19,6 @@ object HttpManager {
 
     fun sendPostRequest() {
 
-        // 创建一个 JSON 格式的请求体
         val requestBody = RequestBody.create(MediaType.parse("application/json"), "{\"name\":\"John\", \"age\":30}")
 
         val request = Request.Builder()
@@ -48,7 +47,7 @@ object HttpManager {
             postBody.put("appId", BuildConfig.AG_APP_ID)
             postBody.put("appCertificate", BuildConfig.AG_APP_CERTIFICATE)
             postBody.put("channelName", channelName)
-            postBody.put("expire", 1500) // s
+            postBody.put("expire", 1500) // expire seconds
             postBody.put("src", "Android")
             postBody.put("ts", System.currentTimeMillis())
             postBody.put("types", jsonArray)
@@ -77,10 +76,10 @@ object HttpManager {
                         onCompletion?.invoke(null)
                     }
                 }
-                Log.d(TAG, "http response: $json")
+                Log.d(TAG, "HTTP response: $json")
             }
             override fun onFailure(call: Call, e: IOException) {
-                Log.d(TAG, "http error")
+                Log.d(TAG, "HTTP error")
                 runOnUiThread {
                     onCompletion?.invoke(null)
                 }

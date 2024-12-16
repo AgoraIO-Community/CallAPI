@@ -15,6 +15,7 @@ import com.hyphenate.chat.EMTextMessageBody
 import com.hyphenate.exceptions.HyphenateException
 import es.dmoral.toasty.Toasty
 import io.agora.onetoone.AGError
+import io.agora.onetoone.R
 import io.agora.rtm.PublishOptions
 import io.agora.rtm.RtmConstants
 import java.util.concurrent.Executors
@@ -35,8 +36,10 @@ class CallEasemobSignalClient(
     init {
         val options = EMOptions()
         options.appKey = appKey
-        // 其他 EMOptions 配置。
+        // Other EMOptions configurations
+        // 其他 EMOptions 配置
         EMClient.getInstance().init(context, options)
+        // Register message listener
         // 注册消息监听
         EMClient.getInstance().chatManager().addMessageListener(this)
         EMClient.getInstance().addConnectionListener(this)
@@ -48,18 +51,23 @@ class CallEasemobSignalClient(
 
     fun login(completion: ((success: Boolean) -> Unit)?) {
         Thread {
+            // Registration
             // 注册
             try {
-                // 同步方法，会阻塞当前线程。
+                // Synchronous method, will block current thread
+                // 同步方法，会阻塞当前线程
                 EMClient.getInstance().createAccount(userId.toString(), userId.toString())
 
             } catch (e: HyphenateException) {
-                //失败
+                // Failed
+                // 失败
                 Log.e(TAG, "createAccount failed: ${e.message}, code: ${e.errorCode}")
             }
 
+            // Login
             // 登陆
             EMClient.getInstance().login(userId.toString(), userId.toString(), object : EMCallBack {
+                // Login success callback
                 // 登录成功回调
                 override fun onSuccess() {
                     Log.d(TAG, "login success")
@@ -69,6 +77,7 @@ class CallEasemobSignalClient(
                     completion?.invoke(true)
                 }
 
+                // Login failure callback with error information
                 // 登录失败回调，包含错误信息
                 override fun onError(code: Int, error: String) {
                     Log.e(TAG, "login failed, code:$code, msg:$error")
@@ -113,25 +122,33 @@ class CallEasemobSignalClient(
         options.setChannelType(RtmConstants.RtmChannelType.USER)
         val startTime = System.currentTimeMillis()
 
-        // `content` 为要发送的文本内容，`toChatUsername` 为对方的账号。
+        // `content` is the text content to send, `toChatUsername` is the recipient's account
+        // `content` 为要发送的文本内容，`toChatUsername` 为对方的账号
         val msg = EMMessage.createTextSendMessage(message, userId)
+        // Chat type: single chat is EMMessage.ChatType.Chat
         // 会话类型：单聊为 EMMessage.ChatType.Chat
         msg.chatType = EMMessage.ChatType.Chat
         msg.deliverOnlineOnly(true)
-        // 发送消息时可以设置 `EMCallBack` 的实例，获得消息发送的状态。可以在该回调中更新消息的显示状态。例如消息发送失败后的提示等等。
+        // When sending a message, you can set an instance of `EMCallBack` to get the message sending status
+        // Can update message display status in this callback, such as message sending failure prompts, etc.
+        // 发送消息时可以设置 `EMCallBack` 的实例，获得消息发送的状态
+        // 可以在该回调中更新消息的显示状态。例如消息发送失败后的提示等等
         msg.setMessageStatusCallback(object : EMCallBack {
             override fun onSuccess() {
+                // Message sent successfully
                 // 发送消息成功
                 runOnUiThread { completion?.invoke(null) }
             }
 
             override fun onError(code: Int, error: String) {
+                // Message sending failed
                 // 发送消息失败
                 runOnUiThread { completion?.invoke(AGError(error, code)) }
             }
 
             override fun onProgress(progress: Int, status: String) {}
         })
+        // Send message
         // 发送消息
         EMClient.getInstance().chatManager().sendMessage(msg)
     }
@@ -151,14 +168,14 @@ class CallEasemobSignalClient(
     // ---------------- EMConnectionListener ----------------
     override fun onConnected() {
         runOnUiThread {
-            Toasty.normal(context, "环信已连接", Toast.LENGTH_SHORT).show()
+            Toasty.normal(context, context.getString(R.string.toast_easemob_connected), Toast.LENGTH_SHORT).show()
         }
         isConnected = true
     }
 
     override fun onDisconnected(errorCode: Int) {
         runOnUiThread {
-            Toasty.normal(context, "环信已断开", Toast.LENGTH_SHORT).show()
+            Toasty.normal(context, context.getString(R.string.toast_easemob_disconnected), Toast.LENGTH_SHORT).show()
         }
         isConnected = false
     }

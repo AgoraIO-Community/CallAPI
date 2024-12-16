@@ -7,37 +7,37 @@
 
 import Foundation
 
-/// 信令回调协议
+/// Signaling callback protocol
 @objc public protocol ISignalClientListener: NSObjectProtocol {
 
-    /// 收到消息的回调
-    /// - Parameter message: 收到的消息内容
+    /// Callback for receiving messages
+    /// - Parameter message: Content of the received message
     func onMessageReceive(message: String)
     
-    /// 信令日志回调
+    /// Signaling log callback
     /// - Parameters:
-    ///   - message: 日志消息内容
-    ///   - logLevel: 日志优先级
+    ///   - message: Content of the log message
+    ///   - logLevel: Log priority level
     @objc optional func debugInfo(message: String, logLevel: Int)
 }
 
-/// 信令抽象协议
+/// Signaling abstract protocol
 @objc public protocol ISignalClient: NSObjectProtocol {
     
-    /// CallApi 通过该方法使用信令系统向指定用户发送消息
+    /// CallApi uses this method to send messages to a specified user through the signaling system
     /// - Parameters:
-    ///   - userId: 目标用户id
-    ///   - message: 消息对象
-    ///   - completion: 发送完成的回调
+    ///   - userId: Target user's ID
+    ///   - message: Message object
+    ///   - completion: Callback upon completion of sending
     func sendMessage(userId: String,
                      message: String,
                      completion: ((NSError?)-> Void)?)
     
-    /// 向信令系统添加一个信令监听器
-    /// - Parameter listener: 信令监听器，用于处理消息接收和日志记录
+    /// Adds a signaling listener to the signaling system
+    /// - Parameter listener: Signaling listener for handling message reception and logging
     func addListener(listener: ISignalClientListener)
     
-    /// 从信令系统移除指定的信令监听器
-    /// - Parameter listener: 待移除的信令监听器
+    /// Removes the specified signaling listener from the signaling system
+    /// - Parameter listener: Signaling listener to be removed
     func removeListener(listener: ISignalClientListener)
 }

@@ -1,0 +1,66 @@
+"rtm_not_connected"="RTM not connected";
+"rtm_did_connected"="RTM connected";
+"easemob_not_connected"="AgoraChat not connected";
+"easemob_did_connected"="AgoraChat connected";
+
+"show_to_1v1_rtm"="Show(RTM)";
+"1v1_rtm"="Pure(RTM)";
+"show_to_1v1_easemob"="Show(AgoraChat)";
+"1v1_easemob"="Pure(AgoraChat)";
+
+"broadcaster"="Broadcaster";
+"audience"="Audience";
+
+"create_show_to_1v1"="Create Show to 1v1";
+"join_show_to_1v1"="Join Show to 1v1";
+"enter_1v1"="Enter Pure 1v1";
+
+"current_user_id"="Current User ID";
+"target_user_id"="Target User ID";
+"call_user_id"="User ID to Call";
+"broadcaster_id"="Broadcaster ID";
+
+"select_fps"="Select FPS";
+"select_resolution"="Resolution";
+"select_width"="Width";
+"select_height"="Height";
+
+"first_frame_related_connected"="First frame related to connection";
+"first_frame_not_related_connected"="First frame not related to connection";
+
+"rtm_not_found"="CallAPI does not contain RTM, please check the integration method";
+
+"room_id"="Room ID";
+
+"rtm_login_fail"="RTM login failed";
+"rtm_connect_fail"="RTM not logged in or connection abnormal";
+"easemob_connect_fail"="AgoraChat not logged in or connection abnormal";
+
+"callapi_initialize"="CallAPI initializing";
+
+"call"="Call";
+"cancel"="Cancel";
+"accept"="Accept";
+"reject"="Reject";
+
+"video"="Video";
+"audio"="Audio";
+"call_audio_on"="Audio On";
+"call_audio_off"="Audio Off";
+"call_video_on"="Video On";
+"call_video_off"="Video Off";
+
+"video_call"="Video Call";
+"audio_call"="Audio Call";
+"call_fail"="Call failed";
+"accept_fail"="Accept call failed";
+"select_call_type"="Please select call type";
+
+"calling_format"="User %ld invites you to 1-on-1 %@ call";
+
+"calling_to_user"="Calling user";
+"call_did_finish"="Call ended";
+"call_did_reject"="Call rejected";
+"call_timeout"="No response";
+"call_is_busy"="User is busy";
+"call_is_cancel"="Call was canceled";

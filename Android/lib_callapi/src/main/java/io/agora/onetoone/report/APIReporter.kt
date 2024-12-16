@@ -7,14 +7,9 @@ import org.json.JSONObject
 import java.util.HashMap
 
 enum class APIType(val value: Int) {
-    KTV(1),             // K歌
-    CALL(2),            // 呼叫连麦
-    BEAUTY(3),          // 美颜
-    VIDEO_LOADER(4),    // 秒开秒切
-    PK(5),              // 团战
-    VIRTUAL_SPACE(6),   //
-    SCREEN_SPACE(7),    // 屏幕共享
-    AUDIO_SCENARIO(8)   // 音频
+    // Call Connection
+    // 呼叫连麦
+    CALL(2),
 }
 
 enum class ApiEventType(val value: Int) {
@@ -32,9 +27,15 @@ object ApiEventKey {
 }
 
 object ApiCostEvent {
-    const val CHANNEL_USAGE = "channelUsage"                 //频道使用耗时
-    const val FIRST_FRAME_ACTUAL = "firstFrameActual"        //首帧实际耗时
-    const val FIRST_FRAME_PERCEIVED = "firstFramePerceived"  //首帧感官耗时
+    // Channel Usage Time
+    // 频道使用耗时
+    const val CHANNEL_USAGE = "channelUsage"
+    // Actual First Frame Time
+    // 首帧实际耗时
+    const val FIRST_FRAME_ACTUAL = "firstFrameActual"
+    // Perceived First Frame Time
+    // 首帧感官耗时
+    const val FIRST_FRAME_PERCEIVED = "firstFramePerceived"
 }
 
 class APIReporter(
@@ -51,6 +52,7 @@ class APIReporter(
         configParameters()
     }
 
+    // Report regular scenario API
     // 上报普通场景化API
     fun reportFuncEvent(name: String, value: Map<String, Any>, ext: Map<String, Any>) {
         Log.d(tag, "reportFuncEvent: $name value: $value ext: $ext")
@@ -76,6 +78,7 @@ class APIReporter(
         innerReportCostEvent(ts, name, cost, ext)
     }
 
+    // Report timing information
     // 上报耗时打点信息
     fun reportCostEvent(name: String, cost: Int, ext: Map<String, Any>) {
         durationEventStartMap.remove(name)
@@ -87,6 +90,7 @@ class APIReporter(
         )
     }
 
+    // Report custom information
     // 上报自定义信息
     fun reportCustomEvent(name: String, ext: Map<String, Any>) {
         Log.d(tag, "reportCustomEvent: $name ext: $ext")
@@ -108,9 +112,13 @@ class APIReporter(
     // ---------------------- private ----------------------
 
     private fun configParameters() {
+        // For test environment
+        // 测试环境使用
         //rtcEngine.setParameters("{\"rtc.qos_for_test_purpose\": true}") //测试环境使用
+        // Data reporting
         // 数据上报
         rtcEngine.setParameters("{\"rtc.direct_send_custom_event\": true}")
+        // Log writing
         // 日志写入
         rtcEngine.setParameters("{\"rtc.log_external_input\": true}")
     }

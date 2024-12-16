@@ -23,30 +23,30 @@ func callMessagePrint(_ message: String) {
     NSLog(message)
 }
 
-/// CallRtmManager回调协议
-public protocol ICallRtmManagerListener: NSObjectProtocol {
+/// CallRtmManager callback protocol
+@objc public protocol ICallRtmManagerListener: NSObjectProtocol {
     
-    /// rtm连接成功
+    /// RTM connection succeeded
     func onConnected()
     
-    /// rtm连接断开
+    /// RTM connection disconnected
     func onDisconnected()
     
-    /// token即将过期，需要renew token
-    /// - Parameter channelName: 即将过期的频道名
+    /// Token is about to expire, need to renew token
+    /// - Parameter channelName: The name of the channel that is about to expire
     func onTokenPrivilegeWillExpire(channelName: String)
 }
 
 @objcMembers public class CallRtmManager: NSObject {
     public var isConnected: Bool = false
-    public weak var delegate: ICallRtmManagerListener?
+    @objc public weak var delegate: ICallRtmManagerListener?
     
     private var rtmClient: AgoraRtmClientKit
 
-    /// RTM是否已经登录
+    /// Whether RTM is logged in
     public var isLoginedRtm: Bool = false
     
-    /// 是否外部传入的rtm，如果是则不需要手动logout
+    /// Whether the RTM is externally provided; if so, manual logout is not required
     private var isExternalRtmClient: Bool = false
     
     deinit {
@@ -54,14 +54,14 @@ public protocol ICallRtmManagerListener: NSObjectProtocol {
     }
     
     
-    /// 初始化
+    /// Initialization
     /// - Parameters:
-    ///   - appId: 声网AppId
-    ///   - userId: 用户id
-    ///   - rtmClient: [可选]声网实时消息(Rtm)实例，传空则CallRtmManager内部自行创建
+    ///   - appId: Agora App ID
+    ///   - userId: User ID
+    ///   - rtmClient: [Optional] Agora Real-Time Messaging (RTM) instance; pass nil to have CallRtmManager create it internally
     public required init(appId: String, userId: String, rtmClient: AgoraRtmClientKit? = nil) {
         if let rtmClient = rtmClient {
-            //如果外部传入rtmclient，默认登陆成功
+            // If an external rtmClient is provided, default to logged in
             self.isLoginedRtm = true
             self.isExternalRtmClient = true
             self.rtmClient = rtmClient
@@ -73,23 +73,23 @@ public protocol ICallRtmManagerListener: NSObjectProtocol {
         
         self.rtmClient.addDelegate(self)
         
-        // disable retry message
+        // Disable retry message
         let _ = self.rtmClient.setParameters("{\"rtm.msg.tx_timeout\": 3000}")
         callMessagePrint("init-- CallMessageManager ")
     }
     
     
-    /// 获取到rtm实例，使用该方法获取到后传递给CallRtmSignalClient
-    /// - Returns: rtm实例对象
+    /// Retrieves the RTM instance; use this method to pass it to CallRtmSignalClient
+    /// - Returns: RTM instance object
     public func getRtmClient() -> AgoraRtmClientKit {
         return rtmClient
     }
     
     
-    /// rtm登录
+    /// RTM login
     /// - Parameters:
-    ///   - rtmToken: rtm token
-    ///   - completion: 完成回调
+    ///   - rtmToken: RTM token
+    ///   - completion: Completion callback
     public func login(rtmToken: String, completion: @escaping ((NSError?) -> ())) {
         callMessagePrint("initialize")
         if rtmToken.isEmpty, isExternalRtmClient == false {
@@ -112,7 +112,7 @@ public protocol ICallRtmManagerListener: NSObjectProtocol {
     }
     
     
-    /// 登出
+    /// Logout
     public func logout() {
         if isExternalRtmClient == false {
             rtmClient.logout()
@@ -121,11 +121,11 @@ public protocol ICallRtmManagerListener: NSObjectProtocol {
         }
     }
     
-    /// 更新RTM token
+    /// Update RTM token
     /// - Parameter tokenConfig: CallTokenConfig
     public func renewToken(rtmToken: String) {
         guard isLoginedRtm else {
-            //没有登陆成功，但是需要自动登陆，可能是初始token问题，这里重新initialize
+            // Not logged in successfully, but needs to auto-login; may be an initial token issue, reinitialize here
             callMessagePrint("renewToken need to reinit")
             self.rtmClient.logout()
             login(rtmToken: rtmToken) { err in
