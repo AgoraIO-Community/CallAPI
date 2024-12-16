@@ -2,6 +2,12 @@
 
 *English | [中文](CHANGELOG.zh.md)* 
 
+## [2.1.3](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.1.3)
+
+- Upgraded RTM SDK to version 4.5.0.
+- Localization.
+- Add camera and microphone toggles to the Android and iOS demos.
+
 ## [2.1.2](https://github.com/AgoraIO-Community/CallAPI/releases/tag/2.1.2)
 
 - Call connected state support is independent of the audio and video first frame reception status.
