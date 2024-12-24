@@ -29,24 +29,12 @@ export interface IPrepareConfig {
   roomId?: string
   /** rtc token（需要使用万能token，token创建的时候channel name为空字符串） */
   rtcToken?: string
-  /** 
-   * 显示本地视频流的画布
-   * 
-   * localView Specifies a DOM element. The SDK will create a `<video>` element under the specified DOM element to play the video track. 
-   * You can specify a DOM element in either of following ways:
-   * - `string`: Specify the ID of the DOM element.
-   * - `HTMLElement`: Pass a DOM object.
-   * */
-  localView?: HTMLElement | string
-  /** 
-   * 显示远端视频流的画布
-   * 
-   * remoteView Specifies a DOM element. The SDK will create a `<video>` element under the specified DOM element to play the video track. 
-   * You can specify a DOM element in either of following ways:
-   * - `string`: Specify the ID of the DOM element.
-   * - `HTMLElement`: Pass a DOM object.
-   * */
-  remoteView?: HTMLElement | string
+  /** 自动接受 */
+  autoAccept?: boolean
+  /** 显示本地流的画布  */
+  localView?: HTMLElement
+  /** 显示远端流的画布  */
+  remoteView?: HTMLElement
   /** 呼叫超时时间 (0表示内部不处理超时) */
   callTimeoutMillisecond?: number
   /** 音频track配置 */
@@ -263,13 +251,13 @@ export interface CallApiEvents {
    * @param errorEvent 错误事件
    * @param errorType 错误类型
    * @param errorCode 错误码
-   * @param errorMessage 错误信息
+   * @param message 错误信息
    */
   callError: (
     errorEvent: CallErrorEvent,
     errorType: CallErrorCodeType,
     errorCode: string | number,
-    errorMessage: string,
+    message: string,
   ) => void
 }
 
