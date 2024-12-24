@@ -743,7 +743,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     const { appId, userId } = this.callConfig
     const { rtcToken, roomId } = this.prepareConfig
     if (!roomId) {
-      logger.error(`[${this._clientId}] rtc has joined`)
+      logger.error(`[${this._clientId}] roomId is undefined`)
       throw new Error("roomId is undefined")
     }
     if (!rtcToken) {
