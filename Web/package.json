@@ -1,6 +1,6 @@
 {
   "name": "callapi-demo-beta",
-  "version": "1.0.0-beta.4",
+  "version": "1.0.1-beta.4",
   "type": "module",
   "scripts": {
     "dev": "vite",
