@@ -144,7 +144,7 @@ const Living = () => {
       track.close()
     })
     // callApi destroy
-    await callApi?.destory()
+    await callApi?.destroy()
     // rtm logout
     await rtmClient?.logout()
     // rtc living client leave channel

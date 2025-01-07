@@ -95,7 +95,7 @@ const Pure1v1 = () => {
     // rtm client logout
     await rtmClient?.logout()
     // callApi destroy
-    await callApi?.destory()
+    await callApi?.destroy()
   }
 
   const addCallApiEventListener = () => {

@@ -76,6 +76,9 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
   constructor(config: ICallConfig) {
     super()
     this.callConfig = config
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    window.client = this;
     this._clientId = `call-client-${uuidv4()}`;
     this.rtcClient = config.rtcClient
       ? config.rtcClient
@@ -198,7 +201,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
         message_action: CallAction.Cancel,
         cancelCallByInternal: RejectByInternal.External,
       }),
-      this.destory()
+      this.destroy()
     ])
     logger.debug(`[${this._clientId}] cancelCall success`)
   }
@@ -224,7 +227,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
         rejectReason: reason,
         rejectByInternal: RejectByInternal.External,
       }),
-      this.destory()
+      this.destroy()
     ])
     logger.debug(`[${this._clientId}] reject success,remoteUserId:${remoteUserId},reason:${reason}`)
   }
@@ -272,7 +275,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
         remoteUserId,
         message_action: CallAction.Hangup,
       }),
-      this.destory()
+      this.destroy()
     ])
     logger.debug(`[${this._clientId}] hangup success,remoteUserId:${remoteUserId}`)
   }
@@ -280,7 +283,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
   /**
    * 销毁
    */
-  async destory() {
+  async destroy() {
     logger.debug(`[${this._clientId}] start destroy`)
     try {
       this.remoteTracks.audioTrack?.stop()
@@ -297,6 +300,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       }
       if (this._rtcJoined) {
         logger.debug(`[${this._clientId}]  rtc leave start`)
+        this._rtcJoined = false
         await this.rtcClient?.leave()
         logger.debug(`[${this._clientId}]  rtc leave success`)
         this._callEventChange(CallEvent.localLeft)
@@ -307,7 +311,8 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     } finally {
       this._resetData()
     }
-    logger.debug(`destory success`)
+    logger.debug(`destroy success`)
+    console.log("destroy success",this.localTracks)
   }
 
   // ------- public -------
@@ -363,7 +368,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       { cancelCallByInternal },
     )
     this._callEventChange(CallEvent.remoteCancelled)
-    await this.destory()
+    await this.destroy()
   }
 
   private async _receiveVideoCall(data: ICallMessage) {
@@ -413,7 +418,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     }
     this._callStateChange(CallStateType.prepared, CallStateReason.remoteHangup)
     this._callEventChange(CallEvent.remoteHangup)
-    await this.destory()
+    await this.destroy()
   }
 
   private async _receiveReject(data: ICallMessage) {
@@ -428,7 +433,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     if (stateReason == CallStateReason.remoteCallBusy) {
       this._callEventChange(CallEvent.remoteCallBusy)
     }
-    await this.destory()
+    await this.destroy()
     this._callStateChange(CallStateType.prepared, stateReason, "", {
       rejectReason,
     })
@@ -491,7 +496,18 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       // play local video track 
       this._playLocalVideo()
       // then publish track
-      await this._rtcPublish()
+      // try {
+        await this._rtcPublish()
+      // } catch (error) {
+      //   if (this.state == CallStateType.prepared) {
+      //     await this.destroy()
+      //   }
+      // }
+
+      if (this.state == CallStateType.prepared) {
+        // when call then fast cancelCall
+        await this.destroy()
+      }
     } catch (err) {
       this._callError(CallErrorEvent.rtcOccurError, CallErrorCodeType.rtc, err)
       throw err
@@ -563,7 +579,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       logger.debug(`[${this._clientId}] rtc remote user leave,uid:${user.uid}`)
       this._callEventChange(CallEvent.remoteLeft)
       if (this.isBusy) {
-        await this.destory()
+        await this.destroy()
         this._callStateChange(
           CallStateType.prepared,
           CallStateReason.remoteHangup,
@@ -658,7 +674,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
               message_action: CallAction.Cancel,
               cancelCallByInternal: RejectByInternal.Internal,
             }),
-            this.destory()
+            this.destroy()
           ])
           logger.debug(`[${this._clientId}]  auto cancelCall success`)
 
@@ -702,7 +718,17 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
   }
 
   private async _rtcPublish() {
+    if (!this._rtcJoined) {
+      this.destroy()
+      return logger.error(`[${this._clientId}] rtc not join`);
+    }
+
+    if (this.rtcClient?.localTracks.length) {
+      console.log("[cjtest]  has localTrack", this.rtcClient?.localTracks.length)
+      return logger.debug(`[${this._clientId}] rtc localTracks is not empty,not need republish`);
+    }
     if (this.localTracks.videoTrack && this.localTracks.audioTrack) {
+
       logger.debug(`[${this._clientId}]  rtc start publish`)
       await this.rtcClient?.publish([
         this.localTracks.videoTrack,
