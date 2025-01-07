@@ -38,7 +38,7 @@ enableLogUpload()
 setLogLevel(1)
 setParameter("ENABLE_INSTANT_VIDEO", true)
 
-export const VERSION = "1.0.1-beta.4"
+export const VERSION = "1.0.0-beta.5"
 
 export class CallApi extends AGEventEmitter<CallApiEvents> {
   callConfig: ICallConfig
