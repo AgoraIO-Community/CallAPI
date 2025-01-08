@@ -329,7 +329,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       const { message_action } = data
       logger.debug(
         `[${this._clientId}]  message receive success action:${CallAction[message_action]},remoteUserId:${data.remoteUserId} `,
-        message
+        message,"this.state",CallStateType[this.state],
       )
       switch (message_action) {
         // receive video call
@@ -407,6 +407,9 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
   }
 
   private async _receiveAccept(data: ICallMessage) {
+    if(this.state !== CallStateType.calling){
+      return logger.debug(`[${this._clientId}] current state is not calling,can not acceptCall`);
+    }
     this._callInfo.add("acceptCall")
     this._callEventChange(CallEvent.remoteAccepted)
     this._callStateChange(
@@ -826,7 +829,7 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
         CallStateType[this.state]
       }],target state:[${state} status is :${
         CallStateType[state]
-      }]stateReason:${stateReason},eventReason:${eventReason},eventInfo:${JSON.stringify(
+      }]stateReason:${stateReason} as ,eventReason:${eventReason},eventInfo:${JSON.stringify(
         eventInfo
       )}`
     )
