@@ -339,3 +339,11 @@ export enum CallAction {
   Hangup = 4, // 挂断
   AudioCall = 10, // 音频呼叫
 }
+
+
+export enum JOIN_CHANNEL_STATUS {
+  DEFAULT = 0,
+  JOINING = 1,
+  JOINED = 2,
+
+}
