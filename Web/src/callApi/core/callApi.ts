@@ -117,7 +117,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
    * @param prepareConfig 准备呼叫配置
    */
   async prepareForCall(prepareConfig: Partial<IPrepareConfig>) {
-    console.log("[cjtest]准备呼叫配置");
     logger.debug(`[${this._clientId}] start set prepareConfig`);
     if (this.isBusy) {
       this._callEventChange(CallEvent.stateMismatch)
@@ -148,7 +147,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
    * @param callType 呼叫类型
    */
   async call(remoteUserId: number, callType?: CallType) {
-    console.log("[cjtest] call 主动呼叫",remoteUserId);
     logger.debug(
       `[${this._clientId}] start call,remoteUserId:${remoteUserId},callType:${callType ?? CallType.video
       }`
@@ -193,7 +191,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
    * 取消呼叫 (主叫)
    */
   async cancelCall() {
-    console.log("[cjtest] cancelCall 主动取消呼叫");
     logger.debug(`[${this._clientId}] start cancelCall`)
     this._callStateChange(CallStateType.prepared, CallStateReason.localCancel)
     this._callEventChange(CallEvent.localCancelled)
@@ -219,7 +216,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
    * @param reason 原因
    */
   async reject(remoteUserId: number, reason?: string) {
-    console.log("[cjtest] 拒绝通话",remoteUserId);
     logger.debug(`[${this._clientId}] start reject,remoteUserId:${remoteUserId},reason:${reason}`)
     this._callStateChange(
       CallStateType.prepared,
@@ -245,7 +241,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
    * @param remoteUserId 远端用户Id
    */
   async accept(remoteUserId: number) {
-    console.log("[cjtest] 接受通话",remoteUserId);
     logger.debug(`[${this._clientId}] start accept,remoteUserId:${remoteUserId}`)
     if (this.state !== CallStateType.calling) {
       this._callEventChange(CallEvent.stateMismatch)
@@ -275,7 +270,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
    * @param remoteUserId 远端用户Id
    */
   async hangup(remoteUserId: number) {
-    console.log("[cjtest] 挂断通话",remoteUserId);
     logger.debug(`[${this._clientId}] start hangup ,remoteUserId:${remoteUserId}`)
     this._callStateChange(CallStateType.prepared, CallStateReason.localHangup)
     this._callEventChange(CallEvent.localHangup)
@@ -311,7 +305,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       // if (this._rtcJoined) {
         logger.debug(`[${this._clientId}]  rtc leave start`)
         this._rtcJoined = false
-        console.log("[cjtest] rtc leave start");
         await this.rtcClient?.leave()
         logger.debug(`[${this._clientId}]  rtc leave success`)
         this._callEventChange(CallEvent.localLeft)
@@ -331,7 +324,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
   // ------- private -------
   private _listenMessagerManagerEvents() {
     this.callMessageManager.on("messageReceive", async (message) => {
-      console.log("[cjtest] 收到呼叫 message receive success:", message) 
       logger.debug("message receive success:", message)
       const data = this._callMessage.decode(message)
       const { message_action } = data
@@ -577,7 +569,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
 
   private _listenRtcEvents() {
     this.rtcClient?.on("user-joined", (user) => {
-      console.log("[cjtest] user-joined", user)
       logger.debug(`[${this._clientId}] RTC EVENT: remote user joined ,uid:${user.uid}`)
       if (user.uid != this.remoteUserId) {
         return
@@ -587,7 +578,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       this._callEventChange(CallEvent.remoteJoined)
     })
     this.rtcClient?.on("user-left", async (user) => {
-      console.log("[cjtest] user-left", user)
       logger.debug(`[${this._clientId}] RTC EVENT: remote user left ,uid:${user.uid}`)
 
       if (user.uid != this.remoteUserId) {
@@ -605,7 +595,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       }
     })
     this.rtcClient?.on("user-published", async (user, mediaType) => {
-      console.log("[cjtest] user-published", user, mediaType)
       if (user.uid != this.remoteUserId) {
         return
       }
@@ -668,15 +657,20 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     if (!this.remoteUserId) {
       return
     }
-    logger.warn(`[${this._clientId}] timeout,start auto cancelCall`,'roomid',this.prepareConfig.roomId)
+   
 
     const time = this.prepareConfig?.callTimeoutMillisecond
+    console.log( 'callEventChanged  time', this.prepareConfig?.callTimeoutMillisecond);
     if (time) {
+      
       if (this._cancelCallTimer) {
         clearTimeout(this._cancelCallTimer)
         this._cancelCallTimer = null
       }
       this._cancelCallTimer = setTimeout(async () => {
+        logger.warn(`[${this._clientId}] callEventChanged timeout,start auto cancelCall`,'roomid',this.prepareConfig.roomId,
+          this.state,'is' ,CallStateType[this.state]
+        )
         if (
           this.state == CallStateType.calling ||
           this.state == CallStateType.connecting
@@ -719,14 +713,13 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
     logger.debug(`[${this._clientId}] start join rtc channel,roomId:${roomId},userId:${userId}`)
     this._callEventChange(CallEvent.joinRTCStart)
 
-    console.log("[cjtest] rtc join start", roomId)
     await this.rtcClient?.join(appId, roomId, rtcToken, userId);
 
-    console.log("[cjtest] rtc join success", "RoomId", roomId, "this.prepareConfig", this.prepareConfig.roomId)
+    logger.debug(`[${this._clientId}]  rtc join success, roomId:${roomId}, .prepareConfig.roomId: ${this.prepareConfig.roomId}`)
     if (this.prepareConfig.roomId !== roomId) {
       logger.warn(`[${this._clientId}] roomId is not equal,local roomId:${roomId},prepareConfig roomId:${this.prepareConfig.roomId}`)
-     await this.rtcClient?.leave();
-     this._rtcJoin();
+      await this.rtcClient?.leave();
+      this._rtcJoin();
      return;
     }
 
@@ -828,13 +821,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
       return
     }
     this.state = state
-    console.log(`[cjtest] callStateChanged current state number:[${this.state} status is :${
-        CallStateType[this.state]
-      }],target state:[${state} status is :${
-        CallStateType[state]
-      }]stateReason:${stateReason},eventReason:${eventReason},eventInfo:${JSON.stringify(
-        eventInfo
-      )}`);
     logger.debug(
       `[${this._clientId}] callStateChanged current state number:[${this.state} status is :${
         CallStateType[this.state]
