@@ -76,9 +76,6 @@ export class CallApi extends AGEventEmitter<CallApiEvents> {
   constructor(config: ICallConfig) {
     super()
     this.callConfig = config
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    window.client = this;
     this._clientId = `call-client-${uuidv4()}`;
     this.rtcClient = config.rtcClient
       ? config.rtcClient
