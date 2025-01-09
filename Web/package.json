@@ -1,6 +1,6 @@
 {
-  "name": "callapi-demo",
-  "version": "1.0.0-beta.3",
+  "name": "callapi-demo-beta",
+  "version": "1.0.0-beta.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,13 +14,13 @@
     "*.css"
   ],
   "resolutions": {
-    "agora-rtc-sdk-ng": "4.20.0",
-    "@agora-js/shared": "4.20.0",
-    "@agora-js/report": "4.20.0",
-    "@agora-js/media": "4.20.0"
+    "agora-rtc-sdk-ng": "4.20.0-300",
+    "@agora-js/shared": "4.20.0-300",
+    "@agora-js/report": "4.20.0-300",
+    "@agora-js/media": "4.20.0-300"
   },
   "dependencies": {
-    "agora-rtc-sdk-ng": "4.20.0",
+    "agora-rtc-sdk-ng": "4.20.0-300",
     "agora-rtm": "2.1.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

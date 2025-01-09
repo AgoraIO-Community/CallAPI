@@ -4,6 +4,7 @@ import {
   getRandomUid, apiGenerateToken, isMobile,
   uuidv4, DEFAULT_RTM_CONFIG, APPID, APPCERTIFICATE,
   CALL_TIMEOUT_MILLISECOND, DEFAULT_VIDEO_ENCODER_CONFIG,
+  throttle,
 } from "@/utils"
 import { createClient, IAgoraRTCClient } from "agora-rtc-sdk-ng/esm"
 import AgoraRTM from "agora-rtm"
@@ -80,9 +81,9 @@ const Pure1v1 = () => {
       roomId: uuidv4(),
       rtcToken: token,
       // must in dom
-      localView: "local-view",
+      localView:document.getElementById("local-view")!,
       // must in dom
-      remoteView: "remote-view",
+      remoteView: document.getElementById("remote-view")!,
       callTimeoutMillisecond: CALL_TIMEOUT_MILLISECOND,
       firstFrameWaittingDisabled,
       videoConfig: {
@@ -158,7 +159,7 @@ const Pure1v1 = () => {
   }
 
 
-  const call = async () => {
+  const call =  throttle(async () => {
     if (!checkRemoteUserId()) {
       return
     }
@@ -171,37 +172,37 @@ const Pure1v1 = () => {
     } catch (e: any) {
       message.error(`call failed! ${e.message}`)
     }
-  }
+  },300)
 
-  const cancelCall = async () => {
+  const cancelCall = throttle(async () => {
     try {
       await callApi.cancelCall()
     } catch (e: any) {
       message.error(`cancelCall failed! ${e.message}`)
     }
-  }
+  },300)
 
-  const accept = async () => {
+  const accept = throttle(async () => {
     if (!checkRemoteUserId()) {
-      return
+      return;
     }
     try {
-      await callApi.accept(remoteUserId)
+      await callApi.accept(remoteUserId);
     } catch (e: any) {
-      message.error(`accept failed! ${e.message}`)
+      message.error(`accept failed! ${e.message}`);
     }
-  }
+  }, 3000);
 
   const reject = async () => {
     if (!checkRemoteUserId()) {
-      return
+      return;
     }
     try {
-      await callApi.reject(remoteUserId)
+      await callApi.reject(remoteUserId);
     } catch (e: any) {
-      message.error(`reject failed! ${e.message}`)
+      message.error(`reject failed! ${e.message}`);
     }
-  }
+  };
 
   const hangup = async () => {
     if (!checkRemoteUserId()) {

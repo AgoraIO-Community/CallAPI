@@ -3,6 +3,7 @@ import {
   getRandomUid, apiGenerateToken,
   uuidv4, DEFAULT_RTM_CONFIG, APPID, APPCERTIFICATE,
   CALL_TIMEOUT_MILLISECOND, DEFAULT_VIDEO_ENCODER_CONFIG,
+  throttle,
 } from "@/utils"
 import {
   createClient, IAgoraRTCClient, createMicrophoneAndCameraTracks,
@@ -45,7 +46,6 @@ let rtcLivingClient: IAgoraRTCClient
 let rtmClient: any
 let callApi: CallApi
 let tracks: [IMicrophoneAudioTrack, ICameraVideoTrack]
-
 
 // 秀场转1v1
 const Living = () => {
@@ -127,9 +127,9 @@ const Living = () => {
       roomId: uuidv4(),
       rtcToken: token,
       // must in dom
-      localView: "local-view",
+      localView: document.getElementById("local-view")!,
       // must in dom
-      remoteView: "remote-view",
+      remoteView:  document.getElementById("remote-view")!,
       callTimeoutMillisecond: CALL_TIMEOUT_MILLISECOND,
       firstFrameWaittingDisabled,
       videoConfig: {
@@ -240,7 +240,7 @@ const Living = () => {
   }
 
 
-  const call = async () => {
+  const call = throttle(async () => {
     if (!checkRemoteUserId()) {
       return
     }
@@ -253,17 +253,17 @@ const Living = () => {
     } catch (e: any) {
       message.error(`call failed! ${e.message}`)
     }
-  }
+  }, 300)
 
-  const cancelCall = async () => {
+  const cancelCall = throttle(async () => {
     try {
       await callApi.cancelCall()
     } catch (e: any) {
       message.error(`cancelCall failed! ${e.message}`)
     }
-  }
+  }, 300)
 
-  const accept = async () => {
+  const accept = throttle(async () => {
     if (!checkRemoteUserId()) {
       return
     }
@@ -272,9 +272,9 @@ const Living = () => {
     } catch (e: any) {
       message.error(`accept failed! ${e.message}`)
     }
-  }
+  }, 300)
 
-  const reject = async () => {
+  const reject = throttle(async () => {
     if (!checkRemoteUserId()) {
       return
     }
@@ -283,9 +283,9 @@ const Living = () => {
     } catch (e: any) {
       message.error(`reject failed! ${e.message}`)
     }
-  }
+  }, 300)
 
-  const hangup = async () => {
+  const hangup = throttle(async () => {
     if (!checkRemoteUserId()) {
       return
     }
@@ -295,7 +295,7 @@ const Living = () => {
       message.error(`hangup failed! ${e.message}`)
     }
 
-  }
+  }, 300)
 
   const checkRemoteUserId = () => {
     if (!remoteUserId) {
@@ -310,7 +310,7 @@ const Living = () => {
     setRtcRole(e.target.value);
   }
 
-  const onClickLive = async () => {
+  const onClickLive = throttle(async () => {
     if (rtcRole == RtcRole.Audience && !remoteUserId) {
       return message.error("请填写主播Id")
     }
@@ -337,7 +337,7 @@ const Living = () => {
       await rtcLivingClient.publish(tracks)
     }
     setScene(Scene.Live)
-  }
+  }, 300)
 
 
   const listenRtcLivingClientEvent = () => {
@@ -380,12 +380,12 @@ const Living = () => {
 
 
 
-  const onClickFirstFrameWaittingDisabled = () => {
+  const onClickFirstFrameWaittingDisabled = throttle(() => {
     setFirstFrameWaittingDisabled(!firstFrameWaittingDisabled)
     callApi.prepareForCall({
       firstFrameWaittingDisabled: !firstFrameWaittingDisabled,
     })
-  }
+  }, 300)
 
 
 
