@@ -80,9 +80,9 @@ const Pure1v1 = () => {
       roomId: uuidv4(),
       rtcToken: token,
       // must in dom
-      localView: "local-view",
+      localView:document.getElementById("local-view")!,
       // must in dom
-      remoteView: "remote-view",
+      remoteView: document.getElementById("remote-view")!,
       callTimeoutMillisecond: CALL_TIMEOUT_MILLISECOND,
       firstFrameWaittingDisabled,
       videoConfig: {
@@ -95,7 +95,7 @@ const Pure1v1 = () => {
     // rtm client logout
     await rtmClient?.logout()
     // callApi destroy
-    await callApi?.destroy()
+    await callApi?.destory()
   }
 
   const addCallApiEventListener = () => {
