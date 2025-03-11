@@ -24,8 +24,6 @@ class CallRtmSignalClient(
         rtmClient = client
         rtmClient.addEventListener(this)
 
-        // disable retry message
-        rtmClient.setParameters("{\"rtm.msg.tx_timeout\": 3000}")
         callMessagePrint("init-- CallMessageManager ")
     }
 
