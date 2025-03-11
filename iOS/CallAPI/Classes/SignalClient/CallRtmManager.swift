@@ -73,8 +73,6 @@ func callMessagePrint(_ message: String) {
         
         self.rtmClient.addDelegate(self)
         
-        // Disable retry message
-        let _ = self.rtmClient.setParameters("{\"rtm.msg.tx_timeout\": 3000}")
         callMessagePrint("init-- CallMessageManager ")
     }
     

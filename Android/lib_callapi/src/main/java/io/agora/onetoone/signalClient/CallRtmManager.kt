@@ -53,7 +53,6 @@ class CallRtmManager(
             rtmClient = createRtmClient()
         }
         rtmClient.addEventListener(this)
-        rtmClient.setParameters("{\"rtm.msg.tx_timeout\": 3000}")
         callMessagePrint("init-- CallRtmManager")
     }
 

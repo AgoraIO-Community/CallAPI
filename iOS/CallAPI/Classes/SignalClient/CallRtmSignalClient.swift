@@ -21,8 +21,6 @@ import AgoraRtmKit
         super.init()
         self.rtmClient.addDelegate(self)
         
-        // disable retry message
-        let _ = self.rtmClient.setParameters("{\"rtm.msg.tx_timeout\": 3000}")
         callMessagePrint("init-- CallMessageManager ")
     }
 }
